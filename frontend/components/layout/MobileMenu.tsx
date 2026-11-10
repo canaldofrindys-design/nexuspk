@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { mainNavigation } from "./navigation";
 
-export function MobileMenu() {
+/** Menu do celular. `account` traz os links da conta (Entrar/Criar conta ou Painel), renderizados no servidor. */
+export function MobileMenu({ account }: { account?: ReactNode }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="lg:hidden">
@@ -20,12 +21,20 @@ export function MobileMenu() {
         {open ? <X className="size-5" /> : <Menu className="size-5" />}
       </button>
       {open && (
-        <nav id="mobile-nav" aria-label="Principal" className="game-window absolute inset-x-0 top-16 z-50 grid gap-1 p-3">
+        <nav
+          id="mobile-nav"
+          aria-label="Principal"
+          className="game-window absolute inset-x-0 top-16 z-50 grid gap-1 p-3"
+          onClick={(e) => {
+            if ((e.target as HTMLElement).closest("a")) setOpen(false);
+          }}
+        >
           {mainNavigation.map((item) => (
-            <Link key={item.href} href={item.href} onClick={() => setOpen(false)} className="px-2 py-2 text-silver hover:text-gold">
+            <Link key={item.href} href={item.href} className="px-2 py-2 text-silver hover:text-gold">
               {item.label}
             </Link>
           ))}
+          {account ? <div className="mt-2 flex flex-col gap-1 border-t border-bronze/50 pt-2">{account}</div> : null}
         </nav>
       )}
     </div>
