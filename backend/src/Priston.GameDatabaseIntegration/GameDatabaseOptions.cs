@@ -24,5 +24,9 @@ public sealed class GameDatabaseOptions
 
     public string UserDatabase { get; set; } = "UserDB";
 
+    public string ClanDatabase { get; set; } = "ClanDB";
+
+    public string CoinShopDatabase { get; set; } = "CoinShopDB";
+
     public int CommandTimeoutSeconds { get; set; } = 15;
 }

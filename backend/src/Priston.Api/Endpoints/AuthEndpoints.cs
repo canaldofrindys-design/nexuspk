@@ -84,12 +84,12 @@ public static class AuthEndpoints
         return header.StartsWith("Bearer ", StringComparison.Ordinal) ? header[7..].Trim() : null;
     }
 
-    private static ClientInfo Client(HttpContext http) =>
+    internal static ClientInfo Client(HttpContext http) =>
         new(http.Connection.RemoteIpAddress?.ToString(), http.Request.Headers.UserAgent.ToString());
 
-    private static IResult Error(AuthStatus status, IReadOnlyList<FieldError>? errors)
+    internal static IResult Error(AuthStatus status, IReadOnlyList<FieldError>? errors)
     {
-        var fieldErrors = errors?.ToDictionary(e => e.Field.ToString().ToLowerInvariant(), e => e.Message);
+        var fieldErrors = errors?.ToDictionary(e => char.ToLowerInvariant(e.Field.ToString()[0]) + e.Field.ToString()[1..], e => e.Message);
         return status switch
         {
             AuthStatus.ValidationFailed => Results.Json(new ErrorBody("validation", "Confira os campos destacados.", fieldErrors), statusCode: 400),

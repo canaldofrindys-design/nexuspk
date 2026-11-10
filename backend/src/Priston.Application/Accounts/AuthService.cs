@@ -38,6 +38,10 @@ public sealed record RegisterResult(AuthStatus Status, IReadOnlyList<FieldError>
 
 public sealed record LoginResult(AuthStatus Status, string? SessionToken, DateTimeOffset? ExpiresUtc);
 
+public sealed record ChangePasswordRequest(string? CurrentPassword, string? NewPassword);
+
+public sealed record ChangeEmailRequest(string? Email);
+
 public sealed record CurrentPlayer(string Login, string? Email, bool EmailConfirmed, DateTimeOffset SessionExpiresUtc);
 
 /// <summary>
@@ -289,6 +293,100 @@ public sealed partial class AuthService(
         await players.MarkEmailConfirmedAsync(login, now, ct);
         await audit.WriteAsync("player", login, "account.email.confirmed", "game-account", login, client.IpAddress, null, ct);
         return AuthResult.Success;
+    }
+
+    /// <summary>Troca de senha com a sessão aberta. Exige a senha atual e encerra as outras sessões.</summary>
+    public async Task<AuthResult> ChangePasswordAsync(string login, string sessionToken, ChangePasswordRequest request, ClientInfo client, CancellationToken ct)
+    {
+        if (!gameAccounts.WritesEnabled)
+        {
+            return AuthResult.Of(AuthStatus.Unavailable);
+        }
+
+        if (throttle.IsLocked(login, client.IpAddress))
+        {
+            return AuthResult.Of(AuthStatus.TooManyAttempts);
+        }
+
+        if (string.IsNullOrEmpty(request.CurrentPassword) || request.CurrentPassword.Length > 32
+            || (await gameAccounts.CheckPasswordAsync(login, request.CurrentPassword, ct)).Result != GameCredentialResult.Valid)
+        {
+            throttle.RecordFailure(login, client.IpAddress);
+            return new(AuthStatus.InvalidCredentials, [new FieldError(AccountField.Password, "Senha atual incorreta.")]);
+        }
+
+        if (AccountRules.ValidatePassword(request.NewPassword, login, O) is { } error)
+        {
+            return new(AuthStatus.ValidationFailed, [error with { Field = AccountField.NewPassword }]);
+        }
+
+        if (request.NewPassword == request.CurrentPassword)
+        {
+            return new(AuthStatus.ValidationFailed, [new FieldError(AccountField.NewPassword, "A nova senha precisa ser diferente da atual.")]);
+        }
+
+        if (!await gameAccounts.ChangePasswordAsync(login, request.NewPassword!, ct))
+        {
+            return AuthResult.Of(AuthStatus.InvalidCredentials);
+        }
+
+        await sessions.RevokeAllExceptAsync(login, SecureToken.Hash(sessionToken), clock.GetUtcNow(), ct);
+        await audit.WriteAsync("player", login, "account.password.changed", "game-account", login, client.IpAddress, null, ct);
+        return AuthResult.Success;
+    }
+
+    /// <summary>Cadastra ou troca o e-mail da conta. O novo e-mail precisa ser confirmado.</summary>
+    public async Task<RegisterResult> ChangeEmailAsync(string login, ChangeEmailRequest request, ClientInfo client, CancellationToken ct)
+    {
+        var mail = request.Email?.Trim();
+        if (AccountRules.ValidateEmail(mail) is { } error)
+        {
+            return new(AuthStatus.ValidationFailed, [error], false);
+        }
+
+        if (await players.EmailInUseAsync(AccountRules.NormalizeEmail(mail!), login, ct))
+        {
+            return new(AuthStatus.EmailTaken, null, false);
+        }
+
+        var current = await players.FindAsync(login, ct);
+        if (current?.Email is not null && AccountRules.NormalizeEmail(current.Email) == AccountRules.NormalizeEmail(mail!) && current.EmailConfirmedUtc is not null)
+        {
+            return new(AuthStatus.Ok, null, false);
+        }
+
+        await players.UpsertAsync(login, mail, null, ct);
+        await audit.WriteAsync("player", login, "account.email.changed", "game-account", login, client.IpAddress, null, ct);
+        return new(AuthStatus.Ok, null, await SendEmailConfirmationAsync(login, mail!, ct));
+    }
+
+    /// <summary>Reenvia o link de confirmação. No máximo 3 por hora.</summary>
+    public async Task<AuthResult> ResendEmailConfirmationAsync(string login, CancellationToken ct)
+    {
+        if (!email.IsConfigured)
+        {
+            return AuthResult.Of(AuthStatus.Unavailable);
+        }
+
+        var account = await players.FindAsync(login, ct);
+        if (account?.Email is null || account.EmailConfirmedUtc is not null)
+        {
+            return AuthResult.Success;
+        }
+
+        if (await tokens.CountSinceAsync(TokenPurpose.EmailConfirm, login, clock.GetUtcNow().AddHours(-1), ct) >= MaxRecoveryEmailsPerHour)
+        {
+            return AuthResult.Of(AuthStatus.TooManyAttempts);
+        }
+
+        return await SendEmailConfirmationAsync(login, account.Email, ct) ? AuthResult.Success : AuthResult.Of(AuthStatus.Unavailable);
+    }
+
+    public async Task<int> RevokeOtherSessionsAsync(string login, string sessionToken, ClientInfo client, CancellationToken ct)
+    {
+        var count = await sessions.RevokeAllExceptAsync(login, SecureToken.Hash(sessionToken), clock.GetUtcNow(), ct);
+        await audit.WriteAsync("player", login, "account.sessions.revoked", "game-account", login, client.IpAddress, null, ct);
+        return count;
     }
 
     private async Task<bool> SendEmailConfirmationAsync(string login, string address, CancellationToken ct)

@@ -7,6 +7,7 @@ public enum AccountField
 {
     Login,
     Password,
+    NewPassword,
     Email,
 }
 

@@ -122,6 +122,21 @@ public class AuthServiceTests
             return Task.CompletedTask;
         }
 
+        public Task<int> RevokeAllExceptAsync(string gameLogin, byte[] keepTokenHash, DateTimeOffset now, CancellationToken ct)
+        {
+            var n = 0;
+            for (var i = 0; i < Rows.Count; i++)
+            {
+                if (Rows[i].Login == gameLogin && !Rows[i].Revoked && !Rows[i].Hash.SequenceEqual(keepTokenHash))
+                {
+                    Rows[i] = Rows[i] with { Revoked = true };
+                    n++;
+                }
+            }
+
+            return Task.FromResult(n);
+        }
+
         public Task RevokeAllAsync(string gameLogin, DateTimeOffset now, CancellationToken ct)
         {
             for (var i = 0; i < Rows.Count; i++)
@@ -401,5 +416,43 @@ public class AuthServiceTests
 
         Assert.Equal(AuthStatus.InvalidToken, (await h.Auth.ResetPasswordAsync(new(h.Email.LastToken(), "novasenha7"), Client, default)).Status);
         Assert.Equal("senha123", h.Game.Accounts["alpha01"].Password);
+    }
+
+    [Fact]
+    public async Task Change_password_requires_current_and_keeps_only_this_session()
+    {
+        using var h = new Harness();
+        h.Game.Accounts["alpha01"] = ("senha123", false);
+        var a = await h.Auth.LoginAsync(new("alpha01", "senha123", null), Client, default);
+        var b = await h.Auth.LoginAsync(new("alpha01", "senha123", null), Client, default);
+
+        var wrong = await h.Auth.ChangePasswordAsync("alpha01", a.SessionToken!, new("errada99", "novasenha7"), Client, default);
+        var same = await h.Auth.ChangePasswordAsync("alpha01", a.SessionToken!, new("senha123", "senha123"), Client, default);
+        var ok = await h.Auth.ChangePasswordAsync("alpha01", a.SessionToken!, new("senha123", "novasenha7"), Client, default);
+
+        Assert.Equal(AuthStatus.InvalidCredentials, wrong.Status);
+        Assert.Equal(AuthStatus.ValidationFailed, same.Status);
+        Assert.Equal(AuthStatus.Ok, ok.Status);
+        Assert.Equal("novasenha7", h.Game.Accounts["alpha01"].Password);
+        Assert.NotNull(await h.Auth.GetCurrentAsync(a.SessionToken, default));
+        Assert.Null(await h.Auth.GetCurrentAsync(b.SessionToken, default));
+    }
+
+    [Fact]
+    public async Task Change_email_resets_confirmation_and_rejects_email_of_other_account()
+    {
+        using var h = new Harness();
+        await h.Auth.RegisterAsync(new("alpha01", "senha123", "alpha@example.com", null), Client, default);
+        await h.Auth.RegisterAsync(new("bravo02", "senha456", "bravo@example.com", null), Client, default);
+        await h.Auth.ConfirmEmailAsync(h.Email.LastToken(), Client, default);
+
+        var taken = await h.Auth.ChangeEmailAsync("bravo02", new("ALPHA@example.com"), Client, default);
+        var changed = await h.Auth.ChangeEmailAsync("bravo02", new("novo@example.com"), Client, default);
+
+        Assert.Equal(AuthStatus.EmailTaken, taken.Status);
+        Assert.Equal(AuthStatus.Ok, changed.Status);
+        Assert.True(changed.ConfirmationEmailSent);
+        Assert.Equal("novo@example.com", h.Players.Rows["bravo02"].Email);
+        Assert.Null(h.Players.Rows["bravo02"].EmailConfirmedUtc);
     }
 }

@@ -59,6 +59,9 @@ public interface IPlayerSessionStore
     Task RevokeAsync(byte[] tokenHash, DateTimeOffset now, CancellationToken ct);
 
     Task RevokeAllAsync(string gameLogin, DateTimeOffset now, CancellationToken ct);
+
+    /// <summary>Encerra todas as sessões do login menos a indicada.</summary>
+    Task<int> RevokeAllExceptAsync(string gameLogin, byte[] keepTokenHash, DateTimeOffset now, CancellationToken ct);
 }
 
 public static class TokenPurpose
