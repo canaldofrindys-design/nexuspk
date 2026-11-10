@@ -22,6 +22,7 @@ public static class DependencyInjection
             .ValidateOnStart();
         services.AddSingleton<LoginThrottle>();
         services.AddScoped<AuthService>();
+        services.AddScoped<Player.PlayerPanelService>();
         return services;
     }
 }

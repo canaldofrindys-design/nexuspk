@@ -6,6 +6,10 @@ CREATE DATABASE ServerDB COLLATE SQL_Latin1_General_CP1_CI_AS;
 GO
 CREATE DATABASE UserDB COLLATE SQL_Latin1_General_CP1_CI_AS;
 GO
+CREATE DATABASE ClanDB COLLATE SQL_Latin1_General_CP1_CI_AS;
+GO
+CREATE DATABASE CoinShopDB COLLATE SQL_Latin1_General_CP1_CI_AS;
+GO
 USE accountdb;
 GO
 CREATE TABLE dbo.[0GameUser] (
@@ -1127,18 +1131,86 @@ CREATE TABLE dbo.[ZGameUser] (
 GO
 USE ServerDB;
 GO
-CREATE TABLE dbo.LevelTable (
+CREATE TABLE dbo.[LevelTable] (
     [szID] varchar(32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
     [Nick] varchar(32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
     [Class] int NULL,
     [Level] int NULL
 );
+CREATE TABLE dbo.[Vip] (
+    [PlayerName] varchar(32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+    [IdVip] int NULL,
+    [DateStart] datetime NULL,
+    [DateEnd] datetime NULL,
+    [AccountID] varchar(32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL
+);
 GO
 USE UserDB;
 GO
-CREATE TABLE dbo.GameMasters (
+CREATE TABLE dbo.[GameMasters] (
     [ID] int IDENTITY(1,1) NOT NULL,
     [Account] varchar(32) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
     [GameMasterLevel] int NOT NULL
+);
+CREATE TABLE dbo.[BattlePoints] (
+    [Account] varchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+    [Nick] varchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+    [BPs] int NULL,
+    [DPs] int NULL,
+    [Class] int NULL,
+    [BPsSemanal] int NOT NULL,
+    [KillsPvP] int NOT NULL,
+    [MortesPvP] int NOT NULL,
+    [PontosPvP] int NOT NULL,
+    [IsReiPvP] int NOT NULL,
+    [SodSemanal] int NOT NULL
+);
+GO
+USE ClanDB;
+GO
+CREATE TABLE dbo.[CL] (
+    [IDX] int IDENTITY(1,1) NOT NULL,
+    [ClanName] nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+    [Note] text COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+    [NoteCnt] int NOT NULL,
+    [UserID] nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+    [ClanZang] nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+    [Flag] int NOT NULL,
+    [MemCnt] int NOT NULL,
+    [MIconCnt] int NOT NULL,
+    [RegiDate] datetime NOT NULL,
+    [LimitDate] datetime NOT NULL,
+    [DelActive] char(1) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+    [PFlag] int NOT NULL,
+    [KFlag] int NOT NULL,
+    [Cpoint] int NULL,
+    [CWin] int NULL,
+    [CFail] int NULL,
+    [ClanMoney] bigint NULL,
+    [CNFlag] int NULL,
+    [SiegeMoney] bigint NULL
+);
+CREATE TABLE dbo.[UL] (
+    [IDX] int NOT NULL,
+    [MIDX] int IDENTITY(1,1) NOT NULL,
+    [userid] nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+    [ChName] nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+    [ChType] int NULL,
+    [ChLv] int NULL,
+    [ClanName] nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+    [Permi] char(2) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+    [JoinDate] datetime NOT NULL,
+    [DelActive] char(1) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+    [PFlag] int NOT NULL,
+    [KFlag] int NOT NULL,
+    [MIconCnt] int NOT NULL
+);
+GO
+USE CoinShopDB;
+GO
+CREATE TABLE dbo.[UserInfo] (
+    [UserID] varchar(32) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+    [UserCoin] int NULL,
+    [LastChange] datetime NULL
 );
 GO

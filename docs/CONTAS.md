@@ -42,3 +42,27 @@ Os logins SQL e as permissões estão em `database/scripts/permissoes-portal.sql
 
 - Unitários: `AuthServiceTests`, `AccountRulesTests` (cadastro, duplicidade, bloqueio, limite de tentativas, recuperação, token expirado).
 - Integração: `scripts/integration-auth.sh` sobe a réplica das tabelas do jogo (`database/scripts/dev/banco-jogo-teste.sql`, gerada a partir do schema real) num SQL Server de laboratório, aplica as permissões acima e testa cadastro, duplicidade, login, sessão e logout. Roda no CI.
+
+## Painel do jogador (Fase 6)
+
+`GET /api/v1/player/panel` (exige sessão) junta, só com o login de leitura:
+
+| No painel | Fonte | Observação |
+|---|---|---|
+| Situação e data de criação | `<letra>GameUser.BlockChk`, `RegistDay` | |
+| Personagens e nível | `ServerDB.dbo.LevelTable` (`szID` = login) | Nível como o servidor grava hoje; sem EXP. |
+| Clã | `ClanDB.dbo.UL` (`userid`, `ChName`, `ClanName`) | Ligado ao personagem pelo nome. |
+| Abates, mortes e BP | `UserDB.dbo.BattlePoints` (`Account`, `Nick`) | |
+| VIP | `ServerDB.dbo.Vip` (`AccountID`) | Mostra o plano ativo, ou o último que expirou. |
+| Coins | `CoinShopDB.dbo.UserInfo` (`UserID`) | Só leitura. |
+| Acessos recentes | `PortalDB.dbo.AuditLog` (`account.login`) | IP mostrado só pela metade (ex.: `203.0.*.*`). |
+
+As datas do jogo (`RegistDay`, `DateStart`, `DateEnd`) são `datetime` sem fuso; o portal considera horário de Brasília.
+Se o banco do jogo falhar, o painel abre do mesmo jeito e avisa que os dados do jogo estão indisponíveis.
+
+Ações com sessão (limite de 10 por minuto por IP):
+
+- `POST /api/v1/player/password`: exige a senha atual; grava no `GameUser` e encerra as outras sessões do site.
+- `POST /api/v1/player/email`: cadastra ou troca o e-mail; a confirmação volta a ficar pendente e o link é enviado.
+- `POST /api/v1/player/email/resend`: reenvia a confirmação (máximo 3 por hora).
+- `POST /api/v1/player/sessions/revoke-others`: encerra as outras sessões.

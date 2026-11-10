@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Teste de integração do cadastro/login contra um SQL Server de LABORATÓRIO (CI ou docker local).
+# Teste de integração do cadastro, login e painel contra um SQL Server de LABORATÓRIO (CI ou docker local).
 # Cria a réplica das tabelas do jogo, aplica as migrações do portal, cria os logins de permissão mínima
 # com senhas aleatórias e roda a API com eles. Nunca aponte para o servidor de produção.
 #
@@ -45,6 +45,17 @@ check "senha errada"                   401 POST /api/v1/auth/login '{"login":"in
 check "login correto"                  200 POST /api/v1/auth/login '{"login":"Integ01","password":"senha123"}'
 TOKEN=$(python3 -c 'import json;print(json.load(open("/tmp/integration-body"))["token"])')
 check "sessão válida"                  200 GET  /api/v1/auth/me '' "$TOKEN"
+$SQLCMD -Q "SET NOCOUNT ON; INSERT INTO ServerDB.dbo.LevelTable (szID,Nick,Class,Level) VALUES ('integ01','Integ Char',3,77); INSERT INTO ServerDB.dbo.Vip (PlayerName,IdVip,DateStart,DateEnd,AccountID) VALUES ('Integ Char',1,'2026-01-01','2099-01-01','integ01'); INSERT INTO CoinShopDB.dbo.UserInfo (UserID,UserCoin,LastChange) VALUES ('integ01',10,GETDATE());" > /dev/null
+check "painel com dados do jogo"       200 GET  /api/v1/player/panel '' "$TOKEN"
+python3 - <<'PY' || fail=1
+import json
+d = json.load(open("/tmp/integration-body"))
+assert d["gameDataAvailable"], "dados do jogo indisponíveis"
+assert d["game"]["characters"][0]["name"] == "Integ Char", d["game"]["characters"]
+assert d["game"]["vip"]["active"] and d["game"]["coins"] == 10, d["game"]
+print("ok   - painel lê personagens, VIP e coins com o login de leitura")
+PY
+check "senha atual errada no painel"   400 POST /api/v1/player/password '{"currentPassword":"errada99","newPassword":"nova1234"}' "$TOKEN"
 check "sair"                           204 POST /api/v1/auth/logout '' "$TOKEN"
 check "sessão revogada"                401 GET  /api/v1/auth/me '' "$TOKEN"
 

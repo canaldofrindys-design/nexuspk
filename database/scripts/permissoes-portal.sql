@@ -11,7 +11,7 @@ IF SUSER_ID('portal_game_write') IS NULL CREATE LOGIN portal_game_write WITH PAS
 IF SUSER_ID('portal_app') IS NULL        CREATE LOGIN portal_app        WITH PASSWORD = '<SENHA-PORTAL>',   CHECK_POLICY = ON;
 GO
 
--- 1) Leitura do jogo: só as tabelas que o portal usa até agora.
+-- 1) Leitura do jogo: só as tabelas que o portal usa até agora. Rodar de novo é seguro (idempotente).
 USE accountdb;
 GO
 IF USER_ID('portal_game_read') IS NULL  CREATE USER portal_game_read  FOR LOGIN portal_game_read;
@@ -34,13 +34,28 @@ GO
 USE ServerDB;
 GO
 IF USER_ID('portal_game_read') IS NULL CREATE USER portal_game_read FOR LOGIN portal_game_read;
-GRANT SELECT ON dbo.LevelTable TO portal_game_read;
+GRANT SELECT ON dbo.LevelTable TO portal_game_read;   -- ranking e personagens da conta
+GRANT SELECT ON dbo.Vip TO portal_game_read;          -- VIP no painel
 GO
 
 USE UserDB;
 GO
 IF USER_ID('portal_game_read') IS NULL CREATE USER portal_game_read FOR LOGIN portal_game_read;
-GRANT SELECT ON dbo.GameMasters TO portal_game_read;
+GRANT SELECT ON dbo.GameMasters TO portal_game_read;  -- GMs fora do ranking
+GRANT SELECT ON dbo.BattlePoints TO portal_game_read; -- PvP no painel
+GO
+
+USE ClanDB;
+GO
+IF USER_ID('portal_game_read') IS NULL CREATE USER portal_game_read FOR LOGIN portal_game_read;
+GRANT SELECT ON dbo.UL TO portal_game_read;           -- clã de cada personagem
+GRANT SELECT ON dbo.CL TO portal_game_read;           -- dados do clã
+GO
+
+USE CoinShopDB;
+GO
+IF USER_ID('portal_game_read') IS NULL CREATE USER portal_game_read FOR LOGIN portal_game_read;
+GRANT SELECT ON dbo.UserInfo TO portal_game_read;     -- saldo de coins no painel
 GO
 
 -- 2) Banco do portal: leitura e escrita nas próprias tabelas, sem alterar estrutura.

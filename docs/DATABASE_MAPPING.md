@@ -161,4 +161,6 @@ Conclusão:
 - [ ] Confirmar se `ServerDB.LevelTable` atualiza quando um personagem sobe de nível.
 - [ ] Decidir se o portal novo migra contas web, notícias e tickets de `KLVN Studio`. Os e-mails de `[KLVN Studio].dbo.Accounts` permitiriam que contas antigas recuperem a senha sem passar pelo suporte.
 - [ ] Confirmar o tamanho máximo de login e senha aceito pelo cliente do jogo (o portal usa 16; o banco aceita 32).
+- [ ] Confirmar o fuso das datas gravadas pelo jogo (`RegistDay`, `Vip.DateStart/DateEnd`). O portal considera horário de Brasília.
+- [ ] Confirmar se `ClanDB.dbo.UL.DelActive` marca membro que saiu do clã. Hoje o painel mostra o clã sem filtrar por essa coluna.
 - [ ] Confirmar o significado de `BlockChk` e `DelChk` diferentes de `'0'` (o portal trata como bloqueada e apagada).

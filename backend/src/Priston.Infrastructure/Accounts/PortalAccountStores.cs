@@ -145,6 +145,16 @@ internal sealed class PlayerSessionStore(IPortalDbConnectionFactory db, IOptions
             cancellationToken: ct)).ConfigureAwait(false);
     }
 
+    public async Task<int> RevokeAllExceptAsync(string gameLogin, byte[] keepTokenHash, DateTimeOffset now, CancellationToken ct)
+    {
+        await using var conn = await db.OpenAsync(ct).ConfigureAwait(false);
+        return await conn.ExecuteAsync(new CommandDefinition(
+            "UPDATE dbo.PlayerSession SET RevokedUtc = @now WHERE GameLogin = @gameLogin AND RevokedUtc IS NULL AND TokenHash <> @keepTokenHash",
+            new { gameLogin = PlayerAccountRepository.Ansi32(gameLogin), keepTokenHash, now = Utc.From(now) },
+            commandTimeout: options.Value.CommandTimeoutSeconds,
+            cancellationToken: ct)).ConfigureAwait(false);
+    }
+
     public async Task RevokeAllAsync(string gameLogin, DateTimeOffset now, CancellationToken ct)
     {
         await using var conn = await db.OpenAsync(ct).ConfigureAwait(false);
@@ -153,6 +163,24 @@ internal sealed class PlayerSessionStore(IPortalDbConnectionFactory db, IOptions
             new { gameLogin = PlayerAccountRepository.Ansi32(gameLogin), now = Utc.From(now) },
             commandTimeout: options.Value.CommandTimeoutSeconds,
             cancellationToken: ct)).ConfigureAwait(false);
+    }
+}
+
+internal sealed class PlayerActivityReader(IPortalDbConnectionFactory db, IOptions<PortalDatabaseOptions> options) : Priston.Application.Player.IPlayerActivityReader
+{
+    public async Task<IReadOnlyList<Priston.Application.Player.RecentLogin>> RecentLoginsAsync(string login, int take, CancellationToken ct)
+    {
+        await using var conn = await db.OpenAsync(ct).ConfigureAwait(false);
+        var rows = await conn.QueryAsync<(DateTime OccurredUtc, string? IpAddress)>(new CommandDefinition(
+            """
+            SELECT TOP (@take) OccurredUtc, IpAddress FROM dbo.AuditLog
+            WHERE ActorType = 'player' AND ActorId = @login AND Action = 'account.login'
+            ORDER BY OccurredUtc DESC
+            """,
+            new { take, login },
+            commandTimeout: options.Value.CommandTimeoutSeconds,
+            cancellationToken: ct)).ConfigureAwait(false);
+        return rows.Select(r => new Priston.Application.Player.RecentLogin(Utc.To(r.OccurredUtc), r.IpAddress)).ToList();
     }
 }
 

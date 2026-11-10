@@ -30,6 +30,7 @@ public static class DependencyInjection
         services.AddSingleton<IPlayerSessionStore, PlayerSessionStore>();
         services.AddSingleton<IOneTimeTokenStore, OneTimeTokenStore>();
         services.AddSingleton<IAuditLog, AuditLogWriter>();
+        services.AddSingleton<Priston.Application.Player.IPlayerActivityReader, PlayerActivityReader>();
         services.AddOptions<SmtpOptions>().Bind(configuration.GetSection(SmtpOptions.SectionName));
         services.AddSingleton<IEmailSender, SmtpEmailSender>();
         services.AddOptions<CaptchaOptions>().Bind(configuration.GetSection(CaptchaOptions.SectionName));
