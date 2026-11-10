@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+/* Paleta base do portal. A identidade visual completa chega na Fase 4. */
+@theme {
+  --color-night: #07090f;
+  --color-abyss: #0d1424;
+  --color-medieval: #1b2a4a;
+  --color-arcane: #4fb3ff;
+  --color-gold: #d4af6a;
+  --color-silver: #c9d1dc;
+  --color-amethyst: #8a5cf6;
+  --color-cyan-glow: #3ee6f0;
+
+  --font-display: var(--font-cinzel), ui-serif, Georgia, serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--color-night);
+  color: var(--color-silver);
+  font-family: var(--font-sans);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,15 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Priston.Api/Priston.Api.csproj" />
+    <Project Path="src/Priston.Application/Priston.Application.csproj" />
+    <Project Path="src/Priston.Contracts/Priston.Contracts.csproj" />
+    <Project Path="src/Priston.DbMigrator/Priston.DbMigrator.csproj" />
+    <Project Path="src/Priston.Domain/Priston.Domain.csproj" />
+    <Project Path="src/Priston.GameDatabaseIntegration/Priston.GameDatabaseIntegration.csproj" />
+    <Project Path="src/Priston.Infrastructure/Priston.Infrastructure.csproj" />
+    <Project Path="src/Priston.Worker/Priston.Worker.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Priston.UnitTests/Priston.UnitTests.csproj" />
+  </Folder>
+</Solution>

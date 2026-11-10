@@ -1,0 +1,4 @@
+root = false
+[*.cs]
+# Nomes de teste descritivos com sublinhado.
+dotnet_diagnostic.CA1707.severity = none
