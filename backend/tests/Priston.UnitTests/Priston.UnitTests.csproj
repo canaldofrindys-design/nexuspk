@@ -22,6 +22,7 @@
     <ProjectReference Include="..\..\src\Priston.GameDatabaseIntegration\Priston.GameDatabaseIntegration.csproj" />
     <ProjectReference Include="..\..\src\Priston.Infrastructure\Priston.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Priston.Domain\Priston.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Priston.Application\Priston.Application.csproj" />
   </ItemGroup>
 
 </Project>

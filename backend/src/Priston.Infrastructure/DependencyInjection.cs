@@ -1,6 +1,10 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Priston.Application.Accounts;
+using Priston.Application.Server;
+using Priston.Infrastructure.Accounts;
 using Priston.Domain.Time;
+using Priston.Infrastructure.GameServer;
 using Priston.Infrastructure.Persistence;
 
 namespace Priston.Infrastructure;
@@ -17,8 +21,19 @@ public static class DependencyInjection
             .ValidateOnStart();
 
         services.AddSingleton<IPortalDbConnectionFactory, PortalDbConnectionFactory>();
+        services.AddOptions<GameServerOptions>().Bind(configuration.GetSection(GameServerOptions.SectionName));
+        services.AddMemoryCache();
+        services.AddSingleton<IServerStatusProvider, GameServerProbe>();
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<RankingPeriods>();
+        services.AddSingleton<IPlayerAccountRepository, PlayerAccountRepository>();
+        services.AddSingleton<IPlayerSessionStore, PlayerSessionStore>();
+        services.AddSingleton<IOneTimeTokenStore, OneTimeTokenStore>();
+        services.AddSingleton<IAuditLog, AuditLogWriter>();
+        services.AddOptions<SmtpOptions>().Bind(configuration.GetSection(SmtpOptions.SectionName));
+        services.AddSingleton<IEmailSender, SmtpEmailSender>();
+        services.AddOptions<CaptchaOptions>().Bind(configuration.GetSection(CaptchaOptions.SectionName));
+        services.AddHttpClient<ICaptchaVerifier, TurnstileCaptchaVerifier>(c => c.Timeout = TimeSpan.FromSeconds(5));
         services.AddHealthChecks().AddCheck<PortalDatabaseHealthCheck>(HealthCheckName, tags: ["ready"]);
         return services;
     }

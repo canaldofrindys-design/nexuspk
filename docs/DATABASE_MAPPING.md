@@ -159,4 +159,6 @@ Conclusão:
 - [x] Schema dos bancos restantes (seção 8).
 - [x] Fonte de EXP e online decidida em 10/11: v1 ranking por nível (LevelTable); depois o servidor do jogo grava nível, EXP e online numa tabela (opção b).
 - [ ] Confirmar se `ServerDB.LevelTable` atualiza quando um personagem sobe de nível.
-- [ ] Decidir se o portal novo migra contas web, notícias e tickets de `KLVN Studio`.
+- [ ] Decidir se o portal novo migra contas web, notícias e tickets de `KLVN Studio`. Os e-mails de `[KLVN Studio].dbo.Accounts` permitiriam que contas antigas recuperem a senha sem passar pelo suporte.
+- [ ] Confirmar o tamanho máximo de login e senha aceito pelo cliente do jogo (o portal usa 16; o banco aceita 32).
+- [ ] Confirmar o significado de `BlockChk` e `DelChk` diferentes de `'0'` (o portal trata como bloqueada e apagada).

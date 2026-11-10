@@ -38,6 +38,31 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
       - run: npm run lint
+      - run: npx next typegen
       - run: npx tsc --noEmit
       - run: npm run build
       - run: npm audit --omit=dev --audit-level=high
+
+  # Cadastro e login contra um SQL Server de laboratório, com os logins de permissão mínima.
+  integration:
+    runs-on: ubuntu-latest
+    needs: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - name: SQL Server de laboratório
+        run: |
+          SA_PASSWORD="Ci$(openssl rand -hex 12)!"
+          echo "::add-mask::$SA_PASSWORD"
+          echo "SA_PASSWORD=$SA_PASSWORD" >> "$GITHUB_ENV"
+          docker run -d --name mssql -e ACCEPT_EULA=Y -e MSSQL_SA_PASSWORD="$SA_PASSWORD" -p 1433:1433 mcr.microsoft.com/mssql/server:2022-latest
+          for i in $(seq 1 60); do
+            docker exec mssql /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$SA_PASSWORD" -C -Q "SELECT 1" > /dev/null 2>&1 && exit 0
+            sleep 2
+          done
+          docker logs mssql; exit 1
+      - run: dotnet build backend -c Release
+      - name: Teste de integração (cadastro e login)
+        run: SQLCMD="docker exec -i mssql /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P $SA_PASSWORD -C -b" SQL_HOST=127.0.0.1,1433 scripts/integration-auth.sh

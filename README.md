@@ -40,15 +40,20 @@ npm install
 npm run dev
 ```
 
-Endpoints da Fase 3:
+Endpoints:
 
 - `GET /health/live` — processo no ar (público).
 - `GET /health/ready` — estado dos dois bancos (só de localhost).
 - `GET /api/v1/system/info` — versão e fuso horário.
+- `GET /api/v1/home` — dados da página inicial (ranking por nível, status, avisos).
+- `POST /api/v1/auth/register|login|logout|recover|reset-password|confirm-email`, `GET /api/v1/auth/me|options` — contas (ver `docs/CONTAS.md`).
+
+Teste de integração local (precisa de Docker): ver o cabeçalho de `scripts/integration-auth.sh`.
 
 ## Regras do projeto
 
 - O banco original do jogo **não é alterado** sem autorização. A API só lê; a escrita
-  (cadastro e troca de senha) usará um login SQL separado, com permissão apenas nessas tabelas.
+  (cadastro e troca de senha) usa um login SQL separado, com permissão apenas nessas tabelas
+  (`database/scripts/permissoes-portal.sql`).
 - Nenhum nome de tabela ou coluna é inventado: tudo vem do `DATABASE_MAPPING.md`.
 - Nenhum dado simulado: status, online e rankings mostram só o que vier de fontes reais.
