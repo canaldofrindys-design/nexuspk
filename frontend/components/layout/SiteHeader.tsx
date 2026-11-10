@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import { GuestLinks, HeaderAccount, MobileAccount, MobileGuestLinks } from "./HeaderAccount";
 import { Crest } from "./Crest";
 import { MobileMenu } from "./MobileMenu";
 import { mainNavigation } from "./navigation";
@@ -19,16 +21,16 @@ export function SiteHeader() {
           ))}
         </nav>
         <div className="flex items-center gap-2">
-          <Link href="/login" className="hidden px-2 text-sm text-silver hover:text-gold sm:block">
-            Entrar
-          </Link>
-          <Link
-            href="/criar-conta"
-            className="btn-glow hidden rounded-sm border border-gold-bright/60 bg-gradient-to-b from-gold-bright to-gold px-3 py-1.5 text-sm font-semibold text-night sm:block"
-          >
-            Criar conta
-          </Link>
-          <MobileMenu />
+          <Suspense fallback={<GuestLinks />}>
+            <HeaderAccount />
+          </Suspense>
+          <MobileMenu
+            account={
+              <Suspense fallback={<MobileGuestLinks />}>
+                <MobileAccount />
+              </Suspense>
+            }
+          />
         </div>
       </div>
     </header>
