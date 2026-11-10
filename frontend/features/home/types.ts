@@ -8,7 +8,7 @@ export type RankedCharacter = {
   level: number;
 };
 
-export type HomeNewsItem = { slug: string; title: string; summary: string; publishedAtUtc: string };
+export type HomeNewsItem = { slug: string; category: string; title: string; summary: string; publishedAtUtc: string };
 export type HomeEventItem = { slug: string; name: string; category: string; startsAtUtc: string; endsAtUtc: string | null };
 export type CommunityLink = { label: string; url: string };
 

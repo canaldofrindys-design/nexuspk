@@ -56,6 +56,21 @@ assert d["game"]["vip"]["active"] and d["game"]["coins"] == 10, d["game"]
 print("ok   - painel lê personagens, VIP e coins com o login de leitura")
 PY
 check "senha atual errada no painel"   400 POST /api/v1/player/password '{"currentPassword":"errada99","newPassword":"nova1234"}' "$TOKEN"
+$SQLCMD -d PortalDB -Q "SET QUOTED_IDENTIFIER ON; SET NOCOUNT ON;
+INSERT INTO dbo.News (Slug, Category, Title, Summary, Body, Status, PublishedUtc) VALUES
+ ('integ-publicada','noticia',N'Publicada',N'r',N'b','published',DATEADD(hour,-1,SYSUTCDATETIME())),
+ ('integ-rascunho','noticia',N'Rascunho',N'r',N'b','draft',NULL);
+INSERT INTO dbo.GameEvent (Slug, Category, Name, Summary, Description, StartsUtc, Status) VALUES
+ ('integ-evento','boss',N'Evento',N'r',N'd',DATEADD(day,1,SYSUTCDATETIME()),'published');" > /dev/null
+check "lista de notícias"              200 GET  /api/v1/news
+check "notícia publicada"              200 GET  /api/v1/news/integ-publicada
+check "rascunho não é público"         404 GET  /api/v1/news/integ-rascunho
+check "categoria inválida"             400 GET  "/api/v1/news?categoria=xyz"
+check "agenda de eventos"              200 GET  /api/v1/events
+check "calendário do mês"              200 GET  "/api/v1/events/calendar?ano=2026&mes=11"
+check "arquivo .ics"                   200 GET  /api/v1/events/integ-evento/ics
+check "lembrete sem sessão"            401 PUT  /api/v1/player/events/integ-evento/reminder
+check "lembrete sem e-mail confirmado" 409 PUT  /api/v1/player/events/integ-evento/reminder '' "$TOKEN"
 check "sair"                           204 POST /api/v1/auth/logout '' "$TOKEN"
 check "sessão revogada"                401 GET  /api/v1/auth/me '' "$TOKEN"
 

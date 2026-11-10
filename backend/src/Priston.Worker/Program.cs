@@ -38,6 +38,13 @@ builder.Services.AddQuartz(q =>
         .WithIdentity($"{nameof(LevelSnapshotJob)}-retry")
         .StartNow()
         .WithSimpleSchedule(s => s.WithIntervalInMinutes(30).RepeatForever()));
+
+    var reminders = new JobKey(nameof(EventReminderJob));
+    q.AddJob<EventReminderJob>(reminders);
+    q.AddTrigger(t => t.ForJob(reminders)
+        .WithIdentity($"{nameof(EventReminderJob)}-trigger")
+        .StartNow()
+        .WithSimpleSchedule(s => s.WithIntervalInMinutes(5).RepeatForever()));
 });
 builder.Services.AddQuartzHostedService(o => o.WaitForJobsToComplete = true);
 

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { GameWindow } from "@/components/ui/GameWindow";
 import { formatDateTime } from "./format";
 import type { HomeEventItem } from "./types";
@@ -21,7 +22,11 @@ export function AgendaWindow({ active, upcoming }: { active: HomeEventItem[]; up
             {rows.map((e) => (
               <tr key={e.slug} className="border-t border-steel/60">
                 <td className="tabular py-1.5 text-silver/80">{formatDateTime(e.startsAtUtc)}</td>
-                <td className="py-1.5">{e.name}</td>
+                <td className="py-1.5">
+                  <Link href={`/eventos/${e.slug}`} className="hover:text-gold hover:underline">
+                    {e.name}
+                  </Link>
+                </td>
                 <td className={`py-1.5 text-right ${e.live ? "text-data-ok" : "text-data-info"}`}>{e.live ? "Agora" : "Agendado"}</td>
               </tr>
             ))}

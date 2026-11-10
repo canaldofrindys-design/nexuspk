@@ -3,15 +3,13 @@
 import Link from "next/link";
 import { useState } from "react";
 import { GameWindow } from "@/components/ui/GameWindow";
+import { eventLabel, newsLabel } from "@/features/content/labels";
 import { formatDateTime } from "./format";
 import type { HomeEventItem, HomeNewsItem } from "./types";
 
 type Tab = "news" | "events";
 
-const tagStyle = {
-  news: "border-arcane/60 text-arcane",
-  events: "border-amethyst/60 text-amethyst",
-} as const;
+const eventTag = "border-amethyst/60 text-amethyst";
 
 export function NoticeBoard({ news, events }: { news: HomeNewsItem[]; events: HomeEventItem[] }) {
   const [tab, setTab] = useState<Tab>("news");
@@ -47,7 +45,7 @@ export function NoticeBoard({ news, events }: { news: HomeNewsItem[]; events: Ho
           ) : (
             news.map((n) => (
               <li key={n.slug} className="flex items-baseline gap-2 py-2">
-                <span className={`shrink-0 border px-1.5 text-[11px] ${tagStyle.news}`}>Notícia</span>
+                <span className={`shrink-0 border px-1.5 text-[11px] ${newsLabel(n.category).tone}`}>{newsLabel(n.category).label}</span>
                 <Link href={`/noticias/${n.slug}`} className="truncate hover:text-gold">
                   {n.title}
                 </Link>
@@ -61,7 +59,7 @@ export function NoticeBoard({ news, events }: { news: HomeNewsItem[]; events: Ho
           ) : (
             events.map((e) => (
               <li key={e.slug} className="flex items-baseline gap-2 py-2">
-                <span className={`shrink-0 border px-1.5 text-[11px] ${tagStyle.events}`}>{e.category}</span>
+                <span className={`shrink-0 border px-1.5 text-[11px] ${eventTag}`}>{eventLabel(e.category)}</span>
                 <Link href={`/eventos/${e.slug}`} className="truncate hover:text-gold">
                   {e.name}
                 </Link>
@@ -70,6 +68,11 @@ export function NoticeBoard({ news, events }: { news: HomeNewsItem[]; events: Ho
             ))
           ))}
       </ul>
+      <p className="mt-2 text-right text-xs">
+        <Link href={tab === "news" ? "/noticias" : "/eventos"} className="text-arcane hover:underline">
+          {tab === "news" ? "Todas as notícias" : "Agenda completa"}
+        </Link>
+      </p>
     </GameWindow>
   );
 }
