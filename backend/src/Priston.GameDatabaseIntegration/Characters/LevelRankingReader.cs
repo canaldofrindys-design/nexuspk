@@ -18,7 +18,7 @@ internal sealed class LevelRankingReader(
     {
         var o = options.Value;
         var sql = $"""
-            SELECT lt.Nick AS Name, lt.Class AS ClassCode, lt.Level AS Level
+            SELECT lt.Nick AS Name, ISNULL(lt.Class, 0) AS ClassCode, lt.Level AS Level
             FROM {SqlIdentifier.Quote(o.ServerDatabase)}.dbo.LevelTable AS lt
             WHERE lt.Level > 0
               AND lt.Nick IS NOT NULL AND LTRIM(RTRIM(lt.Nick)) <> ''

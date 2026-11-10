@@ -25,6 +25,19 @@ builder.Services.AddQuartz(q =>
         .WithIdentity($"{nameof(IntegrationProbeJob)}-trigger")
         .StartNow()
         .WithSimpleSchedule(s => s.WithIntervalInMinutes(5).RepeatForever()));
+
+    // Foto diária de nível: 00:05 em Brasília, a cada 30 min como reforço (só grava se faltar a do dia)
+    // e uma vez ao iniciar o serviço.
+    var snapshot = new JobKey(nameof(LevelSnapshotJob));
+    q.AddJob<LevelSnapshotJob>(snapshot);
+    var brasilia = TimeZoneInfo.FindSystemTimeZoneById(Priston.Domain.Time.RankingPeriods.TimeZoneId);
+    q.AddTrigger(t => t.ForJob(snapshot)
+        .WithIdentity($"{nameof(LevelSnapshotJob)}-daily")
+        .WithCronSchedule("0 5 0 * * ?", c => c.InTimeZone(brasilia)));
+    q.AddTrigger(t => t.ForJob(snapshot)
+        .WithIdentity($"{nameof(LevelSnapshotJob)}-retry")
+        .StartNow()
+        .WithSimpleSchedule(s => s.WithIntervalInMinutes(30).RepeatForever()));
 });
 builder.Services.AddQuartzHostedService(o => o.WaitForJobsToComplete = true);
 

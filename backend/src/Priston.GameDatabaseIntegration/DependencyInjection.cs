@@ -22,6 +22,9 @@ public static class DependencyInjection
 
         services.AddSingleton<IGameDbConnectionFactory, GameDbConnectionFactory>();
         services.AddSingleton<ILevelRankingReader, LevelRankingReader>();
+        services.AddSingleton<IPvpRankingReader, PvpRankingReader>();
+        services.AddSingleton<IClanRankingReader, ClanRankingReader>();
+        services.AddSingleton<ICharacterClanReader, CharacterClanReader>();
         services.AddSingleton<IGameAccountStore, GameAccountStore>();
         services.AddSingleton<Priston.Application.Player.IPlayerGameDataReader, Player.PlayerGameDataReader>();
         services.AddHealthChecks().AddCheck<GameDatabaseHealthCheck>(HealthCheckName, tags: ["ready"]);

@@ -164,3 +164,14 @@ Conclusão:
 - [ ] Confirmar o fuso das datas gravadas pelo jogo (`RegistDay`, `Vip.DateStart/DateEnd`). O portal considera horário de Brasília.
 - [ ] Confirmar se `ClanDB.dbo.UL.DelActive` marca membro que saiu do clã. Hoje o painel mostra o clã sem filtrar por essa coluna.
 - [ ] Confirmar o significado de `BlockChk` e `DelChk` diferentes de `'0'` (o portal trata como bloqueada e apagada).
+- [ ] Confirmar se `ClanDB.dbo.CL.DelActive` marca clã desfeito. O ranking de clãs ainda não filtra por essa coluna.
+- [ ] Confirmar quando `UserDB.dbo.BattlePoints.BPsSemanal` é zerado (dia e hora). A aba "Semanal" do ranking PvP mostra o valor como está no banco.
+
+## 10. Rankings (Fase 7)
+
+- **Nível geral**: `ServerDB.LevelTable`, sem GMs, nomes repetidos ficam com o maior nível.
+- **Nível diário, semanal e mensal**: o Worker grava uma foto de `LevelTable` por dia (00:05, horário de Brasília) em `PortalDB.dbo.LevelSnapshot` (migração `0003`). O ganho é o nível atual menos o nível na primeira foto do período. Personagem sem foto no início do período não entra. Não existe histórico anterior à primeira foto; a página mostra "Contando desde" quando o período começou antes dela. Fotos com mais de 400 dias são apagadas.
+- **PvP**: `UserDB.BattlePoints` (`BPs`, `BPsSemanal`, `KillsPvP`, `MortesPvP`, `IsReiPvP`), sem GMs.
+- **Clãs**: `ClanDB.CL` (`MemCnt`, `Cpoint`, `CWin`, `CFail`, `RegiDate`). O nome do líder (`ClanZang`) não é exibido.
+- **Perfil público**: nome, classe, nível, clã (`ClanDB.UL`) e pontos PvP. Não mostra a conta do jogo.
+- Respostas da API ficam 5 minutos em cache no servidor e 60 s no navegador.

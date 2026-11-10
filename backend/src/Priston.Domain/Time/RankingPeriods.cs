@@ -47,6 +47,14 @@ public sealed class RankingPeriods
         return (ToUtc(startLocal), ToUtc(endLocal));
     }
 
+    /// <summary>Data local (Brasília) de um instante UTC.</summary>
+    public DateOnly LocalDate(DateTimeOffset instantUtc) =>
+        DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(instantUtc, _zone).DateTime);
+
+    /// <summary>Data local em que o período começa (segunda-feira para a semana, dia 1 para o mês).</summary>
+    public DateOnly StartDate(RankingPeriod period, DateTimeOffset instantUtc) =>
+        DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(GetPeriod(period, instantUtc).StartUtc, _zone).DateTime);
+
     private DateTimeOffset ToUtc(DateTime local)
     {
         var unspecified = DateTime.SpecifyKind(local, DateTimeKind.Unspecified);
