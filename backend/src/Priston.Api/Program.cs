@@ -1,5 +1,8 @@
 using System.Threading.RateLimiting;
+using System.Text.Json.Serialization;
+using Priston.Api.Endpoints;
 using Priston.Api.Health;
+using Priston.Application;
 using Priston.Api.Security;
 using Priston.GameDatabaseIntegration;
 using Priston.Infrastructure;
@@ -14,7 +17,9 @@ builder.Host.UseSerilog((context, logger) => logger
     .Enrich.FromLogContext());
 
 builder.Services.AddProblemDetails();
+builder.Services.AddApplication(builder.Configuration);
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.Converters.Add(new JsonStringEnumConverter(System.Text.Json.JsonNamingPolicy.CamelCase)));
 builder.Services.AddGameDatabaseIntegration(builder.Configuration);
 
 // Limite global por IP. Limites mais rígidos (login, cadastro) entram na Fase 5.
@@ -43,6 +48,7 @@ app.UseSerilogRequestLogging();
 app.UseRateLimiter();
 
 app.MapPortalHealth();
+app.MapHomeEndpoints();
 
 app.MapGet("/api/v1/system/info", (TimeProvider clock) => Results.Ok(new
 {

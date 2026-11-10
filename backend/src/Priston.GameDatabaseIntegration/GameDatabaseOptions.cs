@@ -22,5 +22,7 @@ public sealed class GameDatabaseOptions
 
     public string ServerDatabase { get; set; } = "ServerDB";
 
+    public string UserDatabase { get; set; } = "UserDB";
+
     public int CommandTimeoutSeconds { get; set; } = 15;
 }

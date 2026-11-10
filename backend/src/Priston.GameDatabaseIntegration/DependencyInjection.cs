@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Priston.Application.Characters;
+using Priston.GameDatabaseIntegration.Characters;
 using Priston.GameDatabaseIntegration.Connection;
 using Priston.GameDatabaseIntegration.Health;
 
@@ -17,6 +19,7 @@ public static class DependencyInjection
             .ValidateOnStart();
 
         services.AddSingleton<IGameDbConnectionFactory, GameDbConnectionFactory>();
+        services.AddSingleton<ILevelRankingReader, LevelRankingReader>();
         services.AddHealthChecks().AddCheck<GameDatabaseHealthCheck>(HealthCheckName, tags: ["ready"]);
         return services;
     }

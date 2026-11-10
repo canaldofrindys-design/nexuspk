@@ -1,3 +1,4 @@
+using Priston.Application;
 using Priston.GameDatabaseIntegration;
 using Priston.Infrastructure;
 using Priston.Worker.Jobs;
@@ -12,6 +13,7 @@ builder.Services.AddSerilog((services, logger) => logger
     .ReadFrom.Configuration(builder.Configuration)
     .Enrich.FromLogContext());
 
+builder.Services.AddApplication(builder.Configuration);
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddGameDatabaseIntegration(builder.Configuration);
 
