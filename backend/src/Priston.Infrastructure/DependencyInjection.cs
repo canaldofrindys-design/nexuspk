@@ -26,6 +26,7 @@ public static class DependencyInjection
         services.AddSingleton<IServerStatusProvider, GameServerProbe>();
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<RankingPeriods>();
+        services.AddSingleton<Priston.Application.Characters.ILevelSnapshotStore, LevelSnapshotStore>();
         services.AddSingleton<IPlayerAccountRepository, PlayerAccountRepository>();
         services.AddSingleton<IPlayerSessionStore, PlayerSessionStore>();
         services.AddSingleton<IOneTimeTokenStore, OneTimeTokenStore>();

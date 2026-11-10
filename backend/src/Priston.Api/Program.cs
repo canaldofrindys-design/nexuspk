@@ -69,6 +69,7 @@ app.MapPortalHealth();
 app.MapHomeEndpoints();
 app.MapAuthEndpoints();
 app.MapPlayerEndpoints();
+app.MapRankingEndpoints();
 
 app.MapGet("/api/v1/system/info", (TimeProvider clock) => Results.Ok(new
 {

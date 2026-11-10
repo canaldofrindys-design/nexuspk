@@ -14,6 +14,8 @@ public static class DependencyInjection
         services.AddOptions<ServerPresentationOptions>().Bind(configuration.GetSection(ServerPresentationOptions.SectionName));
         services.AddSingleton<RankingService>();
         services.AddSingleton<HomeService>();
+        services.AddSingleton<RankingQueryService>();
+        services.AddSingleton<LevelSnapshotService>();
         services.AddOptions<AccountOptions>()
             .Bind(configuration.GetSection(AccountOptions.SectionName))
             .Validate(o => o.LoginMinLength >= 1 && o.LoginMaxLength <= 32 && o.LoginMinLength <= o.LoginMaxLength, "Accounts: limites de login inválidos (1–32).")

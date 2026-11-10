@@ -31,8 +31,11 @@ public sealed class RankingService(ILevelRankingReader reader, IMemoryCache cach
         return all.Take(Math.Clamp(count, 1, 100)).ToList();
     }
 
+    /// <summary>A LevelTable não tem chave: nome repetido conta uma vez, com o maior nível.</summary>
     public static IReadOnlyList<RankedCharacter> Rank(IEnumerable<CharacterLevelRow> rows) =>
-        rows.OrderByDescending(r => r.Level)
+        rows.GroupBy(r => r.Name, StringComparer.OrdinalIgnoreCase)
+            .Select(g => g.OrderByDescending(r => r.Level).First())
+            .OrderByDescending(r => r.Level)
             .ThenBy(r => r.Name, StringComparer.OrdinalIgnoreCase)
             .Select((r, i) =>
             {
