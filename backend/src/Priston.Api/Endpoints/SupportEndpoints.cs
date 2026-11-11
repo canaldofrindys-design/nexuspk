@@ -56,7 +56,7 @@ public static class SupportEndpoints
                 var form = await ReadFormAsync(http, ct);
                 if (form is null)
                 {
-                    return BadForm();
+                    return BadForm(http);
                 }
 
                 var request = new NewTicketRequest(form["category"], form["subject"], form["body"]);
@@ -75,7 +75,7 @@ public static class SupportEndpoints
                 var form = await ReadFormAsync(http, ct);
                 if (form is null)
                 {
-                    return BadForm();
+                    return BadForm(http);
                 }
 
                 var r = await support.PlayerReplyAsync(me.Login, id, form["body"], Files(form), AuthEndpoints.Client(http), ct);
@@ -121,7 +121,7 @@ public static class SupportEndpoints
                 var form = await ReadFormAsync(http, ct);
                 if (form is null)
                 {
-                    return BadForm();
+                    return BadForm(http);
                 }
 
                 var request = new StaffReplyRequest(form["body"], form["internal"] == "true", form["statusAfter"]);
@@ -194,6 +194,11 @@ public static class SupportEndpoints
         {
             return null;
         }
+        catch (BadHttpRequestException ex) when (ex.StatusCode == StatusCodes.Status413PayloadTooLarge)
+        {
+            http.Items[TooLargeKey] = true;
+            return null;
+        }
         catch (BadHttpRequestException)
         {
             return null;
@@ -224,6 +229,12 @@ public static class SupportEndpoints
         http.Response.Headers.ContentDisposition = disposition.ToString();
         return Results.File(a.Data, a.ContentType);
     }
+
+    private const string TooLargeKey = "support.form-too-large";
+
+    private static IResult BadForm(HttpContext http) => http.Items.ContainsKey(TooLargeKey)
+        ? Results.Json(new AuthEndpoints.ErrorBody("too-large", "Os arquivos passam do limite. Envie até 3 imagens de 3 MB."), statusCode: StatusCodes.Status413PayloadTooLarge)
+        : BadForm();
 
     private static IResult BadForm() =>
         Results.Json(new AuthEndpoints.ErrorBody("validation", "Envie o formulário como multipart/form-data."), statusCode: StatusCodes.Status400BadRequest);

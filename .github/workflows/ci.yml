@@ -22,7 +22,10 @@ jobs:
       - run: dotnet restore
       - run: dotnet build --no-restore -c Release
       - run: dotnet test --no-build -c Release
-      - run: dotnet list package --vulnerable --include-transitive
+      - name: Pacotes com vulnerabilidade conhecida
+        run: |
+          dotnet list package --vulnerable --include-transitive | tee /tmp/vuln.txt
+          ! grep -q "has the following vulnerable packages" /tmp/vuln.txt
 
   frontend:
     runs-on: ubuntu-latest

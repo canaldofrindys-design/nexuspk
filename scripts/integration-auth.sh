@@ -114,10 +114,39 @@ if grep -q "resposta-integ" /tmp/integration-body && ! grep -q "nota-interna-int
 check "chamado: jogador encerra"       204 POST "/api/v1/player/tickets/$TICKET/close" '' "$TOKEN"
 form "chamado: fechado não aceita resposta" 409 "/api/v1/player/tickets/$TICKET/messages" "$TOKEN" -F body="mais uma"
 check "aviso de manutenção"            200 POST /api/v1/admin/notices '{"kind":"manutencao","title":"Reinício","body":"Texto","startsLocal":"2026-11-14T03:00","endsLocal":"2026-11-14T05:00","status":"published"}' "$STAFF_TOKEN"
+# Segurança (Fase 12): entradas hostis não quebram nada nem vazam dados.
+for q in "%27%20OR%201%3D1--" "%27%3BDROP%20TABLE%20dbo.News--" "%5B%5D%25_" "%3Cscript%3Ealert(1)%3C%2Fscript%3E"; do
+  code=$(curl -s -o /tmp/integration-body -w '%{http_code}' -H 'X-Forwarded-For: 198.51.100.30' "$API/api/v1/characters?q=$q")
+  if [ "$code" = "200" ] || [ "$code" = "400" ]; then echo "ok   - busca de personagem com entrada hostil ($code)"; else echo "FAIL - busca com '$q' respondeu $code"; fail=1; fi
+done
+for path in "/api/v1/characters/%27%20OR%201%3D1--" "/api/v1/news/%27%20OR%201%3D1--" "/api/v1/rankings/level?periodo=%27--&classe=-1&pagina=-5&porPagina=100000" "/api/v1/news?pagina=-1"; do
+  code=$(curl -s -o /dev/null -w '%{http_code}' -H 'X-Forwarded-For: 198.51.100.30' "$API$path")
+  case "$code" in 200|400|404) echo "ok   - $path responde $code";; *) echo "FAIL - $path respondeu $code"; fail=1;; esac
+done
+check "fila com login hostil"          200 GET  "/api/v1/admin/tickets?situacao=todos&login=%27%20OR%201%3D1--" '' "$STAFF_TOKEN"
+python3 -c 'import json; d=json.load(open("/tmp/integration-body")); assert d["total"]==0, d; print("ok   - filtro hostil não devolve chamados de outros")' || fail=1
+check "token de jogador na fila"       401 GET  /api/v1/admin/tickets '' "$TOKEN"
+check "token inventado"                401 GET  /api/v1/player/panel '' "abc.def.ghi"
+check "chamado de outro id"            404 GET  /api/v1/player/tickets/999999 '' "$TOKEN"
+head -c 12000000 /dev/zero > /tmp/integration-big.bin
+form "corpo acima do limite"            413 /api/v1/player/tickets "$TOKEN" -F category=conta -F subject="Grande demais" -F body="Descrição longa o bastante para passar." -F "files=@/tmp/integration-big.bin;filename=a.png"
+hdr=$(curl -s -D - -o /dev/null "$API/api/v1/news")
+for h in "x-content-type-options: nosniff" "x-frame-options: deny" "content-security-policy: default-src 'none'"; do
+  echo "$hdr" | tr 'A-Z' 'a-z' | grep -q "$h" && echo "ok   - cabeçalho $h" || { echo "FAIL - falta cabeçalho $h"; fail=1; }
+done
+echo "$hdr" | grep -qi "^server:" && { echo "FAIL - cabeçalho Server exposto"; fail=1; } || echo "ok   - sem cabeçalho Server"
+limited=0
+for _ in $(seq 1 12); do
+  c=$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' -H 'X-Forwarded-For: 198.51.100.40' -d '{"login":"naoexiste","password":"errada99"}' "$API/api/v1/auth/login")
+  [ "$c" = "429" ] && limited=1
+done
+[ $limited = 1 ] && echo "ok   - limite de tentativas de login por IP" || { echo "FAIL - login sem limite por IP"; fail=1; }
 check "sair"                           204 POST /api/v1/auth/logout '' "$TOKEN"
 check "sessão revogada"                401 GET  /api/v1/auth/me '' "$TOKEN"
 
 row=$($SQLCMD -h -1 -W -Q "SET NOCOUNT ON; SELECT userid+'|'+GPCode+'|'+inuse+'|'+Grade+'|'+BlockChk+'|'+DelChk FROM accountdb.dbo.IGameUser")
 [ "$(echo "$row" | tr -d '\r' | head -1)" = "integ01|PTP-RUD001|0|U|0|0" ] && echo "ok   - linha no IGameUser no formato do jogo" || { echo "FAIL - linha no IGameUser: $row"; fail=1; }
+if grep -q -e "HTTP/1.1 500\|responded 500\| 500 in " /tmp/integration-api.log; then echo "FAIL - a API respondeu 500 em algum teste"; fail=1; else echo "ok   - nenhum erro 500 no log da API"; fi
+if grep -q -e "$TOKEN" -e "$STAFF_TOKEN" /tmp/integration-api.log; then echo "FAIL - token apareceu no log"; fail=1; else echo "ok   - tokens fora do log"; fi
 if grep -q -e "senha123" -e "$STAFF_PW" /tmp/integration-api.log; then echo "FAIL - senha apareceu no log"; fail=1; else echo "ok   - senha fora do log"; fi
 exit $fail
