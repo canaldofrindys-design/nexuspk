@@ -20,6 +20,7 @@ public static class DependencyInjection
             .Validate(o => o.CommandTimeoutSeconds is > 0 and <= 120, "CommandTimeoutSeconds deve estar entre 1 e 120.")
             .ValidateOnStart();
 
+        services.AddSingleton<Priston.Application.Admin.IGameStatsReader, Admin.GameStatsReader>();
         services.AddSingleton<IGameDbConnectionFactory, GameDbConnectionFactory>();
         services.AddSingleton<ILevelRankingReader, LevelRankingReader>();
         services.AddSingleton<IPvpRankingReader, PvpRankingReader>();

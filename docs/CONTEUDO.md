@@ -32,4 +32,4 @@ Texto simples, sem HTML (qualquer marcação aparece como texto):
 
 ## Cadastro
 
-O painel administrativo (Fase 10) vai cadastrar e editar notícias e eventos. Até lá não há conteúdo publicado: o site mostra "Nenhuma notícia publicada" e "Nenhum evento agendado".
+Pelo painel da equipe em `/admin/noticias` e `/admin/eventos` (funções moderador, administrador e superadministrador). Os horários do formulário são de Brasília. O site mostra a alteração na hora. Ver `docs/ADMIN.md`.

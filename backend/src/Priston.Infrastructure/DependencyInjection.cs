@@ -31,6 +31,11 @@ public static class DependencyInjection
         services.AddSingleton<IPlayerSessionStore, PlayerSessionStore>();
         services.AddSingleton<IOneTimeTokenStore, OneTimeTokenStore>();
         services.AddSingleton<IAuditLog, AuditLogWriter>();
+        services.AddSingleton<Priston.Application.Admin.IStaffRepository, Admin.StaffRepository>();
+        services.AddSingleton<Priston.Application.Admin.IStaffSessionStore, Admin.StaffSessionStore>();
+        services.AddSingleton<Priston.Application.Admin.IContentAdminStore, Admin.ContentAdminStore>();
+        services.AddSingleton<Priston.Application.Admin.IPortalStatsReader, Admin.PortalStatsReader>();
+        services.AddSingleton<Priston.Application.Admin.IAuditReader, Admin.AuditReader>();
         services.AddSingleton<Priston.Application.Content.INewsReader, Content.NewsReader>();
         services.AddSingleton<Priston.Application.Content.IEventReader, Content.EventReader>();
         services.AddSingleton<Priston.Application.Content.IEventReminderStore, Content.EventReminderStore>();

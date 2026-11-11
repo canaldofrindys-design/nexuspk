@@ -27,6 +27,11 @@ public static class DependencyInjection
         services.AddScoped<AuthService>();
         services.AddScoped<Player.PlayerPanelService>();
         services.AddSingleton<Content.ContentService>();
+        services.AddSingleton<Admin.StaffAuthService>();
+        services.AddSingleton<Admin.StaffAdminService>();
+        services.AddSingleton<Admin.ContentAdminService>();
+        services.AddSingleton<Admin.DashboardService>();
+        services.AddSingleton<Admin.AuditQueryService>();
         return services;
     }
 }

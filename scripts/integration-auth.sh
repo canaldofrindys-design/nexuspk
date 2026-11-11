@@ -71,10 +71,21 @@ check "calendário do mês"              200 GET  "/api/v1/events/calendar?ano=2
 check "arquivo .ics"                   200 GET  /api/v1/events/integ-evento/ics
 check "lembrete sem sessão"            401 PUT  /api/v1/player/events/integ-evento/reminder
 check "lembrete sem e-mail confirmado" 409 PUT  /api/v1/player/events/integ-evento/reminder '' "$TOKEN"
+check "token de jogador no painel"      401 GET  /api/v1/admin/dashboard '' "$TOKEN"
+STAFF_PW="Staff-$(openssl rand -hex 8)"
+printf '%s\n%s\n' "$STAFF_PW" "$STAFF_PW" | PRISTON_ConnectionStrings__PortalDbDeploy="$(cs PortalDB sa "$SA_PASSWORD")" \
+  dotnet run --project backend/src/Priston.DbMigrator -c Release -- --criar-superadmin integadmin > /dev/null
+check "login da equipe errado"         401 POST /api/v1/admin/login '{"username":"integadmin","password":"errada-errada-1"}'
+STAFF_TOKEN=$(curl -s -X POST -H 'Content-Type: application/json' -H 'X-Forwarded-For: 198.51.100.21' -d "{\"username\":\"integadmin\",\"password\":\"$STAFF_PW\"}" "$API/api/v1/admin/login" | python3 -c 'import json,sys; print(json.load(sys.stdin)["token"])')
+check "painel: resumo"                 200 GET  /api/v1/admin/dashboard '' "$STAFF_TOKEN"
+check "painel: criar notícia"          200 POST /api/v1/admin/news '{"slug":"integ-painel","category":"noticia","title":"T","summary":"R","body":"B","pinned":false,"status":"published"}' "$STAFF_TOKEN"
+check "painel: notícia no site"        200 GET  /api/v1/news/integ-painel
+check "painel: equipe"                 200 GET  /api/v1/admin/staff '' "$STAFF_TOKEN"
+check "painel: auditoria"              200 GET  /api/v1/admin/audit '' "$STAFF_TOKEN"
 check "sair"                           204 POST /api/v1/auth/logout '' "$TOKEN"
 check "sessão revogada"                401 GET  /api/v1/auth/me '' "$TOKEN"
 
 row=$($SQLCMD -h -1 -W -Q "SET NOCOUNT ON; SELECT userid+'|'+GPCode+'|'+inuse+'|'+Grade+'|'+BlockChk+'|'+DelChk FROM accountdb.dbo.IGameUser")
 [ "$(echo "$row" | tr -d '\r' | head -1)" = "integ01|PTP-RUD001|0|U|0|0" ] && echo "ok   - linha no IGameUser no formato do jogo" || { echo "FAIL - linha no IGameUser: $row"; fail=1; }
-if grep -q "senha123" /tmp/integration-api.log; then echo "FAIL - senha apareceu no log"; fail=1; else echo "ok   - senha fora do log"; fi
+if grep -q -e "senha123" -e "$STAFF_PW" /tmp/integration-api.log; then echo "FAIL - senha apareceu no log"; fail=1; else echo "ok   - senha fora do log"; fi
 exit $fail

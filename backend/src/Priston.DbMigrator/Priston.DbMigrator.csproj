@@ -15,6 +15,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Priston.Application\Priston.Application.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <EmbeddedResource Include="..\..\..\database\migrations\*.sql" LogicalName="Priston.DbMigrator.migrations.%(Filename)%(Extension)" />
   </ItemGroup>
 
