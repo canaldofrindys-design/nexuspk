@@ -15,14 +15,14 @@ A senha é digitada no terminal, sem eco, duas vezes. Ela não passa por linha d
 
 ## Funções
 
-| Função | Resumo | Notícias e eventos | Auditoria | Equipe |
-|---|---|---|---|---|
-| Superadministrador | sim | sim | sim | sim |
-| Administrador | sim | sim | sim | não |
-| Moderador | sim | sim | não | não |
-| Suporte | sim | não | não | não |
+| Função | Resumo | Notícias, eventos e avisos de status | Chamados | Auditoria | Equipe |
+|---|---|---|---|---|---|
+| Superadministrador | sim | sim | sim | sim | sim |
+| Administrador | sim | sim | sim | sim | não |
+| Moderador | sim | sim | sim | não | não |
+| Suporte | sim | não | sim | não | não |
 
-O suporte ganha os chamados na Fase 11.
+Chamados e avisos de status: ver `docs/SUPORTE.md`.
 
 ## Segurança
 
@@ -40,10 +40,11 @@ O suporte ganha os chamados na Fase 11.
 |---|---|
 | Contas | soma das 36 tabelas `<letra>GameUser` (login de leitura) |
 | Personagens | nomes distintos em `ServerDB.LevelTable` |
-| Servidor online | teste de porta do Worker |
+| Servidor online | teste de porta no login e nos canais (`GameServer:Targets`) |
 | Jogadores online | sem fonte até o servidor do jogo publicar (aparece "sem fonte") |
 | Cadastros | `account.register` na auditoria do portal (só cadastros feitos no portal novo) |
 | Notícias e eventos | tabelas do portal |
+| Chamados | `dbo.SupportTicket`: em andamento, esperando a equipe (última mensagem do jogador) e abertos em 24 horas |
 | Integração SQL | health checks dos dois bancos |
 
 Fonte que falha aparece como "indisponível", nunca como zero.

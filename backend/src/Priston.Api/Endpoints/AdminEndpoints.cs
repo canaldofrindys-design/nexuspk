@@ -133,7 +133,7 @@ public static class AdminEndpoints
             await Guard(auth, http, Capability.ViewAudit, async _ => Results.Ok(await audit.ListAsync(new AuditFilter(tipo, autor, acao), pagina ?? 1, ct)), ct));
     }
 
-    private static async Task<IResult> Guard(StaffAuthService auth, HttpContext http, Capability capability, Func<StaffPrincipal, Task<IResult>> action, CancellationToken ct)
+    internal static async Task<IResult> Guard(StaffAuthService auth, HttpContext http, Capability capability, Func<StaffPrincipal, Task<IResult>> action, CancellationToken ct)
     {
         var g = await Require(auth, http, capability, ct);
         return g.Denied ?? await action(g.Me!);
@@ -155,7 +155,7 @@ public static class AdminEndpoints
         return me.Can(capability) ? new(me, null) : new(me, Err("forbidden", "Sua função não permite esta ação.", 403));
     }
 
-    private static IResult Saved(SaveResult r) => r.Status switch
+    internal static IResult Saved(SaveResult r) => r.Status switch
     {
         StaffAuthStatus.Ok => Results.Ok(new { id = r.Id }),
         StaffAuthStatus.NotFound => Results.NotFound(),

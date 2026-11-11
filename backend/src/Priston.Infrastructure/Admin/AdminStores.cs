@@ -14,6 +14,9 @@ internal abstract class PortalStore(IPortalDbConnectionFactory db, IOptions<Port
     protected CommandDefinition Cmd(string sql, object? args, CancellationToken ct) =>
         new(sql, args, commandTimeout: options.Value.CommandTimeoutSeconds, cancellationToken: ct);
 
+    protected CommandDefinition Cmd(string sql, object? args, SqlTransaction tx, CancellationToken ct) =>
+        new(sql, args, tx, commandTimeout: options.Value.CommandTimeoutSeconds, cancellationToken: ct);
+
     protected static DbString Ansi(string? value, int length) => new() { Value = value, IsAnsi = true, Length = length };
 
     protected static bool IsUniqueViolation(SqlException ex) => ex.Number is 2601 or 2627;
@@ -391,7 +394,10 @@ internal sealed class PortalStatsReader(IPortalDbConnectionFactory db, IOptions<
               (SELECT COUNT(*) FROM dbo.News WHERE Status = 'draft') AS NewsDrafts,
               (SELECT COUNT(*) FROM dbo.GameEvent WHERE Status = 'published' AND StartsUtc <= @now
                   AND COALESCE(EndsUtc, DATEADD(hour, 1, StartsUtc)) > @now) AS EventsLive,
-              (SELECT COUNT(*) FROM dbo.GameEvent WHERE Status = 'published' AND StartsUtc > @now) AS EventsUpcoming
+              (SELECT COUNT(*) FROM dbo.GameEvent WHERE Status = 'published' AND StartsUtc > @now) AS EventsUpcoming,
+              (SELECT COUNT(*) FROM dbo.SupportTicket WHERE Status IN ('aberto','em_atendimento','aguardando')) AS TicketsActive,
+              (SELECT COUNT(*) FROM dbo.SupportTicket WHERE Status IN ('aberto','em_atendimento') AND LastAuthor = 'jogador') AS TicketsWaitingStaff,
+              (SELECT COUNT(*) FROM dbo.SupportTicket WHERE CreatedUtc > DATEADD(day, -1, @now)) AS Tickets24h
             """,
             new { now = now.UtcDateTime }, ct)).ConfigureAwait(false);
     }

@@ -1,4 +1,4 @@
-export type Availability = "unknown" | "online" | "offline";
+export type Availability = "unknown" | "online" | "offline" | "partial";
 
 export type RankedCharacter = {
   position: number;

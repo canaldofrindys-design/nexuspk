@@ -72,6 +72,7 @@ app.MapPlayerEndpoints();
 app.MapRankingEndpoints();
 app.MapContentEndpoints();
 app.MapAdminEndpoints();
+app.MapSupportEndpoints();
 
 app.MapGet("/api/v1/system/info", (TimeProvider clock) => Results.Ok(new
 {

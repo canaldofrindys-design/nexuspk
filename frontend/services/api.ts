@@ -43,34 +43,15 @@ const unreachable: ApiErrorBody = {
   message: "Não foi possível falar com o servidor do portal. Tente de novo em instantes.",
 };
 
-/**
- * Chamada que pode falhar de forma esperada (validação, login incorreto).
- * Nunca lança: devolve o corpo de erro da API ou uma mensagem genérica.
- */
-export async function apiSend<T>(
-  method: "GET" | "POST" | "PUT" | "DELETE",
-  path: string,
-  options: { body?: unknown; token?: string; clientIp?: string; userAgent?: string } = {},
-): Promise<ApiResult<T>> {
+function headersFor(options: { token?: string; clientIp?: string; userAgent?: string }) {
   const headers: Record<string, string> = { Accept: "application/json" };
-  if (options.body !== undefined) headers["Content-Type"] = "application/json";
   if (options.token) headers.Authorization = `Bearer ${options.token}`;
   if (options.clientIp) headers["X-Forwarded-For"] = options.clientIp;
   if (options.userAgent) headers["User-Agent"] = options.userAgent.slice(0, 256);
+  return headers;
+}
 
-  let response: Response;
-  try {
-    response = await fetch(new URL(path, baseUrl), {
-      method,
-      headers,
-      body: options.body === undefined ? undefined : JSON.stringify(options.body),
-      cache: "no-store",
-      signal: AbortSignal.timeout(10000),
-    });
-  } catch {
-    return { ok: false, status: 0, error: unreachable };
-  }
-
+async function toResult<T>(response: Response): Promise<ApiResult<T>> {
   const text = await response.text();
   let json: unknown = null;
   try {
@@ -87,5 +68,69 @@ export async function apiSend<T>(
   if (response.status === 429) {
     return { ok: false, status: 429, error: { code: "rate-limited", message: "Muitas tentativas. Aguarde um minuto." } };
   }
+  if (response.status === 413) {
+    return { ok: false, status: 413, error: { code: "too-large", message: "Os arquivos passam do limite. Envie até 3 imagens de 3 MB." } };
+  }
   return { ok: false, status: response.status, error: unreachable };
+}
+
+/** Envio multipart (texto + imagens) para a API. Nunca lança. */
+export async function apiSendForm<T>(
+  path: string,
+  form: FormData,
+  options: { token?: string; clientIp?: string; userAgent?: string } = {},
+): Promise<ApiResult<T>> {
+  try {
+    const response = await fetch(new URL(path, baseUrl), {
+      method: "POST",
+      headers: headersFor(options),
+      body: form,
+      cache: "no-store",
+      signal: AbortSignal.timeout(30000),
+    });
+    return await toResult<T>(response);
+  } catch {
+    return { ok: false, status: 0, error: unreachable };
+  }
+}
+
+/** Repassa um arquivo da API (anexo de chamado) sem interpretar o corpo. */
+export async function apiFetchRaw(path: string, token: string): Promise<Response | null> {
+  try {
+    return await fetch(new URL(path, baseUrl), {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+      signal: AbortSignal.timeout(15000),
+    });
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Chamada que pode falhar de forma esperada (validação, login incorreto).
+ * Nunca lança: devolve o corpo de erro da API ou uma mensagem genérica.
+ */
+export async function apiSend<T>(
+  method: "GET" | "POST" | "PUT" | "DELETE",
+  path: string,
+  options: { body?: unknown; token?: string; clientIp?: string; userAgent?: string } = {},
+): Promise<ApiResult<T>> {
+  const headers = headersFor(options);
+  if (options.body !== undefined) headers["Content-Type"] = "application/json";
+
+  let response: Response;
+  try {
+    response = await fetch(new URL(path, baseUrl), {
+      method,
+      headers,
+      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      cache: "no-store",
+      signal: AbortSignal.timeout(10000),
+    });
+  } catch {
+    return { ok: false, status: 0, error: unreachable };
+  }
+
+  return toResult<T>(response);
 }

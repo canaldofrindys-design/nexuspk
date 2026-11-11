@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { GameWindow } from "@/components/ui/GameWindow";
 import { formatTime } from "./format";
 import type { HomeSnapshot } from "./types";
@@ -5,6 +6,7 @@ import type { HomeSnapshot } from "./types";
 const label = {
   online: { text: "Online", className: "text-data-ok" },
   offline: { text: "Offline", className: "text-data-bad" },
+  partial: { text: "Parcial", className: "text-data-name" },
   unknown: { text: "Sem verificação", className: "text-silver/70" },
 } as const;
 
@@ -22,6 +24,11 @@ export function StatusWindow({ status }: { status: HomeSnapshot["status"] | null
         <dt>Verificado às</dt>
         <dd className="tabular text-right text-silver/80">{status?.checkedAtUtc ? formatTime(status.checkedAtUtc) : "—"}</dd>
       </dl>
+      <p className="mt-2 text-sm">
+        <Link href="/status" className="text-arcane hover:underline">
+          Login, canais e manutenções
+        </Link>
+      </p>
     </GameWindow>
   );
 }

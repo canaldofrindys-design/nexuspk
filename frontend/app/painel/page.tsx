@@ -10,6 +10,9 @@ import { ChangeEmailForm, ChangePasswordForm, ResendConfirmationButton, RevokeOt
 import type { PlayerPanel } from "@/features/player/types";
 import { clientContext } from "@/features/auth/session";
 import { apiSend } from "@/services/api";
+import Link from "next/link";
+import { PlayerTicketTable } from "@/features/support/PlayerTickets";
+import type { TicketList } from "@/features/support/types";
 
 export const metadata: Metadata = { title: "Painel do jogador", robots: { index: false } };
 
@@ -178,6 +181,31 @@ function AccessWindow({ panel }: { panel: PlayerPanel }) {
   );
 }
 
+async function SupportWindow() {
+  const token = await getSessionToken();
+  const r = token ? await apiSend<TicketList>("GET", "/api/v1/player/tickets", { token, ...(await clientContext()) }) : null;
+  const active = r?.ok ? r.data.items.filter((t) => t.status !== "resolvido" && t.status !== "fechado").slice(0, 3) : [];
+  return (
+    <GameWindow title="Suporte">
+      {!r?.ok ? (
+        <p className="text-sm text-silver/70">Não foi possível carregar os chamados agora.</p>
+      ) : active.length === 0 ? (
+        <p className="text-sm text-silver/70">Nenhum chamado em andamento.</p>
+      ) : (
+        <PlayerTicketTable items={active} />
+      )}
+      <p className="mt-2 flex flex-wrap gap-4 text-sm">
+        <Link href="/painel/suporte/novo" className="text-arcane hover:underline">
+          Abrir chamado
+        </Link>
+        <Link href="/painel/suporte" className="text-arcane hover:underline">
+          Todos os chamados{r?.ok && r.data.total > 0 ? ` (${r.data.total})` : ""}
+        </Link>
+      </p>
+    </GameWindow>
+  );
+}
+
 async function Panel() {
   const panel = await loadPanel();
   if (panel === "error") {
@@ -191,6 +219,9 @@ async function Panel() {
     <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
       <div className="flex min-w-0 flex-col gap-4">
         <CharactersWindow panel={panel} />
+        <Suspense fallback={null}>
+          <SupportWindow />
+        </Suspense>
         <AccessWindow panel={panel} />
       </div>
       <div className="flex flex-col gap-4">

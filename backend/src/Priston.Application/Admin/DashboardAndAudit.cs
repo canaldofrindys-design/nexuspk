@@ -6,7 +6,8 @@ namespace Priston.Application.Admin;
 public sealed record GameTotals(long Accounts, int Characters);
 
 public sealed record PortalTotals(int Registrations24h, int Registrations7d, int Registrations30d, int AccountsWithConfirmedEmail,
-    int NewsPublished, int NewsDrafts, int EventsLive, int EventsUpcoming);
+    int NewsPublished, int NewsDrafts, int EventsLive, int EventsUpcoming,
+    int TicketsActive, int TicketsWaitingStaff, int Tickets24h);
 
 public interface IGameStatsReader
 {

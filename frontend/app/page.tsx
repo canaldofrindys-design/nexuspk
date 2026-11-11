@@ -17,8 +17,8 @@ async function HeroStatus() {
   await connection();
   const home = await loadHome();
   const availability = home?.status.availability ?? "unknown";
-  const text = { online: "Servidor online", offline: "Servidor offline", unknown: "Status em verificação" }[availability];
-  const dot = { online: "bg-data-ok", offline: "bg-data-bad", unknown: "bg-silver/50" }[availability];
+  const text = { online: "Servidor online", offline: "Servidor offline", partial: "Servidor parcialmente fora do ar", unknown: "Status em verificação" }[availability];
+  const dot = { online: "bg-data-ok", offline: "bg-data-bad", partial: "bg-data-name", unknown: "bg-silver/50" }[availability];
   return (
     <p className="flex items-center gap-2 text-sm text-silver">
       <span aria-hidden className={`inline-block size-2.5 rounded-full ${dot}`} />

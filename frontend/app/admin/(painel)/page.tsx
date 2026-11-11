@@ -28,7 +28,7 @@ async function Body({ searchParams }: { searchParams: Promise<{ senha?: string }
   const r = await apiSend<Dashboard>("GET", "/api/v1/admin/dashboard", { token });
   if (!r.ok) return <p className="text-sm text-data-bad">Não foi possível carregar o resumo.</p>;
   const d = r.data;
-  const server = ({ online: "Online", offline: "Offline" } as Record<string, string>)[d.server.availability.toLowerCase()] ?? "Sem verificação";
+  const server = ({ online: "Online", offline: "Offline", partial: "Parcial" } as Record<string, string>)[d.server.availability.toLowerCase()] ?? "Sem verificação";
   return (
     <>
       {sp.senha ? <p className="mb-4 border border-data-ok/60 px-3 py-2 text-sm text-data-ok">Senha trocada.</p> : null}
@@ -38,7 +38,7 @@ async function Body({ searchParams }: { searchParams: Promise<{ senha?: string }
             <tbody>
               <Row label="Contas" value={n(d.game?.accounts)} note="Soma das tabelas de conta do jogo" />
               <Row label="Personagens" value={n(d.game?.characters)} note="Nomes distintos na LevelTable" />
-              <Row label="Servidor" value={<span className={server === "Online" ? "text-data-ok" : server === "Offline" ? "text-data-bad" : "text-silver/70"}>{server}</span>} />
+              <Row label="Servidor" value={<span className={server === "Online" ? "text-data-ok" : server === "Offline" ? "text-data-bad" : server === "Parcial" ? "text-data-name" : "text-silver/70"}>{server}</span>} />
               <Row label="Jogadores online" value={d.server.playersOnline ?? <span className="text-silver/60">sem fonte</span>} note="O jogo ainda não publica esse número" />
             </tbody>
           </table>
@@ -50,7 +50,9 @@ async function Body({ searchParams }: { searchParams: Promise<{ senha?: string }
               <Row label="Cadastros em 7 dias" value={n(d.portal?.registrations7d)} />
               <Row label="Cadastros em 30 dias" value={n(d.portal?.registrations30d)} />
               <Row label="Contas com e-mail confirmado" value={n(d.portal?.accountsWithConfirmedEmail)} />
-              <Row label="Chamados abertos" value={<span className="text-silver/60">chega com a central de suporte</span>} />
+              <Row label="Chamados em andamento" value={n(d.portal?.ticketsActive)} />
+              <Row label="Esperando a equipe" value={n(d.portal?.ticketsWaitingStaff)} note="Última mensagem foi do jogador" />
+              <Row label="Chamados abertos em 24 horas" value={n(d.portal?.tickets24h)} />
             </tbody>
           </table>
         </GameWindow>

@@ -1,4 +1,4 @@
-export type Capability = "ViewDashboard" | "ManageContent" | "ViewAudit" | "ManageStaff";
+export type Capability = "ViewDashboard" | "ManageContent" | "ViewAudit" | "ManageStaff" | "ManageSupport";
 
 export type StaffMe = {
   id: number;
@@ -84,6 +84,9 @@ export type Dashboard = {
     newsDrafts: number;
     eventsLive: number;
     eventsUpcoming: number;
+    ticketsActive: number;
+    ticketsWaitingStaff: number;
+    tickets24h: number;
   } | null;
   server: { availability: string; checkedAtUtc: string | null; playersOnline: number | null };
   generatedUtc: string;
