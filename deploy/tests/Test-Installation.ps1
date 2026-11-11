@@ -20,6 +20,12 @@ Assert-That 'sem cabeçalho Server' ($homePage.Headers -notmatch '(?im)^Server:'
 Assert-That 'sem X-Powered-By' ($homePage.Headers -notmatch '(?im)^X-Powered-By:')
 Assert-That 'CSP presente' ($homePage.Headers -match "(?im)^Content-Security-Policy:.*frame-ancestors 'none'")
 Assert-That 'HSTS presente' ($homePage.Headers -match '(?im)^Strict-Transport-Security:')
+# Nenhum link da página inicial (menu, rodapé, janelas) pode levar a página inexistente.
+$links = [regex]::Matches($homePage.Body, 'href="(/[^"#?]*)') | ForEach-Object { $_.Groups[1].Value } | Where-Object { $_ -notlike '/_next/*' } | Sort-Object -Unique
+foreach ($link in $links) {
+    $code = (Get-SiteResponse $HostName $link).Status
+    Assert-That "link $link existe" ($code -in 200, 307, 308) "($code)"
+}
 $plain = Get-SiteResponse $HostName '/' -Http
 Assert-That 'http também responde (sem URL Rewrite no laboratório)' ($plain.Status -in 200, 301) "($($plain.Status))"
 $asset = [regex]::Match($homePage.Body, '/_next/static/[^"'' ]+\.js').Value
