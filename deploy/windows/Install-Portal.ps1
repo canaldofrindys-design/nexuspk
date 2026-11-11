@@ -146,6 +146,9 @@ if (-not (Get-Website -Name $script:SiteName)) {
     Stop-Website -Name $script:SiteName
     Write-Ok "site $script:SiteName criado (http://$HostName)"
 }
+# Log do IIS sem a query string: os links de e-mail levam o código de confirmação e de nova senha na URL.
+Set-ItemProperty "IIS:\Sites\$script:SiteName" -Name logFile.logExtFileFlags -Value 'Date,Time,ClientIP,UserName,ServerIP,Method,UriStem,HttpStatus,Win32Status,TimeTaken,ServerPort,UserAgent,Referer,HttpSubStatus'
+Write-Ok 'log do IIS sem query string'
 if ($https -and -not (Get-WebBinding -Name $script:SiteName -Protocol https)) {
     New-WebBinding -Name $script:SiteName -Protocol https -Port 443 -HostHeader $HostName -SslFlags 1
     (Get-WebBinding -Name $script:SiteName -Protocol https).AddSslCertificate($CertificateThumbprint, 'My')

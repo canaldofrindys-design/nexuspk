@@ -55,6 +55,10 @@ Assert-That 'três senhas SQL geradas' (@($secrets).Count -eq 3)
 $leaks = @(Get-ChildItem $paths.Logs -Recurse -File | Where-Object { $content = Get-Content $_.FullName -Raw; $content -and (($secrets + 'senha123') | Where-Object { $content.Contains($_) }) })
 Assert-That 'nenhuma senha nos logs' ($leaks.Count -eq 0) (($leaks | ForEach-Object Name) -join ',')
 
+Import-Module WebAdministration
+$flags = (Get-ItemProperty "IIS:\Sites\$script:SiteName" -Name logFile.logExtFileFlags)
+Assert-That 'log do IIS sem query string' ("$flags" -notmatch 'UriQuery') "$flags"
+
 $task = Get-ScheduledTask -TaskName 'NexusPortal - backup do PortalDB' -ErrorAction SilentlyContinue
 Assert-That 'tarefa de backup agendada' ($null -ne $task)
 

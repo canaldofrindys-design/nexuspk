@@ -5,7 +5,8 @@ aprovado no projeto. Este arquivo resume o que está implementado no código.
 
 ## Fluxo
 
-Navegador → IIS (HTTPS, reverse proxy) → Next.js (páginas, `localhost`) e API ASP.NET Core (`/api`, `/hubs`).
+Navegador → IIS (HTTPS) → Next.js (módulo ASP.NET Core do IIS, `127.0.0.1`) → API ASP.NET Core (serviço Windows, `127.0.0.1:5080`).
+O navegador nunca fala com a API: páginas, formulários e anexos passam pelo Next. Detalhes em `INSTALLATION.md`.
 A API e o Worker são os únicos que acessam bancos:
 
 - **Banco do portal** (`PortalDB`): `Priston.Infrastructure`, login de aplicação sem DDL.
