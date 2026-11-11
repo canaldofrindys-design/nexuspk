@@ -48,7 +48,7 @@ const unreachable: ApiErrorBody = {
  * Nunca lança: devolve o corpo de erro da API ou uma mensagem genérica.
  */
 export async function apiSend<T>(
-  method: "GET" | "POST",
+  method: "GET" | "POST" | "PUT" | "DELETE",
   path: string,
   options: { body?: unknown; token?: string; clientIp?: string; userAgent?: string } = {},
 ): Promise<ApiResult<T>> {

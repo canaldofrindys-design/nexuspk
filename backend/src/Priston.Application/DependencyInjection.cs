@@ -16,6 +16,7 @@ public static class DependencyInjection
         services.AddSingleton<HomeService>();
         services.AddSingleton<RankingQueryService>();
         services.AddSingleton<LevelSnapshotService>();
+        services.AddSingleton<Content.EventReminderService>();
         services.AddOptions<AccountOptions>()
             .Bind(configuration.GetSection(AccountOptions.SectionName))
             .Validate(o => o.LoginMinLength >= 1 && o.LoginMaxLength <= 32 && o.LoginMinLength <= o.LoginMaxLength, "Accounts: limites de login inválidos (1–32).")
@@ -25,6 +26,7 @@ public static class DependencyInjection
         services.AddSingleton<LoginThrottle>();
         services.AddScoped<AuthService>();
         services.AddScoped<Player.PlayerPanelService>();
+        services.AddSingleton<Content.ContentService>();
         return services;
     }
 }
