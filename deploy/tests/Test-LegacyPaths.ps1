@@ -9,6 +9,13 @@ param(
 Import-Module WebAdministration
 $legacy = 'C:\legado'
 
+# Início do corpo, sem as tags, para o erro do IIS aparecer no log.
+function Get-Short($Text) {
+    $plain = ("$Text" -replace '<[^>]+>', ' ' -replace '\s+', ' ').Trim()
+    if ($plain.Length -gt 600) { $plain = $plain.Substring(0, 600) }
+    return $plain
+}
+
 if (-not $CheckOnly) {
     New-Item -ItemType Directory -Force -Path "$legacy\ServerMain", "$legacy\ClanContent", "$legacy\updater" | Out-Null
     # Mesmo formato de resposta das páginas do clã: Code=<n> seguido de CR.
@@ -32,6 +39,9 @@ End If
     if (-not (Get-Website -Name 'Legado')) { New-Website -Name 'Legado' -PhysicalPath $legacy -ApplicationPool 'Legado' -Port 8081 | Out-Null }
     Set-WebConfigurationProperty -PSPath 'MACHINE/WEBROOT/APPHOST' -Location 'Legado' -Filter 'system.webServer/asp' -Name codePage -Value 1252
 
+    $direct = (& curl.exe -s --max-time 60 'http://127.0.0.1:8081/ServerMain/isCheckClanName.asp?ClName=teste') -join ''
+    Assert-That 'site antigo de laboratório responde direto' ($direct -eq 'Code=0') "('$(Get-Short $direct)')"
+
     & (Join-Path $PSScriptRoot '..\windows\Connect-LegacyPaths.ps1') -LegacyRoot $legacy
 }
 
@@ -44,15 +54,15 @@ Assert-That 'página de código do ASP copiada do site antigo' ($codePage -eq 12
 foreach ($http in $false, $true) {
     $label = if ($http) { 'http' } else { 'https' }
     $r = Get-SiteResponse $HostName '/ServerMain/isCheckClanName.asp?ClName=teste&gserver=1' -Http:$http
-    Assert-That "ASP do clã responde pelo portal ($label)" ($r.Status -eq 200 -and $r.Body -eq "Code=0`r") "($($r.Status) '$($r.Body)')"
-    Assert-That "ASP do clã sem os cabeçalhos do portal ($label)" ($r.Headers -notmatch 'Content-Security-Policy') ''
+    Assert-That "ASP do clã responde pelo portal ($label)" ($r.Status -eq 200 -and $r.Body -eq "Code=0`r") "($($r.Status) '$(Get-Short $r.Body)')"
+    Assert-That "ASP do clã sem os cabeçalhos do portal ($label)" ([bool]("$($r.Headers)" -notmatch 'Content-Security-Policy')) ''
 }
 $r = Get-SiteResponse $HostName '/ServerMain/isCheckClanName.asp' -Http
-Assert-That 'ASP sem parâmetro responde Code=100' ($r.Body -eq "Code=100`r") "('$($r.Body)')"
+Assert-That 'ASP sem parâmetro responde Code=100' ($r.Body -eq "Code=100`r") "($($r.Status) '$(Get-Short $r.Body)')"
 $r = Get-SiteResponse $HostName '/ClanContent/1000000001.bmp' -Http
 Assert-That 'ícone do clã' ($r.Status -eq 200 -and $r.Headers -match 'Content-Type: image/bmp') "($($r.Status))"
 $r = Get-SiteResponse $HostName '/updater/version.txt' -Http
-Assert-That 'version.txt do launcher' ($r.Status -eq 200 -and $r.Body -eq '1012') "($($r.Status) '$($r.Body)')"
+Assert-That 'version.txt do launcher' ($r.Status -eq 200 -and $r.Body -eq '1012') "($($r.Status) '$(Get-Short $r.Body)')"
 $r = Get-SiteResponse $HostName '/'
 Assert-That 'página inicial continua sendo o portal' ($r.Status -eq 200 -and $r.Headers -match 'Content-Security-Policy' -and $r.Body -notmatch 'site antigo') "($($r.Status))"
 $r = Get-SiteResponse $HostName '/noticias'

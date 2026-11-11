@@ -378,9 +378,12 @@ function Write-WebConfig([hashtable]$Paths, [string]$ReleaseFolder) {
     Import-Module WebAdministration
     $pools = @(Get-WebApplication -Site $script:SiteName | ForEach-Object { $_.applicationPool } | Where-Object { $_ -and $_ -ne $script:AppPool } | Sort-Object -Unique)
     if ($pools.Count -gt 0) {
-        $acl = Get-Acl $file
-        foreach ($pool in $pools) { $acl.AddAccessRule((New-Object System.Security.AccessControl.FileSystemAccessRule("IIS AppPool\$pool", 'Read', 'Allow'))) }
-        Set-Acl -Path $file -AclObject $acl
+        # Na pasta, só ela mesma (sem herança): o IIS lista a pasta para acompanhar mudanças no web.config.
+        foreach ($target in (Split-Path $file -Parent), $file) {
+            $acl = Get-Acl $target
+            foreach ($pool in $pools) { $acl.AddAccessRule((New-Object System.Security.AccessControl.FileSystemAccessRule("IIS AppPool\$pool", 'Read', 'Allow'))) }
+            Set-Acl -Path $target -AclObject $acl
+        }
     }
 }
 
