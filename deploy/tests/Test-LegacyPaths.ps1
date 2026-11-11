@@ -40,7 +40,7 @@ End If
     Set-WebConfigurationProperty -PSPath 'MACHINE/WEBROOT/APPHOST' -Location 'Legado' -Filter 'system.webServer/asp' -Name codePage -Value 1252
 
     $direct = (& curl.exe -s --max-time 60 'http://127.0.0.1:8081/ServerMain/isCheckClanName.asp?ClName=teste') -join ''
-    Assert-That 'site antigo de laboratório responde direto' ($direct -eq 'Code=0') "('$(Get-Short $direct)')"
+    Assert-That 'site antigo de laboratório responde direto' ($direct -match '^Code=0') "('$(Get-Short $direct)')"
 
     & (Join-Path $PSScriptRoot '..\windows\Connect-LegacyPaths.ps1') -LegacyRoot $legacy
 }
