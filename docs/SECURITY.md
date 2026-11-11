@@ -131,10 +131,18 @@ Se o tráfego crescer, a ordem recomendada é: (1) rodar 2 ou mais processos do 
 - O histórico de disponibilidade guarda 30 dias de testes de porta e apaga o resto.
 - SignalR não foi usado: nada do portal precisa de atualização em tempo real; a página de status atualiza a cada minuto.
 
-## 11. Pendências para a Fase 13
+## 11. Na implantação (Fase 13)
 
-- HTTPS com certificado válido no subdomínio do portal; o HSTS só vale sobre HTTPS.
-- Remover `cs-uri-query` do log do IIS.
-- Firewall: só 80 e 443 abertos para o portal; API e SQL Server só em `127.0.0.1`.
-- Backup diário do PortalDB (o Express não tem Agent: Agendador de Tarefas do Windows com `sqlcmd`) e cópia fora da VPS.
-- Links do menu para páginas que ainda não existem (enciclopédia, download, guia) respondem 404 até as fases correspondentes.
+O `Install-Portal.ps1` (ver `INSTALLATION.md`) já faz:
+
+- site do IIS só com o host do portal, HTTPS com o certificado informado e redirecionamento de http (com URL Rewrite);
+- log do IIS sem `cs-uri-query`;
+- API e Node escutando só em `127.0.0.1`; nenhuma porta nova aberta;
+- serviços com contas virtuais (`NT SERVICE\NexusPortalApi`, `NT SERVICE\NexusPortalWorker`), sem senha e sem privilégio de administrador;
+- segredos em `C:\NexusPortal\config\portal.json`, legível só por administradores e pelos dois serviços (o site do IIS não lê);
+- senhas dos logins SQL geradas na VPS, sem passar por chat ou pela tela;
+- backup diário do PortalDB com retenção de 14 dias.
+
+Fica com a equipe: manter a porta 1433 fechada no firewall da VPS, copiar os backups para fora do servidor e renovar o certificado (o win-acme renova sozinho).
+
+Links do menu para páginas que ainda não existem (enciclopédia, download, guia) respondem 404 até as fases correspondentes.

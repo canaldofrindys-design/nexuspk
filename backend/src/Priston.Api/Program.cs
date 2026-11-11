@@ -8,9 +8,18 @@ using Priston.Application;
 using Priston.Api.Security;
 using Priston.GameDatabaseIntegration;
 using Priston.Infrastructure;
+using Priston.Infrastructure.Hosting;
+using Microsoft.Extensions.Hosting.WindowsServices;
 using Serilog;
 
-var builder = WebApplication.CreateBuilder(args);
+// Em produção roda como serviço Windows (o diretório atual é System32): a raiz é a pasta do programa.
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+    Args = args,
+    ContentRootPath = WindowsServiceHelpers.IsWindowsService() ? AppContext.BaseDirectory : null,
+});
+builder.Services.AddWindowsService(o => o.ServiceName = "NexusPortalApi");
+builder.Configuration.AddPortalConfigFile();
 
 builder.WebHost.ConfigureKestrel(o => o.AddServerHeader = false);
 

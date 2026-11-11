@@ -1,14 +1,20 @@
 using Priston.Application;
 using Priston.GameDatabaseIntegration;
+using Microsoft.Extensions.Hosting.WindowsServices;
 using Priston.Infrastructure;
+using Priston.Infrastructure.Hosting;
 using Priston.Worker.Jobs;
 using Quartz;
 using Serilog;
 
-var builder = Host.CreateApplicationBuilder(args);
-
 // Roda como serviço Windows em produção; como console no desenvolvimento.
-builder.Services.AddWindowsService(o => o.ServiceName = "NexusPK Portal Worker");
+var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings
+{
+    Args = args,
+    ContentRootPath = WindowsServiceHelpers.IsWindowsService() ? AppContext.BaseDirectory : null,
+});
+builder.Services.AddWindowsService(o => o.ServiceName = "NexusPortalWorker");
+builder.Configuration.AddPortalConfigFile();
 builder.Services.AddSerilog((services, logger) => logger
     .ReadFrom.Configuration(builder.Configuration)
     .Enrich.FromLogContext());

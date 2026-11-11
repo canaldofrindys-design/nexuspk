@@ -12,7 +12,7 @@ integrado ao banco original do Priston Tale em modo somente leitura.
 | Migrações do banco do portal | DbUp, scripts versionados | `database/migrations`, `backend/src/Priston.DbMigrator` |
 
 Documentação: [`docs/`](docs/). O mapeamento de cada funcionalidade para as tabelas reais
-está em [`docs/DATABASE_MAPPING.md`](docs/DATABASE_MAPPING.md); segurança e desempenho em [`docs/SECURITY.md`](docs/SECURITY.md).
+está em [`docs/DATABASE_MAPPING.md`](docs/DATABASE_MAPPING.md); segurança e desempenho em [`docs/SECURITY.md`](docs/SECURITY.md); instalação no Windows Server em [`docs/INSTALLATION.md`](docs/INSTALLATION.md) e publicação de versões em [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
 
 ## Desenvolvimento
 
