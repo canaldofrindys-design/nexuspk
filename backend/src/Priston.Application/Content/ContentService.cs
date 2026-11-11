@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Primitives;
 using Microsoft.Extensions.Options;
 using Priston.Application.Accounts;
 using Priston.Application.Home;
@@ -29,7 +30,7 @@ public sealed class ContentService(
     IMemoryCache cache,
     TimeProvider clock,
     IOptions<ServerPresentationOptions> presentation,
-    IOptions<AccountOptions> accountOptions)
+    IOptions<AccountOptions> accountOptions) : IDisposable
 {
     public const int MaxPageSize = 50;
 
@@ -176,10 +177,23 @@ public sealed class ContentService(
     public static EventSummary Summarize(EventRow e, DateTimeOffset now) =>
         new(e.Slug, e.Category, e.Name, e.Summary, e.ImageUrl, e.Location, e.StartsUtc, e.EndsUtc, StateOf(e, now));
 
+    private CancellationTokenSource _generation = new();
+
+    public void Dispose() => _generation.Dispose();
+
+    /// <summary>Descarta o cache de notícias e eventos (chamado depois de uma gravação no painel).</summary>
+    public void Invalidate()
+    {
+        var old = Interlocked.Exchange(ref _generation, new CancellationTokenSource());
+        // Sem Dispose: uma leitura em andamento ainda pode pegar o token antigo.
+        old.Cancel();
+    }
+
     private Task<T> Cached<T>(string key, Func<Task<T>> factory) =>
         cache.GetOrCreateAsync("content:" + key, entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = CacheFor;
+            entry.AddExpirationToken(new CancellationChangeToken(_generation.Token));
             return factory();
         })!;
 
