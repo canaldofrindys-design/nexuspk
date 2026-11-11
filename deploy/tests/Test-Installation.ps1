@@ -10,7 +10,7 @@ foreach ($name in $script:ApiService, $script:WorkerService) {
     Assert-That "serviço $name com conta virtual" ($account -eq "NT SERVICE\$name") $account
 }
 
-foreach ($path in '/', '/status', '/ranking', '/noticias', '/eventos', '/login', '/cadastro') {
+foreach ($path in '/', '/status', '/ranking', '/noticias', '/eventos', '/login', '/criar-conta', '/suporte', '/personagens') {
     $r = Get-SiteResponse $HostName $path
     Assert-That "https $path responde 200" ($r.Status -eq 200) "($($r.Status))"
 }
