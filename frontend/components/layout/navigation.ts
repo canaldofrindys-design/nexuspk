@@ -1,12 +1,14 @@
-/** Menu principal. Cada rota ganha sua página nas fases seguintes. */
+/**
+ * Menu principal: só páginas que existem. O Servidor, Download, Guia e a enciclopédia
+ * (monstros, bosses, mapas, itens) entram quando tiverem conteúdo real.
+ */
 export const mainNavigation = [
-  { href: "/servidor", label: "O Servidor" },
   { href: "/noticias", label: "Notícias" },
   { href: "/eventos", label: "Eventos" },
   { href: "/ranking", label: "Ranking" },
-  { href: "/universo", label: "Universo" },
-  { href: "/guia", label: "Guia" },
-  { href: "/download", label: "Download" },
+  { href: "/classes", label: "Classes" },
+  { href: "/personagens", label: "Personagens" },
+  { href: "/status", label: "Status" },
   { href: "/suporte", label: "Suporte" },
 ] as const;
 
@@ -14,20 +16,11 @@ export const footerColumns = [
   {
     title: "Jogo",
     links: [
-      { href: "/servidor", label: "O Servidor" },
-      { href: "/download", label: "Download" },
       { href: "/status", label: "Status do servidor" },
-      { href: "/guia", label: "Guia do jogo" },
+      { href: "/ranking", label: "Ranking" },
       { href: "/classes", label: "Classes" },
-    ],
-  },
-  {
-    title: "Universo",
-    links: [
-      { href: "/monstros", label: "Monstros" },
-      { href: "/bosses", label: "Bosses" },
-      { href: "/mapas", label: "Mapas" },
-      { href: "/itens", label: "Itens e equipamentos" },
+      { href: "/personagens", label: "Buscar personagem" },
+      { href: "/eventos", label: "Eventos" },
     ],
   },
   {

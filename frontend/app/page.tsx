@@ -1,11 +1,10 @@
-import { Download, LayoutDashboard, UserPlus } from "lucide-react";
+import { LayoutDashboard, UserPlus } from "lucide-react";
 import { Suspense } from "react";
 import { ButtonLink } from "@/components/ui/ButtonLink";
 import { HeroScene } from "@/components/home/HeroScene";
 import { AccountWindow } from "@/features/home/AccountWindow";
 import { AgendaWindow } from "@/features/home/AgendaWindow";
 import { ClassesWindow } from "@/features/home/ClassesWindow";
-import { DownloadWindow } from "@/features/home/DownloadWindow";
 import { NoticeBoard } from "@/features/home/NoticeBoard";
 import { RankingWindow } from "@/features/home/RankingWindow";
 import { ServerSheet } from "@/features/home/ServerSheet";
@@ -36,7 +35,6 @@ async function PortalBoard() {
         <div className="flex flex-col gap-4">
           <AccountWindow />
           <StatusWindow status={home?.status ?? null} />
-          <DownloadWindow />
         </div>
         <div className="flex flex-col gap-4">
           <NoticeBoard news={home?.news ?? []} events={[...(home?.activeEvents ?? []), ...(home?.upcomingEvents ?? [])]} />
@@ -70,9 +68,6 @@ export default function HomePage() {
         <div className="mt-6 flex flex-wrap gap-3">
           <ButtonLink href="/criar-conta" size="lg" icon={<UserPlus className="size-5" aria-hidden />}>
             Criar conta
-          </ButtonLink>
-          <ButtonLink href="/download" size="lg" variant="arcane" icon={<Download className="size-5" aria-hidden />}>
-            Baixar o jogo
           </ButtonLink>
           <ButtonLink href="/painel" size="lg" variant="ghost" icon={<LayoutDashboard className="size-5" aria-hidden />}>
             Painel do jogador

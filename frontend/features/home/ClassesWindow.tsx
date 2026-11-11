@@ -8,7 +8,7 @@ export function ClassesWindow() {
       title="Classes"
       actions={
         <Link href="/classes" className="text-xs text-silver/80 hover:text-gold">
-          Guia das classes
+          Ver as classes
         </Link>
       }
     >
