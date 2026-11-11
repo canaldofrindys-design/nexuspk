@@ -10,7 +10,7 @@ require("http").createServer((q, s) => {
   s.end(JSON.stringify({ xff: q.headers["x-forwarded-for"] || "", proto: q.headers["x-forwarded-proto"] || "", host: q.headers.host || "" }));
 }).listen(Number(process.env.ASPNETCORE_PORT), "127.0.0.1");
 '@
-$config = (Get-Content -Raw (Join-Path $PSScriptRoot '..\windows\web\web.config.template')).Replace('__NODE__', (Get-NodePath)).Replace('__LOGS__', $dir).Replace('__API__', 'http://127.0.0.1:1').Replace('__REWRITE__', '').Replace('arguments="start.js"', 'arguments="echo.js"')
+$config = (Get-Content -Raw (Join-Path $PSScriptRoot '..\windows\web\web.config.template')).Replace('__NODE__', (Get-NodePath)).Replace('__LOGS__', $dir).Replace('__API__', 'http://127.0.0.1:1').Replace('__REWRITE__', '').Replace('__LEGACY__', '').Replace('arguments="start.js"', 'arguments="echo.js"')
 Set-Content -Path "$dir\web.config" -Value $config -Encoding UTF8
 New-Item -ItemType Directory -Force -Path "$dir\web" | Out-Null
 if (-not (Test-Path IIS:\AppPools\xfftest)) { New-WebAppPool -Name xfftest | Out-Null }

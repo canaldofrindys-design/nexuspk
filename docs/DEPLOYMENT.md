@@ -84,6 +84,7 @@ A troca é só no IIS: os dois sites estão na mesma VPS, e o domínio principal
 - [ ] Certificado do domínio principal disponível para o site novo (o win-acme pode emitir um que cubra os dois nomes).
 - [ ] Aviso publicado no site antigo e nas redes com dia e hora.
 - [ ] Lista dos endereços antigos mais acessados (cadastro, ranking, download), para redirecionar depois.
+- [ ] Pastas que o jogo e o launcher chamam ligadas ao portal (`Connect-LegacyPaths.ps1`, ver [`LIGACOES-DO-JOGO.md`](LIGACOES-DO-JOGO.md)) e conferidas pelo subdomínio: `http://<subdomínio>/updater/version.txt` e um clã dentro do jogo apontando para o subdomínio, se der para testar.
 
 ### Na hora (cerca de 15 minutos, num horário de pouco movimento)
 

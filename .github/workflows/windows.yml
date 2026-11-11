@@ -68,7 +68,8 @@ jobs:
       - name: IIS
         shell: powershell
         run: |
-          Install-WindowsFeature -Name Web-Server, Web-Scripting-Tools | Out-Null
+          # ASP clássico: as páginas do clã do site antigo (Test-LegacyPaths.ps1).
+          Install-WindowsFeature -Name Web-Server, Web-Scripting-Tools, Web-ASP | Out-Null
           Get-Service W3SVC
 
       - name: .NET 10 Hosting Bundle
@@ -112,6 +113,10 @@ jobs:
         shell: powershell
         run: ./deploy/tests/Test-Installation.ps1 -HostName $env:PORTAL_HOST
 
+      - name: Pastas do site antigo (clã, ícones, launcher) pelo portal
+        shell: powershell
+        run: ./deploy/tests/Test-LegacyPaths.ps1 -HostName $env:PORTAL_HOST
+
       - name: Encaminhamento do IP pelo IIS
         shell: powershell
         run: ./deploy/tests/Test-ForwardedFor.ps1
@@ -119,6 +124,10 @@ jobs:
       - name: Atualização, volta de versão, backup agendado e restauração
         shell: powershell
         run: ./deploy/tests/Test-Lifecycle.ps1 -HostName $env:PORTAL_HOST
+
+      - name: Pastas do site antigo depois de atualizar e voltar versão
+        shell: powershell
+        run: ./deploy/tests/Test-LegacyPaths.ps1 -HostName $env:PORTAL_HOST -CheckOnly
 
       - name: Logs em caso de falha
         if: failure()

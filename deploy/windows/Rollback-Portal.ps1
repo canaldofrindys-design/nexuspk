@@ -35,6 +35,7 @@ $current = Get-CurrentRelease $paths
 if ($current -eq $target) { throw "$target já é a versão no ar." }
 
 Write-Step "Voltando para $([IO.Path]::GetFileName($target))"
+Write-WebConfig $paths $target
 Stop-Portal $paths
 Set-CurrentRelease $paths $target
 Start-Portal $paths

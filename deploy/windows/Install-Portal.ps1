@@ -10,7 +10,9 @@
     - banco PortalDB e as migrações;
     - logins SQL de permissão mínima (portal_game_read, portal_game_write, portal_app) com senhas
       geradas aqui mesmo, gravadas só em C:\NexusPortal\config\portal.json;
-    - tarefa diária de backup do PortalDB.
+    - tarefa diária de backup do PortalDB;
+    - as pastas do site antigo que o jogo e o launcher chamam (ServerMain, ClanContent, updater...),
+      ligadas ao site novo com os mesmos arquivos e o mesmo pool (Connect-LegacyPaths.ps1).
   Depois publica a versão do pacote e confere se responde.
 
   O banco do jogo não tem nenhuma tabela alterada: o script só cria os logins e dá SELECT nas tabelas
@@ -34,7 +36,9 @@ param(
     [ValidateRange(1024, 65535)] [int]$ApiPort = 5080,
     [string]$BackupTime = '04:00',
     [switch]$SkipSqlLogins,
-    [switch]$SkipBackupTask
+    [switch]$SkipBackupTask,
+    [string]$LegacyRoot = 'C:\wwwroot',
+    [switch]$SkipLegacy
 )
 
 . (Join-Path $PSScriptRoot 'Common.ps1')
@@ -245,6 +249,11 @@ if (-not $SkipBackupTask) {
     $principal = New-ScheduledTaskPrincipal -UserId (Get-SystemAccountName) -LogonType ServiceAccount -RunLevel Highest
     Register-ScheduledTask -TaskName 'NexusPortal - backup do PortalDB' -Action $action -Trigger $trigger -Principal $principal -Force | Out-Null
     Write-Ok "todo dia às $BackupTime, 14 dias guardados em $($paths.Backups)"
+}
+
+if (-not $SkipLegacy -and (Test-Path $LegacyRoot -PathType Container)) {
+    try { & (Join-Path $paths.Current 'deploy\Connect-LegacyPaths.ps1') -LegacyRoot $LegacyRoot -Root $Root }
+    catch { Write-Warn "as pastas do site antigo não foram ligadas: $($_.Exception.Message) Rode Connect-LegacyPaths.ps1 depois." }
 }
 
 Write-Step 'Instalação concluída'
