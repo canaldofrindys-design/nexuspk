@@ -2,6 +2,7 @@ import "server-only";
 import { cookies, headers } from "next/headers";
 import { cache } from "react";
 import { apiSend } from "@/services/api";
+import { lastForwardedIp } from "./forwardedIp";
 
 /** Cookie com o token de sessão. httpOnly: o JavaScript da página nunca lê o token. */
 export const SESSION_COOKIE = "nx_session";
@@ -39,13 +40,9 @@ export async function clearSessionCookie() {
   (await cookies()).delete(SESSION_COOKIE);
 }
 
-/**
- * IP do jogador. O IIS repassa o IP real em X-Forwarded-For; usamos a última entrada,
- * que é a que o próprio IIS acrescentou (as anteriores podem vir forjadas pelo cliente).
- */
+/** IP do jogador (última entrada do X-Forwarded-For, sem a porta) e navegador. */
 export async function clientContext() {
   const h = await headers();
-  const forwarded = h.get("x-forwarded-for");
-  const clientIp = forwarded?.split(",").map((s) => s.trim()).filter(Boolean).at(-1) ?? undefined;
+  const clientIp = lastForwardedIp(h.get("x-forwarded-for"));
   return { clientIp, userAgent: h.get("user-agent") ?? undefined };
 }

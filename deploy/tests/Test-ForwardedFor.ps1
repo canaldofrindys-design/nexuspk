@@ -21,13 +21,16 @@ try {
     $raw = & curl.exe -s --max-time 60 -H 'X-Forwarded-For: 6.6.6.6' 'http://127.0.0.1:8088/'
     Write-Host "resposta: $raw"
     $r = $raw | ConvertFrom-Json
+    # O módulo escreve "ip:porta"; o portal tira a porta (frontend/features/auth/forwardedIp.ts).
     $last = ($r.xff -split ',')[-1].Trim()
+    Assert-That 'formato ip:porta, como o portal espera' ($last -match '^(\d{1,3}(\.\d{1,3}){3}|\[[0-9a-fA-F:.]+\]):\d+$') "($last)"
+    $last = $last -replace '^\[(.+)\]:\d+$', '$1' -replace '^(\d{1,3}(\.\d{1,3}){3}):\d+$', '$1'
     Assert-That 'IIS acrescenta o IP real em X-Forwarded-For' ($r.xff -ne '' -and $last -ne '6.6.6.6') "(xff='$($r.xff)')"
     Assert-That 'última entrada é o IP de quem conectou' ($last -in '127.0.0.1', '::1') "($last)"
     Assert-That 'Host original preservado' ($r.host -eq '127.0.0.1:8088') "($($r.host))"
     $raw2 = & curl.exe -s --max-time 60 'http://127.0.0.1:8088/'
     $r2 = $raw2 | ConvertFrom-Json
-    Assert-That 'sem cabeçalho do cliente, X-Forwarded-For só com o IP real' ($r2.xff.Trim() -in '127.0.0.1', '::1') "($($r2.xff))"
+    Assert-That 'sem cabeçalho do cliente, X-Forwarded-For só com o IP real' ($r2.xff.Trim() -match '^(127\.0\.0\.1|\[::1\]):\d+$') "($($r2.xff))"
 }
 finally {
     Remove-Website -Name xfftest
