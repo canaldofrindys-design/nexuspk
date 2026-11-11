@@ -45,6 +45,13 @@ builder.Services.AddQuartz(q =>
         .WithIdentity($"{nameof(EventReminderJob)}-trigger")
         .StartNow()
         .WithSimpleSchedule(s => s.WithIntervalInMinutes(5).RepeatForever()));
+
+    var serverProbe = new JobKey(nameof(ServerProbeJob));
+    q.AddJob<ServerProbeJob>(serverProbe);
+    q.AddTrigger(t => t.ForJob(serverProbe)
+        .WithIdentity($"{nameof(ServerProbeJob)}-trigger")
+        .StartNow()
+        .WithSimpleSchedule(s => s.WithIntervalInMinutes(1).RepeatForever()));
 });
 builder.Services.AddQuartzHostedService(o => o.WaitForJobsToComplete = true);
 

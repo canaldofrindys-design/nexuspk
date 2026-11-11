@@ -9,6 +9,8 @@ const links: { href: string; label: string; needs: Capability }[] = [
   { href: "/admin", label: "Resumo", needs: "ViewDashboard" },
   { href: "/admin/noticias", label: "Notícias", needs: "ManageContent" },
   { href: "/admin/eventos", label: "Eventos", needs: "ManageContent" },
+  { href: "/admin/chamados", label: "Chamados", needs: "ManageSupport" },
+  { href: "/admin/avisos", label: "Avisos de status", needs: "ManageContent" },
   { href: "/admin/equipe", label: "Equipe", needs: "ManageStaff" },
   { href: "/admin/auditoria", label: "Auditoria", needs: "ViewAudit" },
 ];

@@ -32,6 +32,9 @@ public static class DependencyInjection
         services.AddSingleton<Admin.ContentAdminService>();
         services.AddSingleton<Admin.DashboardService>();
         services.AddSingleton<Admin.AuditQueryService>();
+        services.AddSingleton<Server.StatusPageService>();
+        services.AddSingleton<Server.ServerNoticeAdminService>();
+        services.AddSingleton<Support.SupportService>();
         return services;
     }
 }

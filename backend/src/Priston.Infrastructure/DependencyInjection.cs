@@ -23,7 +23,12 @@ public static class DependencyInjection
         services.AddSingleton<IPortalDbConnectionFactory, PortalDbConnectionFactory>();
         services.AddOptions<GameServerOptions>().Bind(configuration.GetSection(GameServerOptions.SectionName));
         services.AddMemoryCache();
-        services.AddSingleton<IServerStatusProvider, GameServerProbe>();
+        services.AddSingleton<GameServerProbe>();
+        services.AddSingleton<IServerProbe>(sp => sp.GetRequiredService<GameServerProbe>());
+        services.AddSingleton<IServerStatusProvider>(sp => sp.GetRequiredService<GameServerProbe>());
+        services.AddSingleton<IServerProbeStore, ServerProbeStore>();
+        services.AddSingleton<IServerNoticeStore, ServerNoticeStore>();
+        services.AddSingleton<Priston.Application.Support.ISupportStore, Support.SupportStore>();
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<RankingPeriods>();
         services.AddSingleton<Priston.Application.Characters.ILevelSnapshotStore, LevelSnapshotStore>();

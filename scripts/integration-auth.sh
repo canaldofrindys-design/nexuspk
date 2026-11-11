@@ -82,6 +82,38 @@ check "painel: criar notícia"          200 POST /api/v1/admin/news '{"slug":"in
 check "painel: notícia no site"        200 GET  /api/v1/news/integ-painel
 check "painel: equipe"                 200 GET  /api/v1/admin/staff '' "$STAFF_TOKEN"
 check "painel: auditoria"              200 GET  /api/v1/admin/audit '' "$STAFF_TOKEN"
+# Suporte e status (Fase 11)
+check "status sem endereço configurado" 200 GET  /api/v1/status
+python3 -c 'import json; d=json.load(open("/tmp/integration-body")); assert d["availability"]=="unknown" and d["playersOnline"] is None and d["targets"]==[], d; print("ok   - status não inventa estado nem jogadores")' || fail=1
+python3 - > /tmp/integration.png <<'PY'
+import struct, sys, zlib
+def chunk(t, d): return struct.pack(">I", len(d)) + t + d + struct.pack(">I", zlib.crc32(t + d))
+sys.stdout.buffer.write(b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", 1, 1, 8, 2, 0, 0, 0))
+  + chunk(b"tEXt", b"Author\x00SecretoGPS") + chunk(b"IDAT", zlib.compress(b"\x00\xff\x00\x00")) + chunk(b"IEND", b""))
+PY
+form() { # form <descrição> <status> <caminho> <token> [-F ...]
+  local d=$1 want=$2 path=$3 tok=$4; shift 4
+  local got; got=$(curl -s -o /tmp/integration-body -w '%{http_code}' -H 'X-Forwarded-For: 198.51.100.22' -H "Authorization: Bearer $tok" "$@" "$API$path")
+  if [ "$got" = "$want" ]; then echo "ok   - $d"; else echo "FAIL - $d (esperado $want, veio $got): $(cat /tmp/integration-body)"; fail=1; fi
+}
+form "chamado: campos inválidos"        400 /api/v1/player/tickets "$TOKEN" -F category=xyz -F subject=oi -F body=
+form "chamado: arquivo que não é imagem" 400 /api/v1/player/tickets "$TOKEN" -F category=conta -F subject="Teste integ" -F body="Descrição longa o bastante para passar." -F "files=@/etc/hostname;filename=x.png"
+form "chamado: abrir com imagem"        201 /api/v1/player/tickets "$TOKEN" -F category=conta -F subject="Teste integ" -F body="Descrição longa o bastante para passar." -F "files=@/tmp/integration.png;filename=print.png"
+TICKET=$(python3 -c 'import json;print(json.load(open("/tmp/integration-body"))["id"])')
+check "chamado: lista do jogador"      200 GET  /api/v1/player/tickets '' "$TOKEN"
+check "chamado: sem sessão"            401 GET  /api/v1/player/tickets
+check "chamado: detalhe"               200 GET  "/api/v1/player/tickets/$TICKET" '' "$TOKEN"
+ATT=$(python3 -c 'import json;print(json.load(open("/tmp/integration-body"))["messages"][0]["attachments"][0]["id"])')
+curl -s -o /tmp/integration-att -D /tmp/integration-att-h -H "Authorization: Bearer $TOKEN" "$API/api/v1/player/tickets/$TICKET/attachments/$ATT"
+if grep -qi "content-type: image/png" /tmp/integration-att-h && ! grep -q "Secreto" /tmp/integration-att; then echo "ok   - anexo volta como PNG sem o texto embutido"; else echo "FAIL - anexo"; fail=1; fi
+check "fila da equipe"                 200 GET  "/api/v1/admin/tickets?aguardandoEquipe=true" '' "$STAFF_TOKEN"
+form "equipe: nota interna"             204 "/api/v1/admin/tickets/$TICKET/messages" "$STAFF_TOKEN" -F body="nota-interna-integ" -F internal=true
+form "equipe: resposta"                 204 "/api/v1/admin/tickets/$TICKET/messages" "$STAFF_TOKEN" -F body="resposta-integ" -F internal=false
+check "chamado: jogador vê a resposta" 200 GET  "/api/v1/player/tickets/$TICKET" '' "$TOKEN"
+if grep -q "resposta-integ" /tmp/integration-body && ! grep -q "nota-interna-integ" /tmp/integration-body; then echo "ok   - jogador vê a resposta e não a nota interna"; else echo "FAIL - nota interna vazou"; fail=1; fi
+check "chamado: jogador encerra"       204 POST "/api/v1/player/tickets/$TICKET/close" '' "$TOKEN"
+form "chamado: fechado não aceita resposta" 409 "/api/v1/player/tickets/$TICKET/messages" "$TOKEN" -F body="mais uma"
+check "aviso de manutenção"            200 POST /api/v1/admin/notices '{"kind":"manutencao","title":"Reinício","body":"Texto","startsLocal":"2026-11-14T03:00","endsLocal":"2026-11-14T05:00","status":"published"}' "$STAFF_TOKEN"
 check "sair"                           204 POST /api/v1/auth/logout '' "$TOKEN"
 check "sessão revogada"                401 GET  /api/v1/auth/me '' "$TOKEN"
 

@@ -16,6 +16,7 @@ export const footerColumns = [
     links: [
       { href: "/servidor", label: "O Servidor" },
       { href: "/download", label: "Download" },
+      { href: "/status", label: "Status do servidor" },
       { href: "/guia", label: "Guia do jogo" },
       { href: "/classes", label: "Classes" },
     ],

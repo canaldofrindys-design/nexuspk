@@ -6,6 +6,11 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   cacheComponents: true,
   partialPrefetching: true,
+  experimental: {
+    // Chamado de suporte com até 3 imagens de 3 MB.
+    serverActions: { bodySizeLimit: "12mb" },
+    proxyClientMaxBodySize: "12mb",
+  },
   turbopack: {
     rules: {
       "*.css": {

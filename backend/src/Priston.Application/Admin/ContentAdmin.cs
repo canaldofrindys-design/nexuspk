@@ -117,7 +117,9 @@ public sealed partial class ContentAdminService(IContentAdminStore store, Conten
         if (status == "published" && published is null && !errors.ContainsKey("publishedLocal"))
         {
             // Publicar sem data: mantém a data original ou usa agora.
-            published = before?.PublishedUtc ?? clock.GetUtcNow();
+            // Truncado ao segundo: a coluna é datetime2(0) e arredondaria para cima, deixando a notícia "no futuro" por até 1 s.
+            var now = clock.GetUtcNow();
+            published = before?.PublishedUtc ?? now.AddTicks(-(now.Ticks % TimeSpan.TicksPerSecond));
         }
 
         if (errors.Count > 0)
