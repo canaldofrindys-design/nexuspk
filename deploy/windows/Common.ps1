@@ -371,7 +371,17 @@ function Write-WebConfig([hashtable]$Paths, [string]$ReleaseFolder) {
     }
     $xml = $template.Replace('__NODE__', (Get-NodePath)).Replace('__LOGS__', $Paths.Logs).Replace('__API__', "http://127.0.0.1:$(Get-ApiPort)").Replace('__REWRITE__', $rewrite).Replace('__LEGACY__', (Get-LegacyWebConfig))
     $utf8 = New-Object System.Text.UTF8Encoding($false)
-    [IO.File]::WriteAllText((Join-Path $ReleaseFolder 'web\web.config'), $xml, $utf8)
+    $file = Join-Path $ReleaseFolder 'web\web.config'
+    [IO.File]::WriteAllText($file, $xml, $utf8)
+    # O IIS lê o web.config do site com a conta do pool de cada aplicação. As pastas do site antigo
+    # rodam no pool dele, que precisa ler só este arquivo (a pasta do portal continua fechada).
+    Import-Module WebAdministration
+    $pools = @(Get-WebApplication -Site $script:SiteName | ForEach-Object { $_.applicationPool } | Where-Object { $_ -and $_ -ne $script:AppPool } | Sort-Object -Unique)
+    if ($pools.Count -gt 0) {
+        $acl = Get-Acl $file
+        foreach ($pool in $pools) { $acl.AddAccessRule((New-Object System.Security.AccessControl.FileSystemAccessRule("IIS AppPool\$pool", 'Read', 'Allow'))) }
+        Set-Acl -Path $file -AclObject $acl
+    }
 }
 
 # Mantém a versão atual, a anterior e as N mais novas.
