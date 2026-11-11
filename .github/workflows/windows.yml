@@ -1,0 +1,144 @@
+name: Publicação no Windows
+
+# Gera o pacote para o Windows Server e testa a instalação de verdade num Windows com IIS e SQL Server Express:
+# instalação, atualização, volta de versão, backup agendado e restauração.
+# Numa tag v*, publica o pacote como release do GitHub.
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+  pull_request:
+    paths:
+      - "deploy/**"
+      - ".github/workflows/windows.yml"
+      - "backend/src/Priston.Api/Program.cs"
+      - "backend/src/Priston.Worker/Program.cs"
+      - "backend/src/Priston.Infrastructure/Hosting/**"
+      - "frontend/next.config.ts"
+      - "frontend/package.json"
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: windows-latest
+    outputs:
+      version: ${{ steps.pkg.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Pacote
+        id: pkg
+        shell: pwsh
+        env:
+          # Chave pública do Turnstile (variável do repositório). Vazia = captcha desligado.
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.TURNSTILE_SITE_KEY }}
+        run: |
+          $version = $null
+          if ($env:GITHUB_REF_TYPE -eq 'tag') { $version = $env:GITHUB_REF_NAME.TrimStart('v') }
+          ./deploy/build-package.ps1 -Version $version -Output artifacts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nexusportal
+          path: artifacts/nexusportal-*
+          retention-days: 30
+
+  smoke:
+    needs: package
+    runs-on: windows-latest
+    timeout-minutes: 60
+    env:
+      PORTAL_HOST: portal.localtest.me
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: nexusportal
+          path: C:\pacotes
+
+      - name: IIS
+        shell: powershell
+        run: |
+          Install-WindowsFeature -Name Web-Server, Web-Scripting-Tools | Out-Null
+          Get-Service W3SVC
+
+      - name: .NET 10 Hosting Bundle
+        shell: powershell
+        run: |
+          $ProgressPreference = 'SilentlyContinue'
+          $meta = Invoke-RestMethod 'https://builds.dotnet.microsoft.com/dotnet/release-metadata/10.0/releases.json'
+          $file = $meta.releases[0].'aspnetcore-runtime'.files | Where-Object { $_.name -eq 'dotnet-hosting-win.exe' }
+          Invoke-WebRequest $file.url -OutFile "$env:TEMP\hosting.exe"
+          $hash = (Get-FileHash "$env:TEMP\hosting.exe" -Algorithm SHA512).Hash
+          if ($hash -ne $file.hash.ToUpperInvariant()) { throw 'hash do Hosting Bundle não confere' }
+          $p = Start-Process "$env:TEMP\hosting.exe" -ArgumentList '/install', '/quiet', '/norestart' -Wait -PassThru
+          if ($p.ExitCode -notin 0, 3010) { throw "Hosting Bundle saiu com $($p.ExitCode)" }
+          net stop was /y | Out-Null; net start w3svc | Out-Null
+          Test-Path "$env:ProgramFiles\IIS\Asp.Net Core Module\V2\aspnetcorev2.dll"
+
+      - name: SQL Server Express (modo misto) e banco de teste do jogo
+        shell: powershell
+        run: |
+          choco install sql-server-express -y --no-progress | Out-Null
+          if (-not (Get-Command sqlcmd -ErrorAction SilentlyContinue)) { choco install sqlcmd -y --no-progress | Out-Null; $env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') }
+          $key = Get-ChildItem 'HKLM:\SOFTWARE\Microsoft\Microsoft SQL Server' | Where-Object { $_.PSChildName -like 'MSSQL*.SQLEXPRESS' } | Select-Object -First 1
+          Set-ItemProperty -Path "$($key.PSPath)\MSSQLServer" -Name LoginMode -Value 2
+          Restart-Service 'MSSQL$SQLEXPRESS' -Force
+          Start-Sleep -Seconds 10
+          sqlcmd -S .\SQLEXPRESS -E -C -b -Q "SELECT @@VERSION, IS_SRVROLEMEMBER('sysadmin')"
+          sqlcmd -S .\SQLEXPRESS -E -C -b -i database\scripts\dev\banco-jogo-teste.sql | Out-Null
+          if ($LASTEXITCODE -ne 0) { throw 'banco de teste do jogo falhou' }
+          # sqlcmd do choco vai para o PATH da máquina: os próximos passos precisam dele.
+          Add-Content -Path $env:GITHUB_ENV -Encoding ascii -Value "PATH=$([Environment]::GetEnvironmentVariable('Path', 'Machine'));$env:Path"
+
+      - name: Instalação
+        shell: powershell
+        run: |
+          $zip = (Get-ChildItem C:\pacotes -Filter 'nexusportal-*.zip').FullName
+          Expand-Archive $zip C:\pacote-extraido
+          $cert = New-SelfSignedCertificate -DnsName $env:PORTAL_HOST -CertStoreLocation Cert:\LocalMachine\My
+          & C:\pacote-extraido\deploy\Install-Portal.ps1 -Package $zip -HostName $env:PORTAL_HOST -CertificateThumbprint $cert.Thumbprint
+
+      - name: Conferências
+        shell: powershell
+        run: ./deploy/tests/Test-Installation.ps1 -HostName $env:PORTAL_HOST
+
+      - name: Encaminhamento do IP pelo IIS
+        shell: powershell
+        run: ./deploy/tests/Test-ForwardedFor.ps1
+
+      - name: Atualização, volta de versão, backup agendado e restauração
+        shell: powershell
+        run: ./deploy/tests/Test-Lifecycle.ps1 -HostName $env:PORTAL_HOST
+
+      - name: Logs em caso de falha
+        if: failure()
+        shell: powershell
+        run: |
+          Get-ChildItem C:\NexusPortal\logs -Recurse -File -ErrorAction SilentlyContinue | ForEach-Object { "----- $($_.FullName)"; Get-Content $_.FullName -Tail 80 }
+          Get-WinEvent -LogName Application -MaxEvents 40 -ErrorAction SilentlyContinue | Where-Object { $_.ProviderName -match 'IIS|ASP.NET|NexusPortal|\.NET' } | Format-List TimeCreated, ProviderName, Message
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [package, smoke]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: nexusportal
+          path: pacote
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" pacote/* --repo "$GITHUB_REPOSITORY" --title "Portal $GITHUB_REF_NAME" --notes "Pacote para o Windows Server. Veja docs/DEPLOYMENT.md."

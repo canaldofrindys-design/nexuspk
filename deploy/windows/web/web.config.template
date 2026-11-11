@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Gerado pelo Deploy-Portal.ps1 a cada publicação. Não edite na pasta da versão. -->
+<configuration>
+  <system.webServer>
+    <handlers>
+      <add name="aspNetCore" path="*" verb="*" modules="AspNetCoreModuleV2" resourceType="Unspecified" />
+    </handlers>
+    <aspNetCore processPath="__NODE__" arguments="start.js" hostingModel="outofprocess"
+                stdoutLogEnabled="true" stdoutLogFile="__LOGS__\web\node" startupTimeLimit="120" requestTimeout="00:02:00">
+      <environmentVariables>
+        <environmentVariable name="NODE_ENV" value="production" />
+        <environmentVariable name="PORTAL_API_INTERNAL_URL" value="__API__" />
+        <environmentVariable name="NEXT_TELEMETRY_DISABLED" value="1" />
+      </environmentVariables>
+    </aspNetCore>
+    <security>
+      <!-- Sem cabeçalho Server. Corpo até 13 MB (chamado com 3 imagens de 3 MB e o texto). -->
+      <requestFiltering removeServerHeader="true">
+        <requestLimits maxAllowedContentLength="13631488" />
+      </requestFiltering>
+    </security>
+    <httpProtocol>
+      <customHeaders>
+        <remove name="X-Powered-By" />
+      </customHeaders>
+    </httpProtocol>
+__REWRITE__
+  </system.webServer>
+</configuration>

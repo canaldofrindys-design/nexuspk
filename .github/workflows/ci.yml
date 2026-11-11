@@ -46,6 +46,35 @@ jobs:
       - run: npm run build
       - run: npm audit --omit=dev --audit-level=high
 
+  # Scripts de publicação: sintaxe, compatibilidade com o Windows PowerShell 5.1 do servidor e BOM
+  # (sem BOM, o PowerShell 5.1 lê os acentos errado).
+  scripts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scripts PowerShell
+        shell: pwsh
+        run: |
+          $files = Get-ChildItem deploy -Recurse -Filter *.ps1
+          $bad = 0
+          foreach ($f in $files) {
+            $bytes = [IO.File]::ReadAllBytes($f.FullName)
+            if ($bytes.Length -lt 3 -or $bytes[0] -ne 0xEF -or $bytes[1] -ne 0xBB -or $bytes[2] -ne 0xBF) { "sem BOM: $($f.FullName)"; $bad++ }
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($f.FullName, [ref]$null, [ref]$errors) | Out-Null
+            foreach ($e in @($errors)) { "$($f.Name):$($e.Extent.StartLineNumber) $($e.Message)"; $bad++ }
+          }
+          Set-PSRepository PSGallery -InstallationPolicy Trusted
+          Install-Module PSScriptAnalyzer -RequiredVersion 1.23.0 -Scope CurrentUser -Force
+          $windows = Get-ChildItem deploy/windows, deploy/tests -Filter *.ps1
+          $settings = @{ Rules = @{ PSUseCompatibleSyntax = @{ Enable = $true; TargetVersions = @('5.1') } } }
+          foreach ($f in $windows) {
+            $found = @(Invoke-ScriptAnalyzer -Path $f.FullName -Settings $settings -IncludeRule PSUseCompatibleSyntax)
+            $found += @(Invoke-ScriptAnalyzer -Path $f.FullName -Severity Error)
+            foreach ($r in $found) { "$($f.Name):$($r.Line) [$($r.RuleName)] $($r.Message)"; $bad++ }
+          }
+          if ($bad -gt 0) { exit 1 }
+
   # Cadastro e login contra um SQL Server de laboratório, com os logins de permissão mínima.
   integration:
     runs-on: ubuntu-latest
