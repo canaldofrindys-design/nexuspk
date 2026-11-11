@@ -145,4 +145,8 @@ O `Install-Portal.ps1` (ver `INSTALLATION.md`) já faz:
 
 Fica com a equipe: manter a porta 1433 fechada no firewall da VPS, copiar os backups para fora do servidor e renovar o certificado (o win-acme renova sozinho).
 
+### Páginas do site antigo atendidas pelo portal
+
+As pastas que o jogo e o launcher chamam (`ServerMain`, `Clan`, `ClanContent`, `updater`...) são ligadas ao site do portal como aplicações do IIS no pool do site antigo (`Connect-LegacyPaths.ps1`). O portal não lê nem guarda a configuração delas, e elas não recebem os cabeçalhos nem o https do portal. Os riscos que já existiam nelas (login `sa`, SQL montado com texto, nenhuma autenticação) continuam e estão descritos em [`LIGACOES-DO-JOGO.md`](LIGACOES-DO-JOGO.md#riscos-que-já-existem-no-site-antigo).
+
 Links do menu para páginas que ainda não existem (enciclopédia, download, guia) respondem 404 até as fases correspondentes.

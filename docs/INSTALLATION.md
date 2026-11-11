@@ -89,6 +89,7 @@ O que o script faz, em ordem:
 6. Cria os logins SQL com senhas aleatórias geradas na própria VPS e grava as connection strings em `config\portal.json`. Ninguém precisa ver ou digitar essas senhas.
 7. Publica a versão, confere a API, os bancos e a página inicial.
 8. Agenda o backup diário do `PortalDB`.
+9. Se existir `C:\wwwroot`, liga ao site novo as pastas que o jogo e o launcher chamam (`ServerMain`, `Clan`, `ClanContent`, `updater`...), com os mesmos arquivos e o mesmo pool do site antigo. Detalhes em [`LIGACOES-DO-JOGO.md`](LIGACOES-DO-JOGO.md). Opções: `-LegacyRoot`, `-SkipLegacy`.
 
 ### O que muda no SQL Server
 
@@ -114,7 +115,7 @@ Abra o Bloco de Notas **como administrador** e edite `C:\NexusPortal\config\port
 "GameServer": {
   "TimeoutMilliseconds": 2000,
   "Targets": [
-    { "Key": "login",   "Name": "Login",   "Host": "127.0.0.1", "Port": 0 },
+    { "Key": "login",   "Name": "Login",   "Host": "127.0.0.1", "Port": 32009 },
     { "Key": "canal-1", "Name": "Canal 1", "Host": "127.0.0.1", "Port": 0 }
   ]
 }
@@ -122,7 +123,7 @@ Abra o Bloco de Notas **como administrador** e edite `C:\NexusPortal\config\port
 
 - **Smtp**: sem ele, cadastro e login funcionam, mas confirmação de e-mail e recuperação de senha ficam desligadas (o site avisa).
 - **Captcha**: a chave secreta do Cloudflare Turnstile. A chave pública vai no pacote (variável `TURNSTILE_SITE_KEY` do repositório no GitHub). Sem as duas, o captcha fica desligado.
-- **GameServer.Targets**: as portas do servidor de login e de cada canal (as mesmas do `.ini` do servidor do jogo). Sem elas, a página de status mostra "Sem verificação configurada" em vez de inventar um estado.
+- **GameServer.Targets**: as portas do servidor de login e de cada canal (as mesmas do `.ini` do servidor do jogo). O site antigo testa o login na porta 32009 (`include/status.php`). Sem elas, a página de status mostra "Sem verificação configurada" em vez de inventar um estado.
 
 Depois:
 

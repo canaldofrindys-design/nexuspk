@@ -78,6 +78,7 @@ Write-Step 'Conferindo'
 if (-not (Test-PortalHealth $paths)) {
     if ($previous) {
         Write-Warn "voltando para $previous"
+        Write-WebConfig $paths $previous
         Stop-Portal $paths
         Set-CurrentRelease $paths $previous
         Start-Portal $paths

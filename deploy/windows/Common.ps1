@@ -297,9 +297,58 @@ function Test-PortalHealth([hashtable]$Paths) {
     return $true
 }
 
+# Pastas do site antigo que o jogo e o launcher chamam (clã, ícones de clã, atualização, status).
+$script:LegacyDefaultPaths = @('ServerMain', 'Clan', 'ClanContent', 'updater', 'att', 'rankAPI', 'include')
+
+# Aplicações do site antigo ligadas ao site do portal (Connect-LegacyPaths.ps1), sem a barra inicial.
+function Get-LegacyApps {
+    Import-Module WebAdministration
+    return @(Get-WebApplication -Site $script:SiteName | ForEach-Object { $_.path.TrimStart('/') } | Where-Object { $_ })
+}
+
+# php-cgi.exe registrado no FastCGI do IIS (o mesmo que o site antigo usa), ou $null.
+function Get-PhpCgiPath {
+    Import-Module WebAdministration
+    $apps = @(Get-WebConfiguration -Filter 'system.webServer/fastCgi/application' -PSPath 'MACHINE/WEBROOT/APPHOST')
+    $php = @($apps | Where-Object { $_.fullPath -like '*php-cgi.exe' })
+    if ($php.Count -eq 0) { return $null }
+    return $php[0].fullPath
+}
+
+# Blocos <location> das aplicações do site antigo: o PHP do site antigo vale só nelas
+# (no site antigo ele vem do web.config da raiz, que as aplicações daqui não leem).
+function Get-LegacyWebConfig {
+    $apps = @(Get-LegacyApps)
+    if ($apps.Count -eq 0) { return '' }
+    $php = Get-PhpCgiPath
+    if (-not $php) { Write-Warn 'nenhum php-cgi.exe no FastCGI do IIS: as páginas .php do site antigo não vão rodar no portal.'; return '' }
+    $phpXml = [Security.SecurityElement]::Escape($php)
+    $blocks = foreach ($app in $apps) {
+        $pathXml = [Security.SecurityElement]::Escape($app)
+        @"
+  <location path="$pathXml">
+    <system.webServer>
+      <handlers>
+        <remove name="PHP-legado" />
+        <add name="PHP-legado" path="*.php" verb="*" modules="FastCgiModule" scriptProcessor="$phpXml" resourceType="File" requireAccess="Script" />
+      </handlers>
+    </system.webServer>
+  </location>
+"@
+    }
+    return ($blocks -join "`r`n")
+}
+
 # web.config da versão: caminho do Node, porta da API, pasta de logs e, com HTTPS, o redirecionamento.
+# Modelo do web.config que veio junto com este script. Ao voltar para uma versão anterior a esta, o modelo dela
+# não separa as pastas do site antigo; aí vale este, que é igual no resto.
+$script:OwnWebConfigTemplate = $null
+$ownTemplateFile = Join-Path $PSScriptRoot 'web\web.config.template'
+if (Test-Path $ownTemplateFile) { $script:OwnWebConfigTemplate = Get-Content -Raw -Path $ownTemplateFile }
+
 function Write-WebConfig([hashtable]$Paths, [string]$ReleaseFolder) {
     $template = Get-Content -Raw -Path (Join-Path $ReleaseFolder 'deploy\web\web.config.template')
+    if ($template -notmatch '__LEGACY__' -and $script:OwnWebConfigTemplate -match '__LEGACY__') { $template = $script:OwnWebConfigTemplate }
     $site = Get-SiteHost
     $rewrite = ''
     if ($site.Https) {
@@ -320,9 +369,22 @@ function Write-WebConfig([hashtable]$Paths, [string]$ReleaseFolder) {
             Write-Warn 'URL Rewrite não instalado: quem abrir por http não é levado ao https.'
         }
     }
-    $xml = $template.Replace('__NODE__', (Get-NodePath)).Replace('__LOGS__', $Paths.Logs).Replace('__API__', "http://127.0.0.1:$(Get-ApiPort)").Replace('__REWRITE__', $rewrite)
+    $xml = $template.Replace('__NODE__', (Get-NodePath)).Replace('__LOGS__', $Paths.Logs).Replace('__API__', "http://127.0.0.1:$(Get-ApiPort)").Replace('__REWRITE__', $rewrite).Replace('__LEGACY__', (Get-LegacyWebConfig))
     $utf8 = New-Object System.Text.UTF8Encoding($false)
-    [IO.File]::WriteAllText((Join-Path $ReleaseFolder 'web\web.config'), $xml, $utf8)
+    $file = Join-Path $ReleaseFolder 'web\web.config'
+    [IO.File]::WriteAllText($file, $xml, $utf8)
+    # O IIS lê o web.config do site com a conta do pool de cada aplicação. As pastas do site antigo
+    # rodam no pool dele, que precisa ler só este arquivo (a pasta do portal continua fechada).
+    Import-Module WebAdministration
+    $pools = @(Get-WebApplication -Site $script:SiteName | ForEach-Object { $_.applicationPool } | Where-Object { $_ -and $_ -ne $script:AppPool } | Sort-Object -Unique)
+    if ($pools.Count -gt 0) {
+        # Na pasta, só ela mesma (sem herança): o IIS lista a pasta para acompanhar mudanças no web.config.
+        foreach ($target in (Split-Path $file -Parent), $file) {
+            $acl = Get-Acl $target
+            foreach ($pool in $pools) { $acl.AddAccessRule((New-Object System.Security.AccessControl.FileSystemAccessRule("IIS AppPool\$pool", 'Read', 'Allow'))) }
+            Set-Acl -Path $target -AclObject $acl
+        }
+    }
 }
 
 # Mantém a versão atual, a anterior e as N mais novas.

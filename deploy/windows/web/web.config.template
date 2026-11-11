@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Gerado pelo Deploy-Portal.ps1 a cada publicação. Não edite na pasta da versão. -->
 <configuration>
+  <!-- inheritInChildApplications="false": as aplicações do site antigo ligadas a este site (ServerMain, updater...)
+       não herdam o Node, o redirecionamento para https nem os limites do portal. -->
+  <location path="." inheritInChildApplications="false">
   <system.webServer>
     <handlers>
       <add name="aspNetCore" path="*" verb="*" modules="AspNetCoreModuleV2" resourceType="Unspecified" />
@@ -26,4 +29,6 @@
     </httpProtocol>
 __REWRITE__
   </system.webServer>
+  </location>
+__LEGACY__
 </configuration>
