@@ -302,6 +302,27 @@ internal sealed class ContentAdminStore(IPortalDbConnectionFactory db, IOptions<
         }
     }
 
+    public async Task<bool> DeleteNewsAsync(int id, CancellationToken ct)
+    {
+        await using var conn = await OpenAsync(ct).ConfigureAwait(false);
+        return await conn.ExecuteAsync(Cmd("DELETE FROM dbo.News WHERE Id = @id", new { id }, ct)).ConfigureAwait(false) > 0;
+    }
+
+    public async Task<bool> DeleteEventAsync(int id, CancellationToken ct)
+    {
+        // Os lembretes saem junto (ON DELETE CASCADE).
+        await using var conn = await OpenAsync(ct).ConfigureAwait(false);
+        return await conn.ExecuteAsync(Cmd("DELETE FROM dbo.GameEvent WHERE Id = @id", new { id }, ct)).ConfigureAwait(false) > 0;
+    }
+
+    public async Task EndEventAsync(int id, DateTimeOffset endsUtc, string by, CancellationToken ct)
+    {
+        await using var conn = await OpenAsync(ct).ConfigureAwait(false);
+        await conn.ExecuteAsync(Cmd(
+            "UPDATE dbo.GameEvent SET EndsUtc = @ends, UpdatedBy = @by, UpdatedUtc = SYSUTCDATETIME() WHERE Id = @id AND StartsUtc < @ends",
+            new { id, ends = Utc.From(endsUtc), by = Ansi(by, 32) }, ct)).ConfigureAwait(false);
+    }
+
     private static object NewsArgs(NewsData d, string by) => new
     {
         Slug = Ansi(d.Slug, 120),

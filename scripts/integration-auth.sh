@@ -114,6 +114,32 @@ if grep -q "resposta-integ" /tmp/integration-body && ! grep -q "nota-interna-int
 check "chamado: jogador encerra"       204 POST "/api/v1/player/tickets/$TICKET/close" '' "$TOKEN"
 form "chamado: fechado não aceita resposta" 409 "/api/v1/player/tickets/$TICKET/messages" "$TOKEN" -F body="mais uma"
 check "aviso de manutenção"            200 POST /api/v1/admin/notices '{"kind":"manutencao","title":"Reinício","body":"Texto","startsLocal":"2026-11-14T03:00","endsLocal":"2026-11-14T05:00","status":"published"}' "$STAFF_TOKEN"
+# Conteúdo do site, banners, imagens, excluir e encerrar (proposta comercial)
+check "site: padrão do appsettings"      200 GET  /api/v1/site
+check "site: textos do servidor"         200 PUT  /api/v1/admin/site/server '{"name":"NexusPK","tagline":"PvP","about":"Texto","rates":[{"label":"EXP","value":"10x"}],"communityLinks":[{"label":"Discord","url":"https://discord.gg/integ"}]}' "$STAFF_TOKEN"
+check "site: link de rede inseguro"      400 PUT  /api/v1/admin/site/server '{"name":"NexusPK","communityLinks":[{"label":"X","url":"javascript:alert(1)"}]}' "$STAFF_TOKEN"
+check "site: downloads"                  200 PUT  /api/v1/admin/site/downloads '{"intro":"Baixe","requirements":"Windows","items":[{"name":"Cliente","url":"https://cdn.example.test/c.exe","size":"1 GB"}]}' "$STAFF_TOKEN"
+check "site: sem sessão da equipe"       401 PUT  /api/v1/admin/site/downloads '{"items":[]}'
+check "site: público atualizado"         200 GET  /api/v1/site
+python3 -c 'import json; d=json.load(open("/tmp/integration-body")); assert d["server"]["communityLinks"][0]["label"]=="Discord" and d["downloads"]["items"][0]["name"]=="Cliente", d; print("ok   - site mostra redes e downloads salvos")' || fail=1
+form "mídia: arquivo que não é imagem"   400 /api/v1/admin/media "$STAFF_TOKEN" -F "file=@/etc/hostname;filename=x.png"
+form "mídia: enviar imagem"              200 /api/v1/admin/media "$STAFF_TOKEN" -F "file=@/tmp/integration.png;filename=banner.png"
+MEDIA=$(python3 -c 'import json;print(json.load(open("/tmp/integration-body"))["id"])')
+curl -s -o /tmp/integration-media -D /tmp/integration-media-h "$API/api/v1/media/$MEDIA"
+if grep -qi "content-type: image/png" /tmp/integration-media-h && grep -qi "immutable" /tmp/integration-media-h && ! grep -q "Secreto" /tmp/integration-media; then echo "ok   - imagem pública sem metadados e com cache longo"; else echo "FAIL - imagem pública"; fail=1; fi
+check "banner: criar"                    200 POST /api/v1/admin/banners "{\"title\":\"Banner integ\",\"imageUrl\":\"/midia/$MEDIA\",\"linkUrl\":\"/eventos\",\"sortOrder\":1,\"active\":true}" "$STAFF_TOKEN"
+BANNER=$(python3 -c 'import json;print(json.load(open("/tmp/integration-body"))["id"])')
+check "banner: na home"                  200 GET  /api/v1/home
+python3 -c 'import json; d=json.load(open("/tmp/integration-body")); assert d["banners"][0]["title"]=="Banner integ" and d["server"]["communityLinks"], d; print("ok   - home traz banner e redes")' || fail=1
+check "banner: excluir"                  200 DELETE "/api/v1/admin/banners/$BANNER" '' "$STAFF_TOKEN"
+NEWS_ID=$($SQLCMD -h -1 -W -Q "SET NOCOUNT ON; SELECT Id FROM PortalDB.dbo.News WHERE Slug='integ-rascunho'" | tr -d '\r' | head -1)
+check "notícia: excluir"                 200 DELETE "/api/v1/admin/news/$NEWS_ID" '' "$STAFF_TOKEN"
+check "notícia: excluída some"           404 GET  "/api/v1/admin/news/$NEWS_ID" '' "$STAFF_TOKEN"
+$SQLCMD -d PortalDB -Q "SET QUOTED_IDENTIFIER ON; SET NOCOUNT ON; INSERT INTO dbo.GameEvent (Slug, Category, Name, Summary, Description, StartsUtc, EndsUtc, Status) VALUES ('integ-agora','exp',N'Agora',N'r',N'd',DATEADD(hour,-1,SYSUTCDATETIME()),DATEADD(hour,2,SYSUTCDATETIME()),'published');" > /dev/null
+EVENT_ID=$($SQLCMD -h -1 -W -Q "SET NOCOUNT ON; SELECT Id FROM PortalDB.dbo.GameEvent WHERE Slug='integ-agora'" | tr -d '\r' | head -1)
+check "evento: encerrar agora"           200 POST "/api/v1/admin/events/$EVENT_ID/end" '' "$STAFF_TOKEN"
+check "evento: já encerrado"             400 POST "/api/v1/admin/events/$EVENT_ID/end" '' "$STAFF_TOKEN"
+check "evento: excluir"                  200 DELETE "/api/v1/admin/events/$EVENT_ID" '' "$STAFF_TOKEN"
 # Segurança (Fase 12): entradas hostis não quebram nada nem vazam dados.
 for q in "%27%20OR%201%3D1--" "%27%3BDROP%20TABLE%20dbo.News--" "%5B%5D%25_" "%3Cscript%3Ealert(1)%3C%2Fscript%3E"; do
   code=$(curl -s -o /tmp/integration-body -w '%{http_code}' -H 'X-Forwarded-For: 198.51.100.30' "$API/api/v1/characters?q=$q")

@@ -153,7 +153,10 @@ internal sealed class MemoryContentAdmin : IContentAdminStore
 
     public Task<(IReadOnlyList<EventRecord> Items, int Total)> ListEventsAsync(string? status, int skip, int take, CancellationToken ct) => throw new NotSupportedException();
 
-    public Task<EventRecord?> GetEventAsync(int id, CancellationToken ct) => Task.FromResult<EventRecord?>(null);
+    public Task<EventRecord?> GetEventAsync(int id, CancellationToken ct) => Task.FromResult(Events.TryGetValue(id, out var d)
+        ? new EventRecord(id, d.Slug, d.Category, d.Name, d.Summary, d.Description, d.Rules, d.Prizes, d.Location, d.ImageUrl, d.StartsUtc, d.EndsUtc, d.Status,
+            DateTimeOffset.UnixEpoch, DateTimeOffset.UnixEpoch, null, null)
+        : null);
 
     public Task<int?> CreateEventAsync(EventData data, string by, CancellationToken ct)
     {
@@ -163,6 +166,16 @@ internal sealed class MemoryContentAdmin : IContentAdminStore
     }
 
     public Task<bool> UpdateEventAsync(int id, EventData data, string by, CancellationToken ct) => Task.FromResult(true);
+
+    public Task<bool> DeleteNewsAsync(int id, CancellationToken ct) => Task.FromResult(News.Remove(id));
+
+    public Task<bool> DeleteEventAsync(int id, CancellationToken ct) => Task.FromResult(Events.Remove(id));
+
+    public Task EndEventAsync(int id, DateTimeOffset endsUtc, string by, CancellationToken ct)
+    {
+        Events[id] = Events[id] with { EndsUtc = endsUtc };
+        return Task.CompletedTask;
+    }
 }
 
 public sealed class AdminTests : IDisposable
@@ -328,5 +341,53 @@ public sealed class AdminTests : IDisposable
         var dup = await svc.SaveNewsAsync(mod, null, input, Client, CancellationToken.None);
         Assert.Equal("slug", Assert.Single(dup.Errors!).Key);
         Assert.Contains(_audit.Rows, r => r.Action == "news.created" && r.Actor == "mod");
+    }
+
+    [Fact]
+    public async Task Ending_an_event_sets_the_end_to_now_only_while_it_is_running()
+    {
+        using var f = new ContentFixture();
+        var store = new MemoryContentAdmin();
+        var svc = new ContentAdminService(store, f.Service(), _audit, _clock);
+        var mod = As(3, "mod", StaffRoles.Moderator);
+        store.Events[1] = new EventData("agora", "exp", "EXP", "r", "d", null, null, null, null, Now.AddMinutes(-30), Now.AddHours(2), "published");
+        store.Events[2] = new EventData("depois", "exp", "EXP", "r", "d", null, null, null, null, Now.AddHours(1), null, "published");
+        store.Events[3] = new EventData("rascunho", "exp", "EXP", "r", "d", null, null, null, null, Now.AddMinutes(-30), null, "draft");
+
+        Assert.Equal(StaffAuthStatus.Ok, (await svc.EndEventAsync(mod, 1, Client, CancellationToken.None)).Status);
+        Assert.Equal(Now, store.Events[1].EndsUtc);
+        Assert.Contains(_audit.Rows, r => r.Action == "event.ended");
+        Assert.Equal("end", Assert.Single((await svc.EndEventAsync(mod, 1, Client, CancellationToken.None)).Errors!).Key);
+        Assert.Equal("end", Assert.Single((await svc.EndEventAsync(mod, 2, Client, CancellationToken.None)).Errors!).Key);
+        Assert.Equal("end", Assert.Single((await svc.EndEventAsync(mod, 3, Client, CancellationToken.None)).Errors!).Key);
+        Assert.Equal(StaffAuthStatus.NotFound, (await svc.EndEventAsync(mod, 99, Client, CancellationToken.None)).Status);
+    }
+
+    [Fact]
+    public async Task Deleting_news_and_events_is_audited()
+    {
+        using var f = new ContentFixture();
+        var store = new MemoryContentAdmin();
+        var svc = new ContentAdminService(store, f.Service(), _audit, _clock);
+        var mod = As(3, "mod", StaffRoles.Moderator);
+        store.News[1] = new NewsData("velha", "noticia", "Velha", "r", "b", null, false, "archived", null);
+        store.Events[1] = new EventData("antigo", "exp", "EXP", "r", "d", null, null, null, null, Now.AddDays(-3), null, "published");
+
+        Assert.Equal(StaffAuthStatus.Ok, (await svc.DeleteNewsAsync(mod, 1, Client, CancellationToken.None)).Status);
+        Assert.Equal(StaffAuthStatus.Ok, (await svc.DeleteEventAsync(mod, 1, Client, CancellationToken.None)).Status);
+        Assert.Empty(store.News);
+        Assert.Empty(store.Events);
+        Assert.Equal(StaffAuthStatus.NotFound, (await svc.DeleteNewsAsync(mod, 1, Client, CancellationToken.None)).Status);
+        Assert.Contains(_audit.Rows, r => r.Action == "news.deleted" && r.Details!.Contains("Velha", StringComparison.Ordinal));
+        Assert.Contains(_audit.Rows, r => r.Action == "event.deleted");
+    }
+
+    [Fact]
+    public void Only_admins_manage_site_texts()
+    {
+        Assert.True(StaffRoles.Can(StaffRoles.SuperAdmin, Capability.ManageSite));
+        Assert.True(StaffRoles.Can(StaffRoles.Admin, Capability.ManageSite));
+        Assert.False(StaffRoles.Can(StaffRoles.Moderator, Capability.ManageSite));
+        Assert.False(StaffRoles.Can(StaffRoles.Support, Capability.ManageSite));
     }
 }

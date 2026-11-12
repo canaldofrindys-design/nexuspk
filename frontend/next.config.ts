@@ -55,8 +55,8 @@ const nextConfig: NextConfig = {
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
         ],
       },
-      // Anexos de chamado: só imagem, nunca interpretada como página (a última regra vence).
-      ...["/painel/suporte/:id/anexo/:anexo", "/admin/chamados/:id/anexo/:anexo"].map((source) => ({
+      // Anexos de chamado e imagens do painel: só imagem, nunca interpretada como página (a última regra vence).
+      ...["/painel/suporte/:id/anexo/:anexo", "/admin/chamados/:id/anexo/:anexo", "/midia/:id"].map((source) => ({
         source,
         headers: [{ key: "Content-Security-Policy", value: "default-src 'none'; sandbox" }],
       })),

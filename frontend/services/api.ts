@@ -134,3 +134,12 @@ export async function apiSend<T>(
 
   return toResult<T>(response);
 }
+
+/** Repassa um arquivo público da API (imagem enviada pelo painel). */
+export async function apiFetchPublic(path: string): Promise<Response | null> {
+  try {
+    return await fetch(new URL(path, baseUrl), { signal: AbortSignal.timeout(15000) });
+  } catch {
+    return null;
+  }
+}

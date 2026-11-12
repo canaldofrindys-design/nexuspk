@@ -1,3 +1,5 @@
+import type { PublicBanner } from "@/features/site/types";
+
 export type Availability = "unknown" | "online" | "offline" | "partial";
 
 export type RankedCharacter = {
@@ -20,4 +22,5 @@ export type HomeSnapshot = {
   news: HomeNewsItem[];
   activeEvents: HomeEventItem[];
   upcomingEvents: HomeEventItem[];
+  banners: PublicBanner[];
 };

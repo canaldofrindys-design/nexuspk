@@ -13,7 +13,7 @@ import { apiSend } from "@/services/api";
 
 export const metadata: Metadata = { title: "Eventos" };
 
-type Q = { situacao?: string; pagina?: string; salvo?: string };
+type Q = { situacao?: string; pagina?: string; salvo?: string; excluido?: string };
 
 async function Body({ searchParams }: { searchParams: Promise<Q> }) {
   await connection();
@@ -29,6 +29,7 @@ async function Body({ searchParams }: { searchParams: Promise<Q> }) {
   return (
     <>
       {q.salvo ? <p className="mb-4 border border-data-ok/60 px-3 py-2 text-sm text-data-ok">Evento salvo.</p> : null}
+      {q.excluido ? <p className="mb-4 border border-data-ok/60 px-3 py-2 text-sm text-data-ok">Evento excluído.</p> : null}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <Tabs
           label="Situação"

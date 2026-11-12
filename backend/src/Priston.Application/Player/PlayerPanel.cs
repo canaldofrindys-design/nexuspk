@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Priston.Application.Accounts;
+using Priston.Application.Characters;
 using Priston.Domain.Characters;
 
 namespace Priston.Application.Player;
@@ -12,7 +13,9 @@ public sealed record PanelCharacter(
     string? Clan,
     int? BattlePoints,
     int? PvpKills,
-    int? PvpDeaths);
+    int? PvpDeaths,
+    int? RankPosition = null,
+    int? ClassRankPosition = null);
 
 public sealed record PanelVip(int? Plan, DateTimeOffset? StartsUtc, DateTimeOffset? EndsUtc, bool Active);
 
@@ -22,7 +25,8 @@ public sealed record PlayerGameData(
     bool Blocked,
     IReadOnlyList<PanelCharacter> Characters,
     PanelVip? Vip,
-    int? Coins);
+    int? Coins,
+    int? RankTotal = null);
 
 public sealed record RecentLogin(DateTimeOffset AtUtc, string? IpAddress);
 
@@ -72,7 +76,8 @@ public sealed partial class PlayerPanelService(
     IGameAccountStore gameAccounts,
     IEmailSender email,
     TimeProvider clock,
-    ILogger<PlayerPanelService> logger)
+    ILogger<PlayerPanelService> logger,
+    RankingService? ranking = null)
 {
     /// <summary>Datas do jogo são gravadas no horário local do servidor (America/Sao_Paulo).</summary>
     private static readonly TimeZoneInfo GameTimeZone = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
@@ -93,6 +98,20 @@ public sealed partial class PlayerPanelService(
         {
             LogGameDataFailed(logger, ex, login);
             game = null;
+        }
+
+        if (game is not null && ranking is not null)
+        {
+            try
+            {
+                game = WithPositions(game, await ranking.GetLevelRankingAsync(ct).ConfigureAwait(false));
+            }
+#pragma warning disable CA1031 // Ranking fora do ar: o painel abre sem a posição.
+            catch (Exception ex) when (!ct.IsCancellationRequested)
+#pragma warning restore CA1031
+            {
+                LogRankingFailed(logger, ex, login);
+            }
         }
 
         return new PlayerPanel(
@@ -142,6 +161,26 @@ public sealed partial class PlayerPanelService(
         return new PlayerGameData(ToUtc(raw.RegisteredLocal), raw.Blocked, characters, vip, raw.Coins);
     }
 
+    /// <summary>Posição de cada personagem no ranking geral por nível e no ranking da própria classe (mesma ordem da página Ranking).</summary>
+    public static PlayerGameData WithPositions(PlayerGameData game, IReadOnlyList<RankedCharacter> ranking)
+    {
+        var general = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        var byClass = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        var classCounters = new Dictionary<int, int>();
+        foreach (var r in ranking)
+        {
+            general.TryAdd(r.Name, r.Position);
+            var n = classCounters.GetValueOrDefault(r.ClassCode) + 1;
+            classCounters[r.ClassCode] = n;
+            byClass.TryAdd(r.Name, n);
+        }
+
+        var characters = game.Characters
+            .Select(c => c with { RankPosition = general.TryGetValue(c.Name, out var p) ? p : null, ClassRankPosition = byClass.TryGetValue(c.Name, out var cp) ? cp : null })
+            .ToList();
+        return game with { Characters = characters, RankTotal = ranking.Count };
+    }
+
     public static DateTimeOffset? ToUtc(DateTime? local)
     {
         if (local is null)
@@ -152,6 +191,9 @@ public sealed partial class PlayerPanelService(
         var unspecified = DateTime.SpecifyKind(local.Value, DateTimeKind.Unspecified);
         return new DateTimeOffset(TimeZoneInfo.ConvertTimeToUtc(unspecified, GameTimeZone), TimeSpan.Zero);
     }
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Falha ao ler o ranking para o painel da conta {Login}")]
+    private static partial void LogRankingFailed(ILogger logger, Exception ex, string login);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Falha ao ler os dados do jogo da conta {Login}")]
     private static partial void LogGameDataFailed(ILogger logger, Exception ex, string login);

@@ -22,9 +22,13 @@ export function SiteHeader() {
             className="h-11 w-auto drop-shadow-[0_0_12px_rgb(95_178_255/0.35)]"
           />
         </Link>
-        <nav aria-label="Principal" className="hidden gap-5 text-sm text-silver lg:flex">
+        <nav aria-label="Principal" className="hidden gap-4 text-sm text-silver lg:flex xl:gap-5">
           {mainNavigation.map((item) => (
-            <Link key={item.href} href={item.href} className="py-1 tracking-wide transition-colors hover:text-gold-bright">
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`py-1 tracking-wide transition-colors hover:text-gold-bright ${"wide" in item && item.wide ? "hidden xl:inline" : ""}`}
+            >
               {item.label}
             </Link>
           ))}
