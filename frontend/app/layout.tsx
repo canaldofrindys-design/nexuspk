@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Cinzel, Inter } from "next/font/google";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
+import { MotionEngine } from "@/components/motion/MotionEngine";
+import { Suspense } from "react";
 import "./globals.css";
 
 const cinzel = Cinzel({ variable: "--font-cinzel", subsets: ["latin"] });
@@ -14,11 +16,14 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="pt-BR" className={`${cinzel.variable} ${inter.variable}`}>
+    <html lang="pt-BR" className={`${cinzel.variable} ${inter.variable}`} data-scroll-behavior="smooth">
       <body className="flex min-h-dvh flex-col antialiased">
         <SiteHeader />
         <main className="flex-1">{children}</main>
         <SiteFooter />
+        <Suspense fallback={null}>
+          <MotionEngine />
+        </Suspense>
       </body>
     </html>
   );

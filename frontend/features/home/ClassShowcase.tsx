@@ -16,12 +16,15 @@ export function ClassShowcase() {
     >
       <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
         {classes.map((c) => (
-          <li key={c.code}>
+          <li key={c.code} data-reveal="zoom">
             <Link
               href={`/classes#${c.code}`}
               className="group relative flex flex-col items-center px-1 pt-1 pb-2 text-center transition-colors hover:bg-steel/20"
             >
-              <span className="relative w-full overflow-hidden border border-gold/30 transition-colors group-hover:border-gold/70">
+              <span
+                data-tilt
+                className="relative w-full overflow-hidden border border-gold/30 shadow-[0_14px_30px_-14px_rgb(0_0_0/0.9)] group-hover:border-gold/70 group-hover:shadow-[0_0_24px_rgb(95_178_255/0.35)]"
+              >
                 <Image
                   src={c.card}
                   alt=""
