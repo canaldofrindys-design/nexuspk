@@ -20,7 +20,7 @@ Levantado nos arquivos do site antigo (`C:\wwwroot`). Onde está "não confirmad
 | `Clan/verificarcl.asp` | jogo | criar o clã (próximo número de ícone em `LI`) | grava `LI`, `CL`, `UL` |
 | `ClanContent/<número>.bmp` | jogo | ícone de cada clã (`CL.MIconCnt`) | — |
 | `updater/version.txt`, `Updates.xml`, `<versão>.zip`, `patch.json` | launcher | atualização do cliente | — |
-| `include/status.php` | não confirmado | imagem online/offline pelo teste da porta do servidor de login (32009) | — |
+| `include/status.php` | não confirmado | imagem online/offline pelo teste da porta 32009, que na VPS é do SQL Server e não do jogo (o jogo escuta na 35002) | — |
 | `att/`, `rankAPI/` | não confirmado | nível e rankings em PHP | lê o banco do jogo |
 
 As respostas do clã são texto no formato `Code=<n>` seguido de CR (`\r`), um campo por linha.

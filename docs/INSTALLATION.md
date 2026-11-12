@@ -115,15 +115,14 @@ Abra o Bloco de Notas **como administrador** e edite `C:\NexusPortal\config\port
 "GameServer": {
   "TimeoutMilliseconds": 2000,
   "Targets": [
-    { "Key": "login",   "Name": "Login",   "Host": "127.0.0.1", "Port": 32009 },
-    { "Key": "canal-1", "Name": "Canal 1", "Host": "127.0.0.1", "Port": 0 }
+    { "Key": "servidor", "Name": "Servidor do jogo", "Host": "127.0.0.1", "Port": 35002 }
   ]
 }
 ```
 
 - **Smtp**: sem ele, cadastro e login funcionam, mas confirmação de e-mail e recuperação de senha ficam desligadas (o site avisa).
 - **Captcha**: a chave secreta do Cloudflare Turnstile. A chave pública vai no pacote (variável `TURNSTILE_SITE_KEY` do repositório no GitHub). Sem as duas, o captcha fica desligado.
-- **GameServer.Targets**: as portas do servidor de login e de cada canal (as mesmas do `.ini` do servidor do jogo). O site antigo testa o login na porta 32009 (`include/status.php`). Sem elas, a página de status mostra "Sem verificação configurada" em vez de inventar um estado.
+- **GameServer.Targets**: as portas do servidor de login e de cada canal (as mesmas do `.ini` do servidor do jogo). Na VPS atual, o servidor do jogo (`open_the_server`) escuta só na 35002. A 32009 que o `include/status.php` do site antigo testava é do SQL Server, não do jogo. Para conferir as portas: `Get-NetTCPConnection -State Listen` com o nome do processo. Sem elas, a página de status mostra "Sem verificação configurada" em vez de inventar um estado.
 
 Depois:
 
