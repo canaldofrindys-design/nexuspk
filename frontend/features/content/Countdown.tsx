@@ -37,8 +37,8 @@ export function Countdown({ target, label, serverNow, boxes = false }: { target:
       { v: p.s, u: "seg" },
     ];
     return (
-      <div className="flex items-center gap-3">
-        <span className="text-sm text-silver/80">{label}</span>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+        <span className="text-sm whitespace-nowrap text-silver/80">{label}</span>
         <div className="flex gap-1.5" role="timer" aria-live="off">
           {cells.map((c) => (
             <span key={c.u} className="flex min-w-12 flex-col items-center border border-gold/50 bg-night/70 px-2 py-1">
