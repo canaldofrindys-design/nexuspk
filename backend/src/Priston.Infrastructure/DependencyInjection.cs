@@ -23,6 +23,7 @@ public static class DependencyInjection
         services.AddSingleton<IPortalDbConnectionFactory, PortalDbConnectionFactory>();
         services.AddOptions<GameServerOptions>().Bind(configuration.GetSection(GameServerOptions.SectionName));
         services.AddMemoryCache();
+        services.AddSingleton<IOnlinePlayersCounter, TcpConnectionCounter>();
         services.AddSingleton<GameServerProbe>();
         services.AddSingleton<IServerProbe>(sp => sp.GetRequiredService<GameServerProbe>());
         services.AddSingleton<IServerStatusProvider>(sp => sp.GetRequiredService<GameServerProbe>());

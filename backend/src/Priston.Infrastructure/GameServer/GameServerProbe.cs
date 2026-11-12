@@ -19,6 +19,27 @@ public sealed class GameServerOptions
 
     /// <summary>Endereços testados: o login e cada canal, com o nome mostrado na página de status.</summary>
     public IList<GameServerTarget> Targets { get; } = [];
+
+    public OnlinePlayersOptions OnlinePlayers { get; } = new();
+}
+
+/// <summary>
+/// Jogadores online contados pelas conexões TCP abertas na porta do servidor do jogo, na mesma máquina do portal.
+/// Desligado por padrão: só ligar depois de conferir que o número bate com a janela do servidor
+/// (INSTALLATION.md, "Jogadores online").
+/// </summary>
+public sealed class OnlinePlayersOptions
+{
+    public bool Enabled { get; set; }
+
+    /// <summary>Porta local do servidor do jogo. 0 = a porta do primeiro endereço testado.</summary>
+    public int Port { get; set; }
+
+    /// <summary>
+    /// <c>Connections</c> (padrão): cada conexão é um jogador. <c>Addresses</c>: cada IP de origem conta uma vez,
+    /// para clientes que abrem mais de uma conexão (mas aí dois jogadores na mesma casa contam como um).
+    /// </summary>
+    public string CountBy { get; set; } = "Connections";
 }
 
 public sealed class GameServerTarget
@@ -40,7 +61,8 @@ public sealed class GameServerTarget
 internal sealed class GameServerProbe(
     IOptions<GameServerOptions> options,
     IMemoryCache cache,
-    TimeProvider clock) : IServerProbe
+    TimeProvider clock,
+    IOnlinePlayersCounter? players = null) : IServerProbe
 {
     private static readonly TimeSpan CacheDuration = TimeSpan.FromSeconds(30);
 
@@ -49,7 +71,30 @@ internal sealed class GameServerProbe(
     public async Task<ServerStatus> GetAsync(CancellationToken cancellationToken)
     {
         var s = await GetSnapshotAsync(cancellationToken).ConfigureAwait(false);
-        return new ServerStatus(s.Availability, s.CheckedAtUtc, null);
+        return new ServerStatus(s.Availability, s.CheckedAtUtc, CountPlayers(s.Availability));
+    }
+
+    /// <summary>Só com a contagem ligada e o servidor respondendo; sem isso o portal não mostra número.</summary>
+    private int? CountPlayers(ServerAvailability availability)
+    {
+        var o = options.Value.OnlinePlayers;
+        if (players is null || !o.Enabled || availability is not (ServerAvailability.Online or ServerAvailability.Partial))
+        {
+            return null;
+        }
+
+        var port = o.Port is > 0 and <= 65535 ? o.Port : Resolve().Select(t => t.Port).FirstOrDefault();
+        if (port == 0)
+        {
+            return null;
+        }
+
+        var byAddress = string.Equals(o.CountBy, "Addresses", StringComparison.OrdinalIgnoreCase);
+        return cache.GetOrCreate($"server:players:{port}:{byAddress}", entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = CacheDuration;
+            return players.Count(port, byAddress);
+        });
     }
 
     public async Task<ServerSnapshot> GetSnapshotAsync(CancellationToken ct)

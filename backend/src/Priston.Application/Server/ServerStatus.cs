@@ -12,8 +12,8 @@ public enum ServerAvailability
 }
 
 /// <summary>
-/// <paramref name="PlayersOnline"/> é nulo enquanto não houver fonte real
-/// (DATABASE_MAPPING.md, seção 8).
+/// <paramref name="PlayersOnline"/>: conexões abertas por jogadores na porta do servidor do jogo, só com a contagem
+/// ligada em <c>GameServer:OnlinePlayers</c> e o servidor no ar. Nulo nos outros casos (DATABASE_MAPPING.md, seção 8).
 /// </summary>
 public sealed record ServerStatus(ServerAvailability Availability, DateTimeOffset? CheckedAtUtc, int? PlayersOnline);
 

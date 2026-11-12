@@ -18,7 +18,7 @@ export function StatusWindow({ status }: { status: HomeSnapshot["status"] | null
         <dt>Estado</dt>
         <dd className={`text-right font-semibold ${state.className}`}>{status ? state.text : "API indisponível"}</dd>
         <dt>Jogadores online</dt>
-        <dd className="tabular text-right text-data-info" title="O servidor ainda não publica a contagem de jogadores">
+        <dd className="tabular text-right text-data-info" title="Jogadores conectados ao servidor do jogo agora">
           {status?.playersOnline ?? "—"}
         </dd>
         <dt>Verificado às</dt>
