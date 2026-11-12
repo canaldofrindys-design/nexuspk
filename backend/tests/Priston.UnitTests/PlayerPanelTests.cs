@@ -56,4 +56,23 @@ public class PlayerPanelTests
     [InlineData("2001:db8:1::5", "2001:db8:…")]
     [InlineData(null, null)]
     public void Ip_is_masked(string? ip, string? expected) => Assert.Equal(expected, PlayerPanelService.MaskIp(ip));
+
+    [Fact]
+    public void Panel_shows_general_and_class_position_from_the_level_ranking()
+    {
+        var game = new PlayerGameData(null, false,
+            [new PanelCharacter("Mago", 9, "Mago", 120, null, null, null, null), new PanelCharacter("Novo", 1, "Lutador", 1, null, null, null, null)], null, null);
+        var ranking = new List<Priston.Application.Characters.RankedCharacter>
+        {
+            new(1, "Outro", 9, "Mago", 150),
+            new(2, "Lutador", 1, "Lutador", 130),
+            new(3, "mago", 9, "Mago", 120),
+        };
+
+        var withPositions = PlayerPanelService.WithPositions(game, ranking);
+
+        Assert.Equal(3, withPositions.RankTotal);
+        Assert.Equal((3, 2), (withPositions.Characters[0].RankPosition!.Value, withPositions.Characters[0].ClassRankPosition!.Value));
+        Assert.Null(withPositions.Characters[1].RankPosition);
+    }
 }

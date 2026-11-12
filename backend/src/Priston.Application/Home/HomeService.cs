@@ -2,6 +2,7 @@ using Microsoft.Extensions.Options;
 using Priston.Application.Characters;
 using Priston.Application.Content;
 using Priston.Application.Server;
+using Priston.Application.Site;
 
 namespace Priston.Application.Home;
 
@@ -9,7 +10,7 @@ public sealed record HomeNewsItem(string Slug, string Category, string Title, st
 
 public sealed record HomeEventItem(string Slug, string Name, string Category, DateTimeOffset StartsAtUtc, DateTimeOffset? EndsAtUtc);
 
-public sealed record HomeServerInfo(string Name, string Tagline, IReadOnlyDictionary<string, string> Rates, IReadOnlyList<CommunityLink> CommunityLinks);
+public sealed record HomeServerInfo(string Name, string Tagline, IReadOnlyDictionary<string, string> Rates, IReadOnlyList<LinkItem> CommunityLinks);
 
 public sealed record HomeSnapshot(
     HomeServerInfo Server,
@@ -18,7 +19,8 @@ public sealed record HomeSnapshot(
     bool RankingAvailable,
     IReadOnlyList<HomeNewsItem> News,
     IReadOnlyList<HomeEventItem> ActiveEvents,
-    IReadOnlyList<HomeEventItem> UpcomingEvents);
+    IReadOnlyList<HomeEventItem> UpcomingEvents,
+    IReadOnlyList<PublicBanner> Banners);
 
 /// <summary>
 /// Monta a homepage só com dados reais (ranking, status, notícias e eventos publicados).
@@ -28,7 +30,8 @@ public sealed class HomeService(
     RankingService ranking,
     IServerStatusProvider status,
     ContentService content,
-    IOptions<ServerPresentationOptions> presentation)
+    IOptions<ServerPresentationOptions> presentation,
+    SiteContentService? site = null)
 {
     public async Task<HomeSnapshot> GetAsync(CancellationToken cancellationToken)
     {
@@ -61,15 +64,36 @@ public sealed class HomeService(
             // Banco do portal indisponível: a home continua com as outras seções.
         }
 
-        var p = presentation.Value;
+        // Textos editados no painel; sem eles (ou sem o banco do portal), os do appsettings.
+        HomeServerInfo server;
+        IReadOnlyList<PublicBanner> banners = [];
+        if (site is not null)
+        {
+            var snapshot = await site.GetAsync(cancellationToken).ConfigureAwait(false);
+            var rates = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (var r in snapshot.Server.Rates)
+            {
+                rates.TryAdd(r.Label, r.Value);
+            }
+
+            server = new HomeServerInfo(snapshot.Server.Name, snapshot.Server.Tagline, rates, snapshot.Server.CommunityLinks);
+            banners = snapshot.Banners;
+        }
+        else
+        {
+            var p = presentation.Value;
+            server = new HomeServerInfo(p.Name, p.Tagline, p.Rates, p.CommunityLinks.Select(l => new LinkItem(l.Label, l.Url)).ToList());
+        }
+
         return new HomeSnapshot(
-            new HomeServerInfo(p.Name, p.Tagline, p.Rates, p.CommunityLinks),
+            server,
             await statusTask.ConfigureAwait(false),
             top,
             rankingAvailable,
             news,
             live,
-            upcoming);
+            upcoming,
+            banners);
     }
 
     private static HomeEventItem ToHome(EventSummary e) => new(e.Slug, e.Name, e.Category, e.StartsUtc, e.EndsUtc);

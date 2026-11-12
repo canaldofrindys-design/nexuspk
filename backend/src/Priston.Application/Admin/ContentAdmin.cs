@@ -60,6 +60,15 @@ public interface IContentAdminStore
     Task<int?> CreateEventAsync(EventData data, string by, CancellationToken ct);
 
     Task<bool> UpdateEventAsync(int id, EventData data, string by, CancellationToken ct);
+
+    /// <summary>False se a notícia não existe.</summary>
+    Task<bool> DeleteNewsAsync(int id, CancellationToken ct);
+
+    /// <summary>Apaga o evento e os lembretes dele. False se não existe.</summary>
+    Task<bool> DeleteEventAsync(int id, CancellationToken ct);
+
+    /// <summary>Muda só o horário de fim (encerrar agora).</summary>
+    Task EndEventAsync(int id, DateTimeOffset endsUtc, string by, CancellationToken ct);
 }
 
 /// <summary>Cadastro de notícias e eventos pela equipe. Toda gravação vai para a auditoria.</summary>
@@ -216,6 +225,64 @@ public sealed partial class ContentAdminService(IContentAdminStore store, Conten
         return new(StaffAuthStatus.Ok, savedId);
     }
 
+    public async Task<SaveResult> DeleteNewsAsync(StaffPrincipal me, int id, ClientInfo client, CancellationToken ct)
+    {
+        var before = await store.GetNewsAsync(id, ct).ConfigureAwait(false);
+        if (before is null || !await store.DeleteNewsAsync(id, ct).ConfigureAwait(false))
+        {
+            return new(StaffAuthStatus.NotFound);
+        }
+
+        await audit.WriteAsync("staff", me.Username, "news.deleted", "news", id.ToString(CultureInfo.InvariantCulture), client.IpAddress,
+            JsonSerializer.Serialize(new { before.Slug, before.Title, before.Status }), ct).ConfigureAwait(false);
+        content.Invalidate();
+        return new(StaffAuthStatus.Ok, id);
+    }
+
+    public async Task<SaveResult> DeleteEventAsync(StaffPrincipal me, int id, ClientInfo client, CancellationToken ct)
+    {
+        var before = await store.GetEventAsync(id, ct).ConfigureAwait(false);
+        if (before is null || !await store.DeleteEventAsync(id, ct).ConfigureAwait(false))
+        {
+            return new(StaffAuthStatus.NotFound);
+        }
+
+        await audit.WriteAsync("staff", me.Username, "event.deleted", "event", id.ToString(CultureInfo.InvariantCulture), client.IpAddress,
+            JsonSerializer.Serialize(new { before.Slug, before.Name, before.Status, before.StartsUtc }), ct).ConfigureAwait(false);
+        content.Invalidate();
+        return new(StaffAuthStatus.Ok, id);
+    }
+
+    /// <summary>
+    /// Encerra agora um evento publicado que já começou: o fim passa a ser este minuto e o site
+    /// deixa de mostrar o evento como em andamento. Evento que ainda não começou se cancela pela situação.
+    /// </summary>
+    public async Task<SaveResult> EndEventAsync(StaffPrincipal me, int id, ClientInfo client, CancellationToken ct)
+    {
+        var e = await store.GetEventAsync(id, ct).ConfigureAwait(false);
+        if (e is null)
+        {
+            return new(StaffAuthStatus.NotFound);
+        }
+
+        var now = clock.GetUtcNow();
+        now = now.AddTicks(-(now.Ticks % TimeSpan.TicksPerSecond));
+        var error = e.Status != "published" ? "Só um evento publicado pode ser encerrado."
+            : now <= e.StartsUtc ? "O evento ainda não começou. Para desmarcar, mude a situação para Cancelado."
+            : (e.EndsUtc ?? e.StartsUtc + ContentService.InstantEventDuration) <= now ? "Este evento já terminou."
+            : null;
+        if (error is not null)
+        {
+            return new(StaffAuthStatus.ValidationFailed, null, new Dictionary<string, string> { ["end"] = error });
+        }
+
+        await store.EndEventAsync(id, now, me.Username, ct).ConfigureAwait(false);
+        await audit.WriteAsync("staff", me.Username, "event.ended", "event", id.ToString(CultureInfo.InvariantCulture), client.IpAddress,
+            JsonSerializer.Serialize(new { e.Slug, e.Name, beforeEndsUtc = e.EndsUtc, endsUtc = now }), ct).ConfigureAwait(false);
+        content.Invalidate();
+        return new(StaffAuthStatus.Ok, id);
+    }
+
     /// <summary>Converte "AAAA-MM-DDTHH:MM" (Brasília) para UTC. Vazio é null.</summary>
     public static DateTimeOffset? ParseLocal(string? value)
     {
@@ -233,7 +300,7 @@ public sealed partial class ContentAdminService(IContentAdminStore store, Conten
         return new DateTimeOffset(TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(local, DateTimeKind.Unspecified), Zone));
     }
 
-    private static DateTimeOffset? Local(string? value, string field, Dictionary<string, string> errors)
+    internal static DateTimeOffset? Local(string? value, string field, Dictionary<string, string> errors)
     {
         try
         {
@@ -258,7 +325,7 @@ public sealed partial class ContentAdminService(IContentAdminStore store, Conten
         return slug;
     }
 
-    private static string? Text(string? value, int max, string field, Dictionary<string, string> errors, bool required)
+    internal static string? Text(string? value, int max, string field, Dictionary<string, string> errors, bool required)
     {
         var text = value?.Replace("\r\n", "\n", StringComparison.Ordinal).Trim();
         if (string.IsNullOrEmpty(text))
@@ -279,8 +346,8 @@ public sealed partial class ContentAdminService(IContentAdminStore store, Conten
         return text;
     }
 
-    /// <summary>Imagem do próprio site ("/...") ou https. Nada de javascript:, data: ou http.</summary>
-    private static string? Image(string? value, Dictionary<string, string> errors)
+    /// <summary>Imagem ou link do próprio site ("/...") ou https. Nada de javascript:, data: ou http.</summary>
+    internal static string? Image(string? value, Dictionary<string, string> errors, string field = "imageUrl")
     {
         var url = value?.Trim();
         if (string.IsNullOrEmpty(url))
@@ -293,7 +360,7 @@ public sealed partial class ContentAdminService(IContentAdminStore store, Conten
             || (Uri.TryCreate(url, UriKind.Absolute, out var uri) && uri.Scheme == Uri.UriSchemeHttps && string.IsNullOrEmpty(uri.UserInfo)));
         if (!ok)
         {
-            errors["imageUrl"] = "Use um caminho do site (/imagens/...) ou um endereço https.";
+            errors[field] = "Use um caminho do site (/imagens/...) ou um endereço https.";
             return null;
         }
 

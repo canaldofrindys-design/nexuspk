@@ -10,6 +10,9 @@ public enum Capability
     ViewAudit,
     ManageStaff,
     ManageSupport,
+
+    /// <summary>Textos institucionais, downloads e redes sociais do site.</summary>
+    ManageSite,
 }
 
 /// <summary>Funções da equipe e o que cada uma pode fazer.</summary>
@@ -30,8 +33,8 @@ public static class StaffRoles
 
     private static readonly Dictionary<string, Capability[]> Grants = new(StringComparer.Ordinal)
     {
-        [SuperAdmin] = [Capability.ViewDashboard, Capability.ManageContent, Capability.ViewAudit, Capability.ManageStaff, Capability.ManageSupport],
-        [Admin] = [Capability.ViewDashboard, Capability.ManageContent, Capability.ViewAudit, Capability.ManageSupport],
+        [SuperAdmin] = [Capability.ViewDashboard, Capability.ManageContent, Capability.ViewAudit, Capability.ManageStaff, Capability.ManageSupport, Capability.ManageSite],
+        [Admin] = [Capability.ViewDashboard, Capability.ManageContent, Capability.ViewAudit, Capability.ManageSupport, Capability.ManageSite],
         [Moderator] = [Capability.ViewDashboard, Capability.ManageContent, Capability.ManageSupport],
         [Support] = [Capability.ViewDashboard, Capability.ManageSupport],
     };

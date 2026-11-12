@@ -35,6 +35,7 @@ public static class DependencyInjection
         services.AddSingleton<Server.StatusPageService>();
         services.AddSingleton<Server.ServerNoticeAdminService>();
         services.AddSingleton<Support.SupportService>();
+        services.AddSingleton<Site.SiteContentService>();
         return services;
     }
 }

@@ -1,4 +1,4 @@
-export type Capability = "ViewDashboard" | "ManageContent" | "ViewAudit" | "ManageStaff" | "ManageSupport";
+export type Capability = "ViewDashboard" | "ManageContent" | "ViewAudit" | "ManageStaff" | "ManageSupport" | "ManageSite";
 
 export type StaffMe = {
   id: number;

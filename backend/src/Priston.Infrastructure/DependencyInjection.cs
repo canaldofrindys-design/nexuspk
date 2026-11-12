@@ -40,6 +40,7 @@ public static class DependencyInjection
         services.AddSingleton<Priston.Application.Admin.IStaffRepository, Admin.StaffRepository>();
         services.AddSingleton<Priston.Application.Admin.IStaffSessionStore, Admin.StaffSessionStore>();
         services.AddSingleton<Priston.Application.Admin.IContentAdminStore, Admin.ContentAdminStore>();
+        services.AddSingleton<Priston.Application.Site.ISiteContentStore, Site.SiteContentStore>();
         services.AddSingleton<Priston.Application.Admin.IPortalStatsReader, Admin.PortalStatsReader>();
         services.AddSingleton<Priston.Application.Admin.IAuditReader, Admin.AuditReader>();
         services.AddSingleton<Priston.Application.Content.INewsReader, Content.NewsReader>();

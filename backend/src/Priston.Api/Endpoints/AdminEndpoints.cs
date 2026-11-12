@@ -102,6 +102,9 @@ public static class AdminEndpoints
         group.MapPut("/news/{id:int}", async ([FromBody] NewsInput body, StaffAuthService auth, ContentAdminService content, HttpContext http, int id, CancellationToken ct) =>
             await Guard(auth, http, Capability.ManageContent, async me => Saved(await content.SaveNewsAsync(me, id, body, AuthEndpoints.Client(http), ct)), ct));
 
+        group.MapDelete("/news/{id:int}", async (StaffAuthService auth, ContentAdminService content, HttpContext http, int id, CancellationToken ct) =>
+            await Guard(auth, http, Capability.ManageContent, async me => Saved(await content.DeleteNewsAsync(me, id, AuthEndpoints.Client(http), ct)), ct));
+
         // Eventos
         group.MapGet("/events", async (StaffAuthService auth, ContentAdminService content, HttpContext http, string? situacao, int? pagina, CancellationToken ct) =>
             await Guard(auth, http, Capability.ManageContent, async _ => Results.Ok(await content.ListEventsAsync(situacao, pagina ?? 1, ct)), ct));
@@ -114,6 +117,12 @@ public static class AdminEndpoints
 
         group.MapPut("/events/{id:int}", async ([FromBody] EventInput body, StaffAuthService auth, ContentAdminService content, HttpContext http, int id, CancellationToken ct) =>
             await Guard(auth, http, Capability.ManageContent, async me => Saved(await content.SaveEventAsync(me, id, body, AuthEndpoints.Client(http), ct)), ct));
+
+        group.MapDelete("/events/{id:int}", async (StaffAuthService auth, ContentAdminService content, HttpContext http, int id, CancellationToken ct) =>
+            await Guard(auth, http, Capability.ManageContent, async me => Saved(await content.DeleteEventAsync(me, id, AuthEndpoints.Client(http), ct)), ct));
+
+        group.MapPost("/events/{id:int}/end", async (StaffAuthService auth, ContentAdminService content, HttpContext http, int id, CancellationToken ct) =>
+            await Guard(auth, http, Capability.ManageContent, async me => Saved(await content.EndEventAsync(me, id, AuthEndpoints.Client(http), ct)), ct));
 
         // Equipe
         group.MapGet("/staff", async (StaffAuthService auth, StaffAdminService staff, HttpContext http, CancellationToken ct) =>

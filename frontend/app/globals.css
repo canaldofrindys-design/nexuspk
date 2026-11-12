@@ -684,3 +684,23 @@ html.motion [data-reveal-state="hidden"][data-reveal="fade"] {
     scroll-behavior: auto;
   }
 }
+
+/* Banner da home: troca com um leve esmaecer. */
+.banner-slide {
+  animation: banner-in 600ms ease-out both;
+}
+@keyframes banner-in {
+  from {
+    opacity: 0;
+    transform: scale(1.015);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .banner-slide {
+    animation: none;
+  }
+}

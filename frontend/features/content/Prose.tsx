@@ -6,7 +6,16 @@ import type { ReactNode } from "react";
  * Tudo é renderizado como texto pelo React, então nada do conteúdo vira marcação.
  */
 export function Prose({ text }: { text: string }) {
-  const blocks = text.replace(/\r\n/g, "\n").split(/\n{2,}/).map((b) => b.trim()).filter(Boolean);
+  // Um subtítulo pode vir colado ao texto ou à lista logo abaixo dele: vira um bloco próprio.
+  const blocks = text
+    .replace(/\r\n/g, "\n")
+    .split(/\n{2,}/)
+    .flatMap((b) => {
+      const t = b.trim();
+      const [first, ...rest] = t.split("\n");
+      return first.startsWith("## ") && rest.length > 0 ? [first, rest.join("\n").trim()] : [t];
+    })
+    .filter(Boolean);
   const out: ReactNode[] = [];
   blocks.forEach((block, i) => {
     const lines = block.split("\n");

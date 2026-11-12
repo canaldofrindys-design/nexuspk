@@ -44,13 +44,14 @@ function CharactersWindow({ panel }: { panel: PlayerPanel }) {
         <p className="text-sm text-silver/70">Nenhum personagem encontrado nesta conta.</p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[520px] text-sm">
+          <table className="w-full min-w-[600px] text-sm">
             <caption className="sr-only">Personagens da conta</caption>
             <thead>
               <tr className="text-left text-xs text-silver/60">
                 <th scope="col" className="py-1 font-normal">Personagem</th>
                 <th scope="col" className="py-1 font-normal">Classe</th>
                 <th scope="col" className="py-1 text-right font-normal">Nível</th>
+                <th scope="col" className="py-1 text-right font-normal">Ranking</th>
                 <th scope="col" className="py-1 pl-4 font-normal">Clã</th>
                 <th scope="col" className="py-1 text-right font-normal">Abates / mortes PvP</th>
                 <th scope="col" className="py-1 text-right font-normal">BP</th>
@@ -64,6 +65,16 @@ function CharactersWindow({ panel }: { panel: PlayerPanel }) {
                     <ClassBadge code={c.classCode} name={c.className} />
                   </td>
                   <td className="tabular py-1.5 text-right text-data-info">{c.level}</td>
+                  <td className="tabular py-1.5 text-right">
+                    {c.rankPosition ? (
+                      <Link href={`/personagens/${encodeURIComponent(c.name)}`} className="text-gold-bright hover:underline" title="Posição no ranking geral por nível">
+                        {formatNumber(c.rankPosition)}º
+                      </Link>
+                    ) : (
+                      <span className="text-silver/50">—</span>
+                    )}
+                    {c.classRankPosition ? <span className="block text-[11px] text-silver/60">{formatNumber(c.classRankPosition)}º da classe</span> : null}
+                  </td>
                   <td className="py-1.5 pl-4 text-silver/80">{c.clan ?? "—"}</td>
                   <td className="tabular py-1.5 text-right text-data-info">
                     {c.pvpKills === null ? "—" : `${formatNumber(c.pvpKills)} / ${formatNumber(c.pvpDeaths ?? 0)}`}
@@ -75,7 +86,10 @@ function CharactersWindow({ panel }: { panel: PlayerPanel }) {
           </table>
         </div>
       )}
-      <p className="mt-2 text-xs text-silver/50">Nível como o servidor grava hoje. EXP ainda não é publicada pelo servidor.</p>
+      <p className="mt-2 text-xs text-silver/50">
+        Nível como o servidor grava hoje. EXP ainda não é publicada pelo servidor.
+        {panel.game?.rankTotal ? ` Ranking geral por nível entre ${formatNumber(panel.game.rankTotal)} personagens, atualizado a cada 5 minutos.` : ""}
+      </p>
     </GameWindow>
   );
 }

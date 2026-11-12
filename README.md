@@ -46,6 +46,7 @@ Endpoints:
 - `GET /health/ready` — estado dos dois bancos (só de localhost).
 - `GET /api/v1/system/info` — versão e fuso horário.
 - `GET /api/v1/home` — dados da página inicial (ranking por nível, status, avisos).
+- `GET /api/v1/site` — textos do servidor, downloads, redes sociais e banners; `GET /api/v1/media/{id}` — imagens enviadas pelo painel.
 - `POST /api/v1/auth/register|login|logout|recover|reset-password|confirm-email`, `GET /api/v1/auth/me|options` — contas (ver `docs/CONTAS.md`).
 
 Teste de integração local (precisa de Docker): ver o cabeçalho de `scripts/integration-auth.sh`.

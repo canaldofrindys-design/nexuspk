@@ -15,12 +15,20 @@ A senha é digitada no terminal, sem eco, duas vezes. Ela não passa por linha d
 
 ## Funções
 
-| Função | Resumo | Notícias, eventos e avisos de status | Chamados | Auditoria | Equipe |
-|---|---|---|---|---|---|
-| Superadministrador | sim | sim | sim | sim | sim |
-| Administrador | sim | sim | sim | sim | não |
-| Moderador | sim | sim | sim | não | não |
-| Suporte | sim | não | sim | não | não |
+| Função | Resumo | Notícias, eventos, banners e avisos de status | Conteúdo do site | Chamados | Auditoria | Equipe |
+|---|---|---|---|---|---|---|
+| Superadministrador | sim | sim | sim | sim | sim | sim |
+| Administrador | sim | sim | sim | sim | sim | não |
+| Moderador | sim | sim | não | sim | não | não |
+| Suporte | sim | não | não | sim | não | não |
+
+## Conteúdo do site, banners e imagens
+
+- `/admin/site`: nome, slogan, texto da página **O Servidor** (`/servidor`), taxas, links da comunidade e redes sociais (só https; aparecem no rodapé, na home e em `/servidor`) e a página **Download** (`/download`: texto, requisitos e até 10 arquivos com link https ou do próprio site). Sem nada salvo, valem os valores de `ServerPresentation` do appsettings. Tabela `dbo.SiteSetting` (migração `0007`).
+- `/admin/banners`: destaques do topo da home (até 5 ativos, pela ordem, com período opcional). Tabela `dbo.SiteBanner`.
+- Imagem de notícia, evento e banner: pode ser enviada do computador (PNG ou JPG até 3 MB). O arquivo é conferido pela estrutura, os metadados (EXIF, textos) são removidos e ele fica em `dbo.MediaFile`, servido em `/midia/<id>` com cache longo.
+- Notícias, eventos e banners podem ser excluídos (com confirmação). Evento publicado que está acontecendo tem o botão **Encerrar agora**, que grava o fim neste minuto.
+- Tudo vai para a auditoria (`site.server.updated`, `site.downloads.updated`, `banner.*`, `media.uploaded`, `news.deleted`, `event.deleted`, `event.ended`).
 
 Chamados e avisos de status: ver `docs/SUPORTE.md`.
 
