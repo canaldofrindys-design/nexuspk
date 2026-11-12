@@ -11,7 +11,30 @@ A primeira instalação está em [`INSTALLATION.md`](INSTALLATION.md). Aqui fica
 
 O pacote é compilado num Windows do GitHub e não leva nenhum segredo.
 
-## Publicar uma versão nova
+## Atualização automática (recomendado)
+
+Cada merge na `main` passa no teste de instalação do GitHub e vira uma release `build-<versão>` (pré-lançamento; ficam as 5 mais novas). O `Update-Portal.ps1` na VPS confere as releases a cada 10 minutos e, se houver versão nova, baixa e roda o `Deploy-Portal.ps1` sozinho, com backup e volta automática se falhar.
+
+Ligar, uma vez, num PowerShell como administrador (conta sysadmin no SQL Server):
+
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass
+Invoke-WebRequest https://raw.githubusercontent.com/canaldofrindys-design/nexuspk/main/deploy/windows/Update-Portal.ps1 -OutFile $env:TEMP\Update-Portal.ps1 -UseBasicParsing
+& $env:TEMP\Update-Portal.ps1 -InstallTask
+```
+
+Isso copia o script para `C:\NexusPortal\tools`, dá ao SYSTEM permissão de aplicar migrações no `PortalDB`, cria a tarefa "NexusPortal - atualização automática" e já publica a versão mais nova.
+
+| Quero | Comando |
+|---|---|
+| Atualizar agora, sem esperar | `C:\NexusPortal\tools\Update-Portal.ps1` |
+| Tentar de novo uma versão que falhou | `C:\NexusPortal\tools\Update-Portal.ps1 -Force` |
+| Só versões numeradas (tags `v*`) | `Update-Portal.ps1 -InstallTask -OnlyStable` |
+| Desligar | `C:\NexusPortal\tools\Update-Portal.ps1 -RemoveTask` |
+
+Registro: `C:\NexusPortal\logs\update.log` e um `update-<data>.log` por publicação. Cada versão é instalada sozinha uma vez só: se falhar, ou se você voltar com o `Rollback-Portal.ps1`, ela não é reinstalada até sair outra mais nova (ou até rodar com `-Force`).
+
+## Publicar uma versão nova à mão
 
 1. Copie o zip e o `.sha256` para `C:\NexusPortal-pacotes` e rode `Unblock-File` no zip.
 2. Num PowerShell como administrador:

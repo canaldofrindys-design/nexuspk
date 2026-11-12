@@ -3,11 +3,16 @@ name: Publicação no Windows
 # Gera o pacote para o Windows Server e testa a instalação de verdade num Windows com IIS e SQL Server Express:
 # instalação, atualização, volta de versão, backup agendado e restauração.
 # Numa tag v*, publica o pacote como release do GitHub.
+# A cada merge na main, publica uma release "build-<versão>" (pré-lançamento) que o
+# Update-Portal.ps1 da VPS baixa e instala sozinho.
 
 on:
   workflow_dispatch:
   push:
+    branches: [main]
     tags: ["v*"]
+    # Mudança só de documentação não gera versão nova (não vale para tags).
+    paths-ignore: ["docs/**", "**/*.md"]
   pull_request:
     paths:
       - "deploy/**"
@@ -36,6 +41,16 @@ jobs:
           node-version: "22"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
+      - name: Sintaxe dos scripts de publicação
+        shell: powershell
+        run: |
+          $bad = 0
+          foreach ($f in Get-ChildItem deploy -Recurse -Filter *.ps1) {
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($f.FullName, [ref]$null, [ref]$errors) | Out-Null
+            foreach ($e in @($errors)) { Write-Host "$($f.Name):$($e.Extent.StartLineNumber) $($e.Message)"; $bad++ }
+          }
+          if ($bad) { throw "$bad erro(s) de sintaxe" }
       - name: Pacote
         id: pkg
         shell: pwsh
@@ -151,3 +166,33 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release create "$GITHUB_REF_NAME" pacote/* --repo "$GITHUB_REPOSITORY" --title "Portal $GITHUB_REF_NAME" --notes "Pacote para o Windows Server. Veja docs/DEPLOYMENT.md."
+
+  build-release:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [package, smoke]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: build-release
+      cancel-in-progress: false
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: nexusportal
+          path: pacote
+      - name: Release da main
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.package.outputs.version }}
+        run: |
+          if gh release view "build-$VERSION" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then echo "build-$VERSION já existe"; exit 0; fi
+          gh release create "build-$VERSION" pacote/* --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
+            --title "Portal $VERSION (main)" --notes "Pacote gerado da main ($GITHUB_SHA). A VPS instala sozinha com o Update-Portal.ps1. Veja docs/DEPLOYMENT.md."
+      - name: Apagar builds antigos (fica com os 5 mais novos)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release list --repo "$GITHUB_REPOSITORY" --limit 100 --json tagName,createdAt \
+            --jq '[.[] | select(.tagName | startswith("build-"))] | sort_by(.createdAt) | reverse | .[5:] | .[].tagName' |
+          while read -r tag; do gh release delete "$tag" --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag; done
