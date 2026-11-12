@@ -30,7 +30,7 @@ export function RankingWindow({ players, available }: { players: RankedCharacter
           </thead>
           <tbody>
             {players.map((p) => (
-              <tr key={p.name} className="border-t border-steel/60">
+              <tr key={p.name} className={`border-t border-steel/60 ${p.position > 5 ? "hidden md:table-row" : ""}`}>
                 <td className={`tabular py-1.5 ${p.position <= 3 ? "text-gold-bright" : "text-silver/70"}`}>{p.position}</td>
                 <td className="py-1.5 font-medium text-data-name">{p.name}</td>
                 <td className="py-1.5 text-silver/80">

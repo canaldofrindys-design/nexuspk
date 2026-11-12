@@ -12,7 +12,8 @@ import { useEffect } from "react";
  * - `data-reveal="up|left|right|zoom|fade"`: entra ao aparecer na tela. Janelas (.game-window)
  *   e painéis de vidro (.glass-panel) entram sozinhos, sem marcação.
  * - `data-tilt`: inclina em 3D seguindo o ponteiro (só mouse/caneta).
- * - `data-mouse-scope`: publica --mx/--my (-1 a 1) para as camadas que seguem o mouse.
+ * - `data-mouse-scope`: publica --mx/--my (-1 a 1) para as camadas que seguem o mouse (ou a
+ *   inclinação do aparelho, no celular).
  * - `.px-scope` / `.px-layer`: parallax por CSS; aqui só o substituto para quem não tem suporte.
  *
  * Com "reduzir movimento" ligado no sistema nada disso roda e o conteúdo aparece parado.
@@ -141,11 +142,16 @@ function setupTilt(): () => void {
   };
 }
 
-/** Camadas que seguem o mouse, com suavização (cada quadro anda 8% do caminho). */
+/**
+ * Camadas que seguem o mouse, com suavização (cada quadro anda 8% do caminho). No celular, onde
+ * não há mouse, a mesma camada segue a inclinação do aparelho (giroscópio), a partir da posição em
+ * que a pessoa segura o telefone. No iPhone o Safari só libera o giroscópio com permissão
+ * explícita; sem ela simplesmente não chegam eventos e a cena fica parada.
+ */
 function setupMouseScopes(): () => void {
-  if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return () => {};
   const scopes = Array.from(document.querySelectorAll<HTMLElement>("[data-mouse-scope]"));
   if (!scopes.length) return () => {};
+  const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
   const state = new Map(scopes.map((s) => [s, { tx: 0, ty: 0, x: 0, y: 0 }]));
   let frame = 0;
 
@@ -161,21 +167,47 @@ function setupMouseScopes(): () => void {
     });
     if (moving) frame = requestAnimationFrame(tick);
   };
+  const clamp = (v: number) => Math.max(-1, Math.min(1, v));
 
-  const onMove = (e: PointerEvent) => {
-    if (e.pointerType === "touch") return;
+  if (finePointer) {
+    const onMove = (e: PointerEvent) => {
+      if (e.pointerType === "touch") return;
+      state.forEach((s, el) => {
+        const r = el.getBoundingClientRect();
+        if (r.bottom < 0 || r.top > window.innerHeight) return;
+        s.tx = clamp(((e.clientX - r.left) / r.width) * 2 - 1);
+        s.ty = clamp(((e.clientY - r.top) / r.height) * 2 - 1);
+      });
+      if (!frame) frame = requestAnimationFrame(tick);
+    };
+    window.addEventListener("pointermove", onMove, { passive: true });
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }
+
+  // Giroscópio: ±18° de inclinação em relação à posição inicial cobrem todo o deslocamento.
+  let base: { beta: number; gamma: number } | null = null;
+  const onTilt = (e: DeviceOrientationEvent) => {
+    if (e.beta == null || e.gamma == null) return;
+    base ??= { beta: e.beta, gamma: e.gamma };
+    // A posição "neutra" acompanha devagar o jeito como a pessoa segura o aparelho.
+    base.beta += (e.beta - base.beta) * 0.01;
+    base.gamma += (e.gamma - base.gamma) * 0.01;
+    const tx = clamp((e.gamma - base.gamma) / 18);
+    const ty = clamp((e.beta - base.beta) / 18);
     state.forEach((s, el) => {
       const r = el.getBoundingClientRect();
       if (r.bottom < 0 || r.top > window.innerHeight) return;
-      s.tx = Math.max(-1, Math.min(1, ((e.clientX - r.left) / r.width) * 2 - 1));
-      s.ty = Math.max(-1, Math.min(1, ((e.clientY - r.top) / r.height) * 2 - 1));
+      s.tx = tx;
+      s.ty = ty;
     });
     if (!frame) frame = requestAnimationFrame(tick);
   };
-
-  window.addEventListener("pointermove", onMove, { passive: true });
+  window.addEventListener("deviceorientation", onTilt);
   return () => {
-    window.removeEventListener("pointermove", onMove);
+    window.removeEventListener("deviceorientation", onTilt);
     if (frame) cancelAnimationFrame(frame);
   };
 }

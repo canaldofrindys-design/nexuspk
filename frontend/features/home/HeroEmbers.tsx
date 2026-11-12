@@ -65,7 +65,8 @@ export function HeroEmbers() {
       canvas.width = Math.round(w * dpr);
       canvas.height = Math.round(h * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const count = Math.round(Math.min(90, (w * h) / 14000));
+      // Tela estreita é alta e fina: garante um mínimo para a cena não ficar vazia no celular.
+      const count = Math.round(Math.min(90, Math.max(w < 768 ? 38 : 0, (w * h) / 14000)));
       embers = Array.from({ length: count }, () => spawn(true));
     };
 

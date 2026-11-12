@@ -13,14 +13,16 @@ type Props = Omit<ComponentProps<typeof Link>, "className"> & {
   size?: "md" | "lg";
   /** Reflexo de luz que atravessa o botão de tempos em tempos (chamadas principais). */
   shine?: boolean;
+  /** Classes extras (ex.: largura total no celular). */
+  className?: string;
 };
 
-export function ButtonLink({ variant = "gold", icon, size = "md", shine = false, children, ...rest }: Props) {
+export function ButtonLink({ variant = "gold", icon, size = "md", shine = false, className = "", children, ...rest }: Props) {
   const sizing = size === "lg" ? "px-5 py-2.5 text-base" : "px-3.5 py-1.5 text-sm";
   return (
     <Link
       {...rest}
-      className={`btn-glow ${shine ? "btn-shine " : ""}inline-flex items-center gap-2 rounded-sm font-semibold ${sizing} ${variants[variant]}`}
+      className={`btn-glow ${shine ? "btn-shine " : ""}inline-flex items-center gap-2 rounded-sm font-semibold ${sizing} ${variants[variant]} ${className}`}
     >
       {icon}
       {children}
