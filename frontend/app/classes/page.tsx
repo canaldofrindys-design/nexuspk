@@ -38,33 +38,17 @@ export default function ClassesPage() {
             <li key={c.code} id={String(c.code)} className="min-w-0 scroll-mt-24">
               <GameWindow title={c.name} className="h-full">
                 <div className="flex flex-col gap-2">
-                  <div className="relative flex h-60 items-end justify-center">
-                    <span
-                      aria-hidden
-                      className="absolute inset-x-4 bottom-0 h-12 rounded-[50%] bg-[radial-gradient(closest-side,rgb(95_178_255/0.35),transparent)]"
+                  <div className="relative mx-auto w-full max-w-[240px] overflow-hidden border border-gold/30 shadow-[inset_0_0_24px_rgb(0_0_0/0.6)]">
+                    <Image
+                      src={c.card}
+                      alt={`Ilustração da classe ${c.name}`}
+                      width={197}
+                      height={265}
+                      sizes="240px"
+                      priority={i < 5}
+                      className="aspect-[197/265] h-auto w-full object-cover"
                     />
-                    {"art" in c ? (
-                      <Image
-                        src={c.art}
-                        alt={`Arte oficial da classe ${c.name}`}
-                        width={300}
-                        height={480}
-                        sizes="240px"
-                        priority={i < 5}
-                        className="relative h-60 w-auto max-w-full object-contain drop-shadow-[0_8px_16px_rgb(0_0_0/0.6)]"
-                      />
-                    ) : (
-                      <div className="relative mb-6 flex flex-col items-center gap-2 text-center">
-                        <Image
-                          src={c.icon}
-                          alt={`Ícone da classe ${c.name}`}
-                          width={84}
-                          height={84}
-                          className="size-24 rounded-full border border-gold/50 object-cover shadow-[0_0_24px_rgb(95_178_255/0.35)]"
-                        />
-                        <span className="text-xs text-silver/50">Ilustração em breve</span>
-                      </div>
-                    )}
+                    <span aria-hidden className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-night/80 to-transparent" />
                   </div>
                   <div className="gold-rule my-1" />
                   <p className="flex items-center gap-2 text-sm text-silver/85">
