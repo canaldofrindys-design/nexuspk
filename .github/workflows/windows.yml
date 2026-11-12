@@ -187,6 +187,10 @@ jobs:
           VERSION: ${{ needs.package.outputs.version }}
         run: |
           if gh release view "build-$VERSION" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then echo "build-$VERSION já existe"; exit 0; fi
+          # Só publica se este commit ainda for o topo da main. Se outro merge chegou enquanto este rodava,
+          # a execução dele publica; assim a release mais recente é sempre a da main mais nova.
+          head=$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)
+          if [ "$head" != "$GITHUB_SHA" ]; then echo "a main já está em $head; esta execução não publica"; exit 0; fi
           gh release create "build-$VERSION" pacote/* --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
             --title "Portal $VERSION (main)" --notes "Pacote gerado da main ($GITHUB_SHA). A VPS instala sozinha com o Update-Portal.ps1. Veja docs/DEPLOYMENT.md."
       - name: Apagar builds antigos (fica com os 5 mais novos)
