@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ClassBadge } from "@/components/ui/ClassBadge";
 import { GameWindow } from "@/components/ui/GameWindow";
 import type { RankedCharacter } from "./types";
 
@@ -32,7 +33,9 @@ export function RankingWindow({ players, available }: { players: RankedCharacter
               <tr key={p.name} className="border-t border-steel/60">
                 <td className={`tabular py-1.5 ${p.position <= 3 ? "text-gold-bright" : "text-silver/70"}`}>{p.position}</td>
                 <td className="py-1.5 font-medium text-data-name">{p.name}</td>
-                <td className="py-1.5 text-silver/80">{p.className}</td>
+                <td className="py-1.5 text-silver/80">
+                  <ClassBadge code={p.classCode} name={p.className} />
+                </td>
                 <td className="tabular py-1.5 text-right text-data-info">{p.level}</td>
               </tr>
             ))}

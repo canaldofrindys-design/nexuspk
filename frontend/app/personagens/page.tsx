@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { ClassBadge } from "@/components/ui/ClassBadge";
 import { GameWindow } from "@/components/ui/GameWindow";
 import type { SearchResult } from "@/features/ranking/types";
 import { apiSend } from "@/services/api";
@@ -36,7 +37,9 @@ async function Results({ searchParams }: { searchParams: Promise<{ q?: string | 
                 {c.name}
               </Link>
             </td>
-            <td className="py-1.5 text-silver/80">{c.className}</td>
+            <td className="py-1.5 text-silver/80">
+              <ClassBadge code={c.classCode} name={c.className} />
+            </td>
             <td className="tabular py-1.5 text-right text-data-info">{c.level}</td>
             <td className="tabular py-1.5 text-right text-silver/70">{c.position}º</td>
           </tr>
