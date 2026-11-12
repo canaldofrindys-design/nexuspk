@@ -123,9 +123,11 @@ async function Body() {
               <dt>Jogadores online</dt>
               <dd className="tabular text-right text-data-info">{s.playersOnline ?? "—"}</dd>
             </dl>
-            {s.playersOnline === null ? (
-              <p className="mt-2 text-xs text-silver/60">O servidor do jogo ainda não publica quantos jogadores estão conectados, então o portal não mostra esse número.</p>
-            ) : null}
+            <p className="mt-2 text-xs text-silver/60">
+              {s.playersOnline === null
+                ? "Sem número enquanto a contagem não está ligada ou o servidor não responde."
+                : "Jogadores conectados ao servidor do jogo agora. Atualiza a cada 30 segundos."}
+            </p>
           </GameWindow>
           <GameWindow title="Próximas manutenções e avisos">
             {upcoming.length === 0 ? (

@@ -130,6 +130,29 @@ Depois:
 Restart-Service NexusPortalApi, NexusPortalWorker
 ```
 
+### Jogadores online
+
+O banco do jogo não guarda quem está conectado: `inuse` nas tabelas de conta e `ClanDB.CT` ficam em 1 depois que a conta sai (conferido em 11/11/2026). A fonte real é o próprio servidor do jogo: cada jogador mantém uma conexão aberta na porta dele. O portal roda na mesma máquina e conta essas conexões, sem ler nada do que passa por elas. Conexões vindas da própria VPS (o teste de porta do portal) não contam.
+
+A contagem vem **desligada**. Antes de ligar, confira que o número bate com o "Jogadores Online" da janela do servidor, com 0, com 1 conta dentro do jogo e logo depois que ela sair:
+
+```powershell
+$c = Get-NetTCPConnection -LocalPort 35002 -State Established -ErrorAction SilentlyContinue | Where-Object { $_.RemoteAddress -notin '127.0.0.1', '::1' }
+"conexoes: $(@($c).Count)   enderecos: $(@($c.RemoteAddress | Sort-Object -Unique).Count)"
+```
+
+- Se **conexões** bater com a janela, use `"CountBy": "Connections"`.
+- Se conexões der mais (o cliente abre mais de uma) e **endereços** bater, use `"CountBy": "Addresses"`. Nesse modo, duas pessoas na mesma internet contam como uma.
+- Se nenhum dos dois bater, deixe desligado.
+
+Para ligar, acrescente ao `"GameServer"` do `portal.json` e reinicie a API:
+
+```json
+"OnlinePlayers": { "Enabled": true, "CountBy": "Connections" }
+```
+
+`Port` é opcional: sem ele, vale a porta do primeiro endereço de `Targets`. O número só aparece com o servidor respondendo ao teste de porta; fora do ar, o portal mostra "—".
+
 ## 5. Primeiro superadministrador
 
 ```powershell
