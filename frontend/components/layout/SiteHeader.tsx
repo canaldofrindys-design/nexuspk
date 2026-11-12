@@ -1,21 +1,20 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import { GuestLinks, HeaderAccount, MobileAccount, MobileGuestLinks } from "./HeaderAccount";
-import { Crest } from "./Crest";
 import { MobileMenu } from "./MobileMenu";
 import { mainNavigation } from "./navigation";
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-40 border-b border-bronze/50 bg-night/90 backdrop-blur">
-      <div className="relative mx-auto flex h-16 max-w-7xl items-center justify-between gap-6 px-4">
-        <Link href="/" className="flex items-center gap-2" aria-label="NexusPK, página inicial">
-          <Crest />
-          <span className="font-display text-xl tracking-widest text-gold-bright">NEXUSPK</span>
+    <header className="sticky top-0 z-40 border-b border-gold/30 bg-night/80 backdrop-blur-md">
+      <div className="relative mx-auto flex h-[68px] max-w-7xl items-center justify-between gap-6 px-4">
+        <Link href="/" className="flex shrink-0 items-center" aria-label="NexusPK, página inicial">
+          <Image src="/brand/logo-nexuspk.webp" alt="NexusPK" width={400} height={161} priority className="h-11 w-auto drop-shadow-[0_0_12px_rgb(95_178_255/0.35)]" />
         </Link>
         <nav aria-label="Principal" className="hidden gap-5 text-sm text-silver lg:flex">
           {mainNavigation.map((item) => (
-            <Link key={item.href} href={item.href} className="transition-colors hover:text-gold-bright">
+            <Link key={item.href} href={item.href} className="py-1 tracking-wide transition-colors hover:text-gold-bright">
               {item.label}
             </Link>
           ))}

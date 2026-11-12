@@ -13,7 +13,7 @@ const pad = (n: number) => String(n).padStart(2, "0");
  * Contagem regressiva até `target`. O HTML do servidor já vem com o valor do momento da página;
  * no navegador o número segue o relógio local a cada segundo.
  */
-export function Countdown({ target, label, serverNow }: { target: string; label: string; serverNow: string }) {
+export function Countdown({ target, label, serverNow, boxes = false }: { target: string; label: string; serverNow: string; boxes?: boolean }) {
   const end = new Date(target).getTime();
   const [now, setNow] = useState(() => new Date(serverNow).getTime());
   useEffect(() => {
@@ -29,6 +29,27 @@ export function Countdown({ target, label, serverNow }: { target: string; label:
   const left = end - now;
   if (left <= 0) return <p className="text-sm text-silver/70">{label}: agora.</p>;
   const p = parts(left);
+  if (boxes) {
+    const cells = [
+      ...(p.d > 0 ? [{ v: p.d, u: p.d === 1 ? "dia" : "dias" }] : []),
+      { v: p.h, u: "horas" },
+      { v: p.m, u: "min" },
+      { v: p.s, u: "seg" },
+    ];
+    return (
+      <div className="flex items-center gap-3">
+        <span className="text-sm text-silver/80">{label}</span>
+        <div className="flex gap-1.5" role="timer" aria-live="off">
+          {cells.map((c) => (
+            <span key={c.u} className="flex min-w-12 flex-col items-center border border-gold/50 bg-night/70 px-2 py-1">
+              <span className="tabular font-display text-xl leading-none text-gold-bright">{pad(c.v)}</span>
+              <span className="mt-0.5 text-[10px] uppercase text-silver/60">{c.u}</span>
+            </span>
+          ))}
+        </div>
+      </div>
+    );
+  }
   return (
     <p className="text-sm text-silver">
       {label}{" "}
