@@ -39,7 +39,7 @@ async function Body({ searchParams }: { searchParams: Promise<{ senha?: string }
               <Row label="Contas" value={n(d.game?.accounts)} note="Soma das tabelas de conta do jogo" />
               <Row label="Personagens" value={n(d.game?.characters)} note="Nomes distintos na LevelTable" />
               <Row label="Servidor" value={<span className={server === "Online" ? "text-data-ok" : server === "Offline" ? "text-data-bad" : server === "Parcial" ? "text-data-name" : "text-silver/70"}>{server}</span>} />
-              <Row label="Jogadores online" value={d.server.playersOnline ?? <span className="text-silver/60">sem fonte</span>} note="O jogo ainda não publica esse número" />
+              <Row label="Jogadores online" value={d.server.playersOnline ?? <span className="text-silver/60">—</span>} note="Contas com inuse = 1 no banco do jogo, só com o servidor no ar" />
             </tbody>
           </table>
         </GameWindow>

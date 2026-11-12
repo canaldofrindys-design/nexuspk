@@ -21,6 +21,7 @@ public static class DependencyInjection
             .ValidateOnStart();
 
         services.AddSingleton<Priston.Application.Admin.IGameStatsReader, Admin.GameStatsReader>();
+        services.AddSingleton<Priston.Application.Server.IOnlinePlayersReader, Admin.OnlinePlayersReader>();
         services.AddSingleton<IGameDbConnectionFactory, GameDbConnectionFactory>();
         services.AddSingleton<ILevelRankingReader, LevelRankingReader>();
         services.AddSingleton<IPvpRankingReader, PvpRankingReader>();

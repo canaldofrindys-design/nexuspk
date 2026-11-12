@@ -54,7 +54,7 @@ public sealed record StatusReport(
 
 /// <summary>
 /// Página de status: teste de porta ao vivo, histórico gravado pelo Worker e avisos da equipe.
-/// Jogadores online seguem sem fonte (nulo) até o servidor do jogo publicar esse número.
+/// Jogadores online: contas em uso no banco do jogo, só com o servidor no ar (ver <see cref="ServerStatus"/>).
 /// </summary>
 public sealed class StatusPageService(IServerProbe probe, IServerProbeStore history, IServerNoticeStore notices, IMemoryCache cache, TimeProvider clock)
 {
@@ -99,7 +99,9 @@ public sealed class StatusPageService(IServerProbe probe, IServerProbeStore hist
             .ToList();
         var maintenance = publicNotices.Any(n => n.Active && n.Kind == "manutencao");
 
-        return new StatusReport(live.Availability, live.CheckedAtUtc, targets, since, null, maintenance, publicNotices, now);
+        var players = (await probe.GetAsync(ct).ConfigureAwait(false)).PlayersOnline;
+
+        return new StatusReport(live.Availability, live.CheckedAtUtc, targets, since, players, maintenance, publicNotices, now);
     }
 
     /// <summary>Percentual de amostras online. Sem amostras, null: o portal não afirma disponibilidade que não mediu.</summary>

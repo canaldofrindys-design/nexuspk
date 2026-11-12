@@ -40,16 +40,46 @@ public sealed class GameServerTarget
 internal sealed class GameServerProbe(
     IOptions<GameServerOptions> options,
     IMemoryCache cache,
-    TimeProvider clock) : IServerProbe
+    TimeProvider clock,
+    IOnlinePlayersReader? players = null) : IServerProbe
 {
     private static readonly TimeSpan CacheDuration = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan PlayersCacheDuration = TimeSpan.FromSeconds(60);
 
     public IReadOnlyList<ProbeTarget> Targets => Resolve().Select(t => new ProbeTarget(t.Key, t.Name)).ToList();
 
     public async Task<ServerStatus> GetAsync(CancellationToken cancellationToken)
     {
         var s = await GetSnapshotAsync(cancellationToken).ConfigureAwait(false);
-        return new ServerStatus(s.Availability, s.CheckedAtUtc, null);
+        // Com o servidor fora do ar, "inuse" pode ter ficado marcado de antes: o portal não mostra número.
+        var count = s.Availability is ServerAvailability.Online or ServerAvailability.Partial
+            ? await CountPlayersAsync(cancellationToken).ConfigureAwait(false)
+            : null;
+        return new ServerStatus(s.Availability, s.CheckedAtUtc, count);
+    }
+
+    private async Task<int?> CountPlayersAsync(CancellationToken ct)
+    {
+        if (players is null)
+        {
+            return null;
+        }
+
+        return await cache.GetOrCreateAsync("server:players", async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = PlayersCacheDuration;
+            try
+            {
+                return (int?)await players.CountAsync(ct).ConfigureAwait(false);
+            }
+#pragma warning disable CA1031 // Sem o banco do jogo, o status continua; só sem o número de jogadores.
+            catch (Exception ex) when (ex is not OperationCanceledException)
+#pragma warning restore CA1031
+            {
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(10);
+                return null;
+            }
+        }).ConfigureAwait(false);
     }
 
     public async Task<ServerSnapshot> GetSnapshotAsync(CancellationToken ct)

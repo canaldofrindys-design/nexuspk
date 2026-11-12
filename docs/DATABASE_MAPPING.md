@@ -61,7 +61,7 @@ Bancos que existem no servidor e **não** foram extraídos: BattleEvents, Billin
 | Ranking PvP | `[UserDB].dbo.BattlePoints` | `Nick, BPs, DPs, BPsSemanal, KillsPvP, MortesPvP, PontosPvP, IsReiPvP, SodSemanal` | Confirmado (usado hoje) |
 | Excluir GMs do ranking | `[UserDB].dbo.GameMasters` | `Account, GameMasterLevel` | Confirmado |
 | VIP | `[ServerDB].dbo.Vip` | `AccountID, PlayerName, IdVip, DateStart, DateEnd` | Confirmado |
-| Jogadores online | `GameLogDB.GameOnRecord` x `GameOutRecord` por `SNo`; ou `<letra>GameUser.inuse` | `SNo, UserID, LogonTime / LogoutTime` | Existe, semântica a confirmar |
+| Jogadores online | `<letra>GameUser.inuse` (`'1'` = conta no jogo) | `inuse` | Em uso desde 11/11/2026: com uma conta no jogo, `inuse = '1'` deu 1 (e a tabela `ClanDB.CT` também). A volta para 0 ao sair ainda não foi conferida |
 | Status do servidor (online/offline) | Teste de porta TCP do servidor de jogo (`GAME_SERVER_IP`/`PORT` do admin antigo) | — | Sem tabela; verificação ativa pelo Worker |
 | Coins | `[CoinShopDB].dbo.UserInfo` | `UserID, UserCoin, LastChange` | Confirmado (fora do escopo inicial) |
 | Histórico diário/semanal/mensal | — | — | **Sem fonte**: snapshots no banco do portal, a partir da data de implantação |
@@ -150,7 +150,7 @@ Bancos restantes (schema 2): `KLVN` (site mais antigo: Accounts, Logout, Tickets
 
 Conclusão:
 - **EXP atual só existe nos arquivos `.dat` dos personagens.** Não há fonte SQL viva.
-- **Jogadores online não têm fonte SQL viva.** O status do servidor será feito por teste de porta.
+- **Jogadores online:** `GameOnRecord`/`GameOutRecord` não servem (pararam em 2022). Desde 11/11/2026 o portal conta `inuse = '1'` nas tabelas de conta, só com o servidor respondendo no teste de porta.
 - Opções para EXP e online: (a) ranking só por nível na v1; (b) o servidor do jogo passar a gravar nível, EXP e online numa tabela (exige alterar o código-fonte do servidor); (c) o Worker ler os `.dat` (exige o formato do arquivo, que está no código-fonte).
 
 ## 9. Pendências

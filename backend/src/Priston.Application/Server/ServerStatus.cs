@@ -12,10 +12,16 @@ public enum ServerAvailability
 }
 
 /// <summary>
-/// <paramref name="PlayersOnline"/> é nulo enquanto não houver fonte real
-/// (DATABASE_MAPPING.md, seção 8).
+/// <paramref name="PlayersOnline"/>: contas com <c>inuse = '1'</c> nas tabelas de conta do jogo, só com o servidor
+/// no ar. Nulo sem servidor configurado, com ele fora do ar ou se o banco não responder (DATABASE_MAPPING.md, seção 8).
 /// </summary>
 public sealed record ServerStatus(ServerAvailability Availability, DateTimeOffset? CheckedAtUtc, int? PlayersOnline);
+
+/// <summary>Contas marcadas como em uso pelo servidor do jogo (<c>&lt;letra&gt;GameUser.inuse = '1'</c>).</summary>
+public interface IOnlinePlayersReader
+{
+    Task<int> CountAsync(CancellationToken ct);
+}
 
 public interface IServerStatusProvider
 {
