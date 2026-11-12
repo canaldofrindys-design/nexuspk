@@ -4,7 +4,7 @@ import { formatDateTime } from "./format";
 import type { HomeEventItem } from "./types";
 
 export function AgendaWindow({ active, upcoming }: { active: HomeEventItem[]; upcoming: HomeEventItem[] }) {
-  const rows = [...active.map((e) => ({ ...e, live: true })), ...upcoming.map((e) => ({ ...e, live: false }))];
+  const rows = [...active.map((e) => ({ ...e, live: true })), ...[...upcoming].sort((a, b) => a.startsAtUtc.localeCompare(b.startsAtUtc)).map((e) => ({ ...e, live: false }))];
   return (
     <GameWindow title="Agenda de eventos">
       {rows.length === 0 ? (

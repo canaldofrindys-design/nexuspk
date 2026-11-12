@@ -1,19 +1,19 @@
 @import "tailwindcss";
 
 /*
- * Identidade NexusPK — fantasia medieval, noite azul, metal dourado e prata.
+ * Identidade NexusPK — couro escuro, bronze e metal dourado, como as janelas do jogo.
  * Cores de dado (ok/info/alerta/erro) são reservadas para informação, nunca para enfeite.
  */
 @theme {
-  --color-night: #05070c;
-  --color-abyss: #0a1020;
-  --color-medieval: #14213d;
-  --color-steel: #24324f;
+  --color-night: #0e0b08;
+  --color-abyss: #16110c;
+  --color-medieval: #2a1f13;
+  --color-steel: #3a2c1c;
   --color-arcane: #5cb8ff;
   --color-gold: #d9b26a;
   --color-gold-bright: #f3d892;
   --color-bronze: #8a6a3a;
-  --color-silver: #c9d1dc;
+  --color-silver: #e6dccb;
   --color-amethyst: #9b6dff;
   --color-cyan-glow: #46e4f0;
 
@@ -32,7 +32,7 @@ html {
 
 body {
   background:
-    radial-gradient(1200px 600px at 50% -10%, rgb(20 33 61 / 0.55), transparent 70%),
+    radial-gradient(1200px 600px at 50% -10%, rgb(58 42 22 / 0.45), transparent 70%),
     var(--color-night);
   color: var(--color-silver);
   font-family: var(--font-sans);
@@ -52,7 +52,7 @@ body {
   /* Janela do jogo: base de todos os blocos do portal. */
   .game-window {
     position: relative;
-    background: linear-gradient(180deg, rgb(14 22 40 / 0.96), rgb(7 10 18 / 0.98));
+    background: linear-gradient(180deg, rgb(24 18 12 / 0.97), rgb(16 12 8 / 0.98));
     border: 1px solid var(--color-bronze);
     box-shadow:
       inset 0 0 0 1px #000,
@@ -62,8 +62,14 @@ body {
   .game-window__title {
     font-family: var(--font-display);
     letter-spacing: 0.04em;
-    background: linear-gradient(180deg, rgb(36 50 79 / 0.9), rgb(14 22 40 / 0.9));
+    background: linear-gradient(180deg, rgb(48 35 20 / 0.95), rgb(26 19 12 / 0.95));
     border-bottom: 1px solid rgb(138 106 58 / 0.7);
+  }
+
+  /* Abas e links da barra de título em fonte de texto: versalete só no título. */
+  .game-window__actions {
+    font-family: var(--font-sans);
+    letter-spacing: 0;
   }
 
   .btn-glow {
