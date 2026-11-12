@@ -1,22 +1,33 @@
-import { LogIn, UserPlus } from "lucide-react";
+import Link from "next/link";
 import { ButtonLink } from "@/components/ui/ButtonLink";
 import { GameWindow } from "@/components/ui/GameWindow";
+import { LoginForm } from "@/features/auth/forms";
+import { getCurrentPlayer } from "@/features/auth/session";
 
-export function AccountWindow() {
+/** Login direto da home; com sessão aberta, leva ao painel. */
+export async function AccountWindow() {
+  const player = await getCurrentPlayer();
+  if (player) {
+    return (
+      <GameWindow title="Conta">
+        <p className="mb-3 text-sm">
+          Conectado como <span className="font-medium text-data-name">{player.login}</span>.
+        </p>
+        <ButtonLink href="/painel">Abrir painel</ButtonLink>
+      </GameWindow>
+    );
+  }
   return (
     <GameWindow title="Conta">
-      <p className="mb-3 text-sm text-silver/80">Use a mesma conta do jogo para entrar no painel.</p>
-      <div className="flex flex-wrap gap-2">
-        <ButtonLink href="/login" variant="arcane" icon={<LogIn className="size-4" aria-hidden />}>
-          Entrar
-        </ButtonLink>
-        <ButtonLink href="/criar-conta" variant="ghost" icon={<UserPlus className="size-4" aria-hidden />}>
+      <LoginForm next="/painel" />
+      <div className="mt-3 flex justify-between gap-2 text-sm">
+        <Link href="/criar-conta" className="text-gold hover:underline">
           Criar conta
-        </ButtonLink>
+        </Link>
+        <Link href="/recuperar-conta" className="text-silver/70 hover:text-gold hover:underline">
+          Esqueci minha senha
+        </Link>
       </div>
-      <a href="/recuperar-conta" className="mt-3 inline-block text-xs text-silver/70 underline-offset-2 hover:text-gold hover:underline">
-        Esqueci minha senha
-      </a>
     </GameWindow>
   );
 }

@@ -14,11 +14,11 @@ export function GameWindow({ title, actions, children, className = "", as: Tag =
   const id = `win-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
   return (
     <Tag aria-labelledby={id} className={`game-window ${className}`}>
-      <header className="game-window__title flex items-center justify-between gap-3 px-3 py-2">
+      <header className="game-window__title flex flex-wrap items-center justify-between gap-3 px-3 py-2">
         <h2 id={id} className="text-sm text-gold-bright">
           {title}
         </h2>
-        {actions}
+        {actions ? <div className="game-window__actions">{actions}</div> : null}
       </header>
       <div className="p-3">{children}</div>
     </Tag>

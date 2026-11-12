@@ -7,16 +7,39 @@ import { eventLabel, newsLabel } from "@/features/content/labels";
 import { formatDateTime } from "./format";
 import type { HomeEventItem, HomeNewsItem } from "./types";
 
-type Tab = "news" | "events";
+type Tab = "all" | "news" | "events";
 
 const eventTag = "border-amethyst/60 text-amethyst";
 
+type Row = { key: string; href: string; tag: string; tone: string; title: string; at: string };
+
 export function NoticeBoard({ news, events }: { news: HomeNewsItem[]; events: HomeEventItem[] }) {
-  const [tab, setTab] = useState<Tab>("news");
+  const [tab, setTab] = useState<Tab>("all");
   const tabs: { id: Tab; label: string }[] = [
+    { id: "all", label: "Tudo" },
     { id: "news", label: "Notícias" },
     { id: "events", label: "Eventos" },
   ];
+
+  const newsRows: Row[] = news.map((n) => ({
+    key: `n-${n.slug}`,
+    href: `/noticias/${n.slug}`,
+    tag: newsLabel(n.category).label,
+    tone: newsLabel(n.category).tone,
+    title: n.title,
+    at: n.publishedAtUtc,
+  }));
+  const eventRows: Row[] = events.map((e) => ({
+    key: `e-${e.slug}`,
+    href: `/eventos/${e.slug}`,
+    tag: eventLabel(e.category),
+    tone: eventTag,
+    title: e.name,
+    at: e.startsAtUtc,
+  }));
+  const rows =
+    tab === "news" ? newsRows : tab === "events" ? eventRows : [...newsRows, ...eventRows].sort((a, b) => b.at.localeCompare(a.at)).slice(0, 6);
+  const empty = { all: "Nenhum aviso publicado.", news: "Nenhuma notícia publicada.", events: "Nenhum evento agendado." }[tab];
 
   return (
     <GameWindow
@@ -30,7 +53,7 @@ export function NoticeBoard({ news, events }: { news: HomeNewsItem[]; events: Ho
               type="button"
               aria-selected={tab === t.id}
               onClick={() => setTab(t.id)}
-              className={`px-2 py-0.5 text-xs ${tab === t.id ? "bg-bronze/40 text-gold-bright" : "text-silver/70 hover:text-gold"}`}
+              className={`border px-2 py-0.5 text-xs ${tab === t.id ? "border-bronze bg-medieval text-gold-bright" : "border-transparent text-silver/70 hover:text-gold"}`}
             >
               {t.label}
             </button>
@@ -39,38 +62,26 @@ export function NoticeBoard({ news, events }: { news: HomeNewsItem[]; events: Ho
       }
     >
       <ul role="tabpanel" className="divide-y divide-steel/60 text-sm">
-        {tab === "news" &&
-          (news.length === 0 ? (
-            <li className="py-2 text-silver/70">Nenhuma notícia publicada.</li>
-          ) : (
-            news.map((n) => (
-              <li key={n.slug} className="flex items-baseline gap-2 py-2">
-                <span className={`shrink-0 border px-1.5 text-[11px] ${newsLabel(n.category).tone}`}>{newsLabel(n.category).label}</span>
-                <Link href={`/noticias/${n.slug}`} className="truncate hover:text-gold">
-                  {n.title}
-                </Link>
-                <span className="tabular ml-auto shrink-0 text-xs text-silver/60">{formatDateTime(n.publishedAtUtc)}</span>
-              </li>
-            ))
-          ))}
-        {tab === "events" &&
-          (events.length === 0 ? (
-            <li className="py-2 text-silver/70">Nenhum evento agendado.</li>
-          ) : (
-            events.map((e) => (
-              <li key={e.slug} className="flex items-baseline gap-2 py-2">
-                <span className={`shrink-0 border px-1.5 text-[11px] ${eventTag}`}>{eventLabel(e.category)}</span>
-                <Link href={`/eventos/${e.slug}`} className="truncate hover:text-gold">
-                  {e.name}
-                </Link>
-                <span className="tabular ml-auto shrink-0 text-xs text-silver/60">{formatDateTime(e.startsAtUtc)}</span>
-              </li>
-            ))
-          ))}
+        {rows.length === 0 ? (
+          <li className="py-2 text-silver/70">{empty}</li>
+        ) : (
+          rows.map((r) => (
+            <li key={r.key} className="flex items-baseline gap-2 py-2">
+              <span className={`w-24 shrink-0 border px-1.5 text-center text-[11px] ${r.tone}`}>{r.tag}</span>
+              <Link href={r.href} className="min-w-0 hover:text-gold sm:truncate">
+                {r.title}
+              </Link>
+              <span className="tabular ml-auto shrink-0 text-xs text-silver/60">{formatDateTime(r.at)}</span>
+            </li>
+          ))
+        )}
       </ul>
-      <p className="mt-2 text-right text-xs">
-        <Link href={tab === "news" ? "/noticias" : "/eventos"} className="text-arcane hover:underline">
-          {tab === "news" ? "Todas as notícias" : "Agenda completa"}
+      <p className="mt-2 flex justify-end gap-4 text-xs">
+        <Link href="/noticias" className="text-arcane hover:underline">
+          Todas as notícias
+        </Link>
+        <Link href="/eventos" className="text-arcane hover:underline">
+          Todos os eventos
         </Link>
       </p>
     </GameWindow>

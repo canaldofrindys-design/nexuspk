@@ -82,7 +82,7 @@ export function LoginForm({ next }: { next: string }) {
       <Field label="Login" name="login" autoComplete="username" required maxLength={32} defaultValue={state.values?.login} />
       <Field label="Senha" name="password" type="password" autoComplete="current-password" required maxLength={32} />
       <Turnstile />
-      <SubmitButton variant="arcane">Entrar</SubmitButton>
+      <SubmitButton>Entrar</SubmitButton>
     </form>
   );
 }
