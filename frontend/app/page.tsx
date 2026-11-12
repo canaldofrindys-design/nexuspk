@@ -1,7 +1,8 @@
 import { Suspense } from "react";
 import { AccountWindow } from "@/features/home/AccountWindow";
 import { AgendaWindow } from "@/features/home/AgendaWindow";
-import { HomeHighlight } from "@/features/home/HomeHighlight";
+import { ClassShowcase } from "@/features/home/ClassShowcase";
+import { HomeHero } from "@/features/home/HomeHero";
 import { NoticeBoard } from "@/features/home/NoticeBoard";
 import { RankingWindow } from "@/features/home/RankingWindow";
 import { ServerSheet } from "@/features/home/ServerSheet";
@@ -10,7 +11,7 @@ import { loadHome } from "@/features/home/loadHome";
 import { connection } from "next/server";
 
 /**
- * Home em formato de portal: destaque curto e, abaixo, três colunas de janelas.
+ * Home: abertura com o cenário do castelo e, abaixo, três colunas de janelas e a vitrine de classes.
  * No celular as colunas viram uma lista na ordem: conta, avisos, agenda, ranking, servidor.
  */
 async function Portal() {
@@ -18,9 +19,9 @@ async function Portal() {
   const home = await loadHome();
   return (
     <>
-      <HomeHighlight home={home} />
-      <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-6">
-        <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[270px_1fr_320px] lg:items-start">
+      <HomeHero home={home} />
+      <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 pt-0 pb-6">
+        <div className="relative z-10 -mt-6 flex flex-col gap-4 lg:grid lg:grid-cols-[270px_1fr_320px] lg:items-start">
           <div className="contents lg:flex lg:flex-col lg:gap-4">
             <div className="order-1 lg:order-none">
               <AccountWindow />
@@ -41,6 +42,7 @@ async function Portal() {
             <RankingWindow players={home?.topPlayers ?? []} available={home?.rankingAvailable ?? false} />
           </div>
         </div>
+        <ClassShowcase />
         {home && <ServerSheet server={home.server} />}
       </div>
     </>

@@ -1,16 +1,13 @@
+import Image from "next/image";
 import Link from "next/link";
-import { Crest } from "./Crest";
 import { footerColumns } from "./navigation";
 
 export function SiteFooter() {
   return (
-    <footer className="mt-8 border-t border-bronze/40 bg-abyss/60">
+    <footer className="mt-8 border-t border-gold/30 bg-abyss/70">
       <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
         <div>
-          <div className="flex items-center gap-2">
-            <Crest className="size-8" />
-            <span className="font-display tracking-widest text-gold-bright">NEXUSPK</span>
-          </div>
+          <Image src="/brand/logo-nexuspk.webp" alt="NexusPK" width={400} height={161} className="h-14 w-auto" />
           <p className="mt-3 max-w-xs text-sm text-silver/70">Servidor privado de Priston Tale. Horários em horário de Brasília.</p>
         </div>
         {footerColumns.map((col) => (

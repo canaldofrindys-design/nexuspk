@@ -24,7 +24,7 @@ export function MobileMenu({ account }: { account?: ReactNode }) {
         <nav
           id="mobile-nav"
           aria-label="Principal"
-          className="game-window absolute inset-x-0 top-16 z-50 grid gap-1 p-3"
+          className="game-window absolute inset-x-0 top-[68px] z-50 grid gap-1 p-3"
           onClick={(e) => {
             if ((e.target as HTMLElement).closest("a")) setOpen(false);
           }}
