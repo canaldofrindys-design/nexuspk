@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { ClassBadge, ClassIcon } from "@/components/ui/ClassBadge";
 import { GameWindow } from "@/components/ui/GameWindow";
 import { classes } from "@/features/home/classes";
 import { formatDate, formatNumber, formatTime } from "@/features/home/format";
@@ -75,7 +76,9 @@ function LevelTable({ data, period }: { data: RankingPage<LevelEntry>; period: P
             <td className="py-1.5">
               <CharacterLink name={c.name} />
             </td>
-            <td className="py-1.5 text-silver/80">{c.className}</td>
+            <td className="py-1.5 text-silver/80">
+              <ClassBadge code={c.classCode} name={c.className} />
+            </td>
             <td className="py-1.5 text-silver/80">{c.clan ?? "—"}</td>
             {gains ? <td className="tabular py-1.5 text-right text-data-ok">+{c.levelsGained}</td> : null}
             <td className="tabular py-1.5 text-right text-data-info">{c.level}</td>
@@ -109,7 +112,9 @@ function PvpTable({ data }: { data: RankingPage<PvpEntry> }) {
               <CharacterLink name={c.name} />
               {c.isPvpKing ? <span className="ml-2 border border-gold/60 px-1 text-xs text-gold-bright">Rei do PvP</span> : null}
             </td>
-            <td className="py-1.5 text-silver/80">{c.className}</td>
+            <td className="py-1.5 text-silver/80">
+              <ClassBadge code={c.classCode} name={c.className} />
+            </td>
             <td className="tabular py-1.5 text-right text-data-info">{formatNumber(c.battlePoints)}</td>
             <td className="tabular py-1.5 text-right text-data-info">{formatNumber(c.weeklyBattlePoints)}</td>
             <td className="tabular py-1.5 text-right text-data-info">{formatNumber(c.kills)}</td>
@@ -214,6 +219,7 @@ async function RankingBody({ searchParams }: { searchParams: Promise<Query> }) {
             tabs={[{ code: undefined, name: "Todas" }, ...classes].map((c) => ({
               href: url(s, { classCode: c.code }),
               label: c.name,
+              icon: c.code ? <ClassIcon code={c.code} name={c.name} size={20} /> : undefined,
               active: s.classCode === c.code,
             }))}
           />

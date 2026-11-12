@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { LogOut } from "lucide-react";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { ClassBadge } from "@/components/ui/ClassBadge";
 import { GameWindow } from "@/components/ui/GameWindow";
 import { logoutAction } from "@/features/auth/actions";
 import { getSessionToken } from "@/features/auth/session";
@@ -59,7 +60,9 @@ function CharactersWindow({ panel }: { panel: PlayerPanel }) {
               {characters.map((c) => (
                 <tr key={c.name} className="border-t border-steel/60">
                   <td className="py-1.5 font-medium text-data-name">{c.name}</td>
-                  <td className="py-1.5 text-silver/80">{c.className}</td>
+                  <td className="py-1.5 text-silver/80">
+                    <ClassBadge code={c.classCode} name={c.className} />
+                  </td>
                   <td className="tabular py-1.5 text-right text-data-info">{c.level}</td>
                   <td className="py-1.5 pl-4 text-silver/80">{c.clan ?? "—"}</td>
                   <td className="tabular py-1.5 text-right text-data-info">

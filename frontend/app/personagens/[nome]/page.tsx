@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { ClassIcon } from "@/components/ui/ClassBadge";
 import { GameWindow } from "@/components/ui/GameWindow";
 import { formatNumber } from "@/features/home/format";
 import type { CharacterProfile } from "@/features/ranking/types";
@@ -33,6 +34,15 @@ async function Profile({ params }: { params: Promise<{ nome: string }> }) {
   return (
     <div className="grid gap-4 md:grid-cols-2">
       <GameWindow title={c.name}>
+        <div className="mb-3 flex items-center gap-3 border-b border-steel/60 pb-3">
+          <ClassIcon code={c.classCode} name={c.className} size={64} />
+          <div>
+            <p className="font-display text-lg text-gold-bright">{c.name}</p>
+            <p className="text-sm text-silver/80">
+              {c.className} · nível <span className="tabular text-data-info">{c.level}</span>
+            </p>
+          </div>
+        </div>
         <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
           <Row label="Classe">{c.className}</Row>
           <Row label="Nível">

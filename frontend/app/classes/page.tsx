@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { ClassIcon } from "@/components/ui/ClassBadge";
 import { GameWindow } from "@/components/ui/GameWindow";
 import { classes } from "@/features/home/classes";
 
@@ -54,15 +55,22 @@ export default function ClassesPage() {
                       />
                     ) : (
                       <div className="relative mb-6 flex flex-col items-center gap-2 text-center">
-                        <span className="grid size-24 place-items-center rounded-full border border-gold/50 bg-night/60 font-display text-5xl text-gold/80 shadow-[inset_0_0_24px_rgb(95_178_255/0.25)]">
-                          {c.name[0]}
-                        </span>
+                        <Image
+                          src={c.icon}
+                          alt={`Ícone da classe ${c.name}`}
+                          width={84}
+                          height={84}
+                          className="size-24 rounded-full border border-gold/50 object-cover shadow-[0_0_24px_rgb(95_178_255/0.35)]"
+                        />
                         <span className="text-xs text-silver/50">Ilustração em breve</span>
                       </div>
                     )}
                   </div>
                   <div className="gold-rule my-1" />
-                  <p className="text-sm text-silver/85">{c.role}</p>
+                  <p className="flex items-center gap-2 text-sm text-silver/85">
+                    <ClassIcon code={c.code} name={c.name} size={28} />
+                    {c.role}
+                  </p>
                   <Link href={`/ranking?classe=${c.code}`} className="text-sm text-arcane hover:text-gold">
                     Ranking de {c.name}
                   </Link>
