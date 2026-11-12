@@ -20,7 +20,7 @@ async function Portal() {
   return (
     <>
       <HomeHero home={home} />
-      <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 pt-0 pb-6">
+      <div id="portal" className="mx-auto flex max-w-7xl scroll-mt-20 flex-col gap-4 px-4 pt-0 pb-6">
         <div className="relative z-10 -mt-6 flex flex-col gap-4 lg:grid lg:grid-cols-[270px_1fr_320px] lg:items-start">
           <div className="contents lg:flex lg:flex-col lg:gap-4">
             <div className="order-1 lg:order-none">
