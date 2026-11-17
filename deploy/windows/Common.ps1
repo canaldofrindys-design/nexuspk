@@ -282,7 +282,10 @@ function Get-SiteHost {
     $https = @($bindings | Where-Object { $_.protocol -eq 'https' })
     $chosen = $bindings[0]
     if ($https.Count -gt 0) { $chosen = $https[0] }
-    return @{ HostName = ($chosen.bindingInformation -split ':')[2]; Https = ($chosen.protocol -eq 'https') }
+    # Associação sem nome de host (site aberto pelo IP): as conferências locais usam "localhost".
+    $hostName = ($chosen.bindingInformation -split ':')[2]
+    if (-not $hostName) { $hostName = 'localhost' }
+    return @{ HostName = $hostName; Https = ($chosen.protocol -eq 'https') }
 }
 
 function Test-PortalHealth([hashtable]$Paths) {
@@ -351,7 +354,13 @@ function Write-WebConfig([hashtable]$Paths, [string]$ReleaseFolder) {
     if ($template -notmatch '__LEGACY__' -and $script:OwnWebConfigTemplate -match '__LEGACY__') { $template = $script:OwnWebConfigTemplate }
     $site = Get-SiteHost
     $rewrite = ''
-    if ($site.Https) {
+    # Com certificado autoassinado (Enable-PortalHttps.ps1 sem domínio) o http continua aberto:
+    # mandar todo mundo para o https mostraria o aviso de certificado a todos os jogadores.
+    $noRedirect = Test-Path (Join-Path $Paths.Config 'https-sem-redirecionamento')
+    if ($site.Https -and $noRedirect) {
+        Write-Warn 'https ligado sem redirecionar o http (certificado autoassinado).'
+    }
+    elseif ($site.Https) {
         if (Test-UrlRewrite) {
             $rewrite = @'
     <rewrite>

@@ -144,6 +144,17 @@ jobs:
         shell: powershell
         run: ./deploy/tests/Test-LegacyPaths.ps1 -HostName $env:PORTAL_HOST -CheckOnly
 
+      - name: Ligar https sem domínio (Enable-PortalHttps.ps1), duas vezes
+        shell: powershell
+        run: |
+          & ./deploy/windows/Enable-PortalHttps.ps1
+          & ./deploy/windows/Enable-PortalHttps.ps1
+          $code = & curl.exe -s -k -o NUL -w '%{http_code}' --max-time 60 https://localhost/
+          if ($code -ne '200') { throw "https://localhost respondeu $code" }
+          if (-not (Test-Path C:\NexusPortal\config\https-sem-redirecionamento)) { throw 'faltou a marca de certificado autoassinado' }
+          $certs = @(Get-ChildItem Cert:\LocalMachine\My | Where-Object { $_.FriendlyName -eq 'NexusPortal (autoassinado)' })
+          if ($certs.Count -ne 1) { throw "esperava 1 certificado autoassinado, achei $($certs.Count)" }
+
       - name: Logs em caso de falha
         if: failure()
         shell: powershell
