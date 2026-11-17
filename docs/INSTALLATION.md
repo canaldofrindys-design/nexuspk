@@ -165,6 +165,15 @@ C:\NexusPortal\current\deploy\Enable-PortalHttps.ps1
 C:\NexusPortal\current\deploy\Enable-PortalHttps.ps1 -HostName portal.seudominio.com -CertificateThumbprint <impressão digital>
 ```
 
+**Site antigo já na porta 80 do IP (portal em paralelo até a migração):** use um nome provisório gratuito do [sslip.io](https://sslip.io), que aponta para o IP escrito nele. Nada do site antigo é alterado: o IIS manda para o portal só quem abrir por esse nome.
+
+```powershell
+# Troque 203.0.113.10 pelo IP da VPS
+C:\NexusPortal\current\deploy\Enable-PortalHttps.ps1 -HostName nexuspk.203.0.113.10.sslip.io
+```
+
+Depois abra `https://nexuspk.203.0.113.10.sslip.io` (o navegador avisa uma vez: Avançado > Continuar).
+
 O script cria a associação https na porta 443, libera a porta no firewall, atualiza o `web.config` e confere se o site responde. Pode rodar de novo sem problema. Com o certificado autoassinado, o http continua aberto para os jogadores não verem o aviso (marca em `C:\NexusPortal\config\https-sem-redirecionamento`).
 
 ## 5. Primeiro superadministrador

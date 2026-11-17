@@ -19,6 +19,11 @@
   Sem domínio: certificado autoassinado, acesso por https://IP-DA-VPS
 
 .EXAMPLE
+  .\Enable-PortalHttps.ps1 -HostName nexuspk.203.0.113.10.sslip.io
+  Sem domínio, com o site antigo na porta 80/443 do IP: nome provisório gratuito do sslip.io
+  (aponta para o IP que está no nome). Certificado autoassinado.
+
+.EXAMPLE
   .\Enable-PortalHttps.ps1 -HostName portal.seudominio.com -CertificateThumbprint 0123ABCD...
   Com domínio e certificado do win-acme.
 #>
@@ -39,6 +44,29 @@ $HostName = $HostName.Trim().ToLowerInvariant()
 
 if (-not (Get-Website -Name $script:SiteName)) { throw "Site $script:SiteName não encontrado no IIS. Instale o portal antes." }
 
+# Outro site (ex.: o site antigo) já usando a mesma porta e nome: não mexe nele.
+function Get-OtherOwner([string]$Protocol, [string]$Info) {
+    foreach ($s in @(Get-Website | Where-Object { $_.Name -ne $script:SiteName })) {
+        if (@(Get-WebBinding -Name $s.Name -Protocol $Protocol | Where-Object { $_.bindingInformation -eq $Info }).Count -gt 0) { return $s.Name }
+    }
+    return $null
+}
+$owner = Get-OtherOwner 'https' "*:443:$HostName"
+if ($owner) {
+    if ($HostName) { throw "O site '$owner' já usa https://$HostName no IIS." }
+    throw "O site '$owner' já usa a porta 443 sem nome de host. Rode com -HostName (ex.: -HostName nexuspk.SEU-IP.sslip.io) para o portal ficar ao lado dele."
+}
+
+# Com nome de host, o portal também responde por http nesse nome (o site antigo continua com o resto da porta 80).
+if ($HostName) {
+    $owner = Get-OtherOwner 'http' "*:80:$HostName"
+    if ($owner) { throw "O host $HostName já está no site '$owner' do IIS." }
+    if (@(Get-WebBinding -Name $script:SiteName -Protocol http | Where-Object { $_.bindingInformation -eq "*:80:$HostName" }).Count -eq 0) {
+        New-WebBinding -Name $script:SiteName -Protocol http -Port 80 -HostHeader $HostName
+        Write-Ok "http://$HostName ligado ao portal"
+    }
+}
+
 # 1. Certificado
 Write-Step 'Certificado'
 $selfSigned = $false
@@ -51,6 +79,7 @@ else {
     $selfSigned = $true
     $existing = Get-ChildItem Cert:\LocalMachine\My |
         Where-Object { $_.FriendlyName -eq $friendly -and $_.NotAfter -gt (Get-Date).AddDays(30) } |
+        Where-Object { -not $HostName -or @($_.DnsNameList | ForEach-Object { $_.Unicode }) -contains $HostName } |
         Sort-Object NotAfter -Descending | Select-Object -First 1
     if ($existing) {
         $CertificateThumbprint = $existing.Thumbprint

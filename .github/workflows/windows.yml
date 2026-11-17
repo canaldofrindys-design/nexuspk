@@ -154,6 +154,12 @@ jobs:
           if (-not (Test-Path C:\NexusPortal\config\https-sem-redirecionamento)) { throw 'faltou a marca de certificado autoassinado' }
           $certs = @(Get-ChildItem Cert:\LocalMachine\My | Where-Object { $_.FriendlyName -eq 'NexusPortal (autoassinado)' })
           if ($certs.Count -ne 1) { throw "esperava 1 certificado autoassinado, achei $($certs.Count)" }
+          # Nome provisório ao lado de outro site: http e https por nome de host.
+          & ./deploy/windows/Enable-PortalHttps.ps1 -HostName nexuspk.127.0.0.1.sslip.io
+          $code = & curl.exe -s -k -o NUL -w '%{http_code}' --max-time 60 --resolve nexuspk.127.0.0.1.sslip.io:443:127.0.0.1 https://nexuspk.127.0.0.1.sslip.io/
+          if ($code -ne '200') { throw "https por nome de host respondeu $code" }
+          $code = & curl.exe -s -o NUL -w '%{http_code}' --max-time 60 --resolve nexuspk.127.0.0.1.sslip.io:80:127.0.0.1 http://nexuspk.127.0.0.1.sslip.io/
+          if ($code -ne '200') { throw "http por nome de host respondeu $code" }
 
       - name: Logs em caso de falha
         if: failure()
