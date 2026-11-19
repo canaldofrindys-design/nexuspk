@@ -6,7 +6,7 @@ import type { HomeEventItem } from "./types";
 export function AgendaWindow({ active, upcoming }: { active: HomeEventItem[]; upcoming: HomeEventItem[] }) {
   const rows = [...active.map((e) => ({ ...e, live: true })), ...[...upcoming].sort((a, b) => a.startsAtUtc.localeCompare(b.startsAtUtc)).map((e) => ({ ...e, live: false }))];
   return (
-    <GameWindow title="Agenda de eventos">
+    <GameWindow title="Agenda de eventos" icon="eventos">
       {rows.length === 0 ? (
         <p className="text-sm text-silver/70">Nenhum evento ativo ou agendado. Os horários seguem o horário de Brasília.</p>
       ) : (

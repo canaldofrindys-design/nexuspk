@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
+import { KitIcon } from "@/components/ui/KitIcon";
 import { mainNavigation } from "./navigation";
 
 /** Menu do celular. `account` traz os links da conta (Entrar/Criar conta ou Painel), renderizados no servidor. */
@@ -16,7 +17,7 @@ export function MobileMenu({ account }: { account?: ReactNode }) {
         aria-controls="mobile-nav"
         aria-label={open ? "Fechar menu" : "Abrir menu"}
         onClick={() => setOpen((v) => !v)}
-        className="grid size-9 place-items-center border border-bronze text-gold"
+        className="nx-btn grid size-10 place-items-center"
       >
         {open ? <X className="size-5" /> : <Menu className="size-5" />}
       </button>
@@ -24,13 +25,14 @@ export function MobileMenu({ account }: { account?: ReactNode }) {
         <nav
           id="mobile-nav"
           aria-label="Principal"
-          className="game-window absolute inset-x-0 top-[68px] z-50 grid gap-1 p-3"
+          className="game-window absolute inset-x-0 top-full z-50 mt-2 grid max-h-[75vh] gap-0.5 overflow-y-auto p-3"
           onClick={(e) => {
             if ((e.target as HTMLElement).closest("a")) setOpen(false);
           }}
         >
           {mainNavigation.map((item) => (
-            <Link key={item.href} href={item.href} className="px-2 py-2 text-silver hover:text-gold">
+            <Link key={item.href} href={item.href} className="flex items-center gap-3 px-2 py-1.5 text-silver hover:text-gold">
+              <KitIcon name={item.icon} size={30} />
               {item.label}
             </Link>
           ))}

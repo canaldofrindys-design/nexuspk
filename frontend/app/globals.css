@@ -1,21 +1,23 @@
 @import "tailwindcss";
 
 /*
- * Identidade NexusPK — azul profundo e ouro, a partir do logo e da arte do castelo.
+ * Identidade NexusPK — paleta do kit visual (06_guia/estilo_base.css): fundo noturno #06101F,
+ * azul profundo #0C2A5B, safira #0877DE, cristal #35B8FF, ouro #CB8A26, brilho dourado #FFD46B, texto #F4EEE5.
  * Cores de dado (ok/info/alerta/erro) são reservadas para informação, nunca para enfeite.
  */
 @theme {
-  --color-night: #040814;
+  --color-night: #06101f;
   --color-abyss: #08112a;
-  --color-medieval: #10204a;
+  --color-medieval: #0c2a5b;
   --color-steel: #1f3468;
-  --color-arcane: #5fb2ff;
-  --color-gold: #dcb36a;
-  --color-gold-bright: #f7dd98;
-  --color-bronze: #a27b3d;
-  --color-silver: #dfe7f5;
+  --color-arcane: #35b8ff;
+  --color-gold: #e0a43c;
+  --color-gold-bright: #ffd46b;
+  --color-bronze: #cb8a26;
+  --color-silver: #f4eee5;
   --color-amethyst: #a77dff;
   --color-cyan-glow: #46e4f0;
+  --color-sapphire: #0877de;
 
   --color-data-name: #ffcf4a;
   --color-data-info: #8fb2ff;
@@ -80,11 +82,13 @@ body::before {
   /* Janela do jogo: base de todos os blocos do portal. Moldura de ouro, fundo azul profundo. */
   .game-window {
     position: relative;
-    background: linear-gradient(180deg, rgb(15 29 66 / 0.94), rgb(6 12 32 / 0.97));
-    border: 1px solid rgb(220 179 106 / 0.55);
+    background: linear-gradient(140deg, #0c2a5b, #06101f);
+    border: 1px solid var(--color-bronze);
+    border-radius: 12px;
     box-shadow:
-      inset 0 0 0 1px rgb(0 0 0 / 0.65),
-      inset 0 0 40px rgb(95 178 255 / 0.04),
+      inset 0 0 0 1px rgb(0 0 0 / 0.55),
+      inset 0 0 24px rgb(53 184 255 / 0.06),
+      0 0 24px #0877de22,
       0 18px 40px -18px rgb(0 0 0 / 0.9);
   }
   /* Filete de luz dourada no topo da moldura. */
@@ -99,9 +103,13 @@ body::before {
 
   .game-window__title {
     font-family: var(--font-display);
+    font-weight: 700;
     letter-spacing: 0.05em;
-    background: linear-gradient(180deg, rgb(31 52 104 / 0.75), rgb(10 20 48 / 0.85));
-    border-bottom: 1px solid rgb(220 179 106 / 0.35);
+    text-transform: uppercase;
+    border-radius: 11px 11px 0 0;
+    background: linear-gradient(180deg, rgb(21 82 162 / 0.55), rgb(8 32 68 / 0.85));
+    border-bottom: 1px solid rgb(203 138 38 / 0.6);
+    box-shadow: inset 0 -8px 16px -10px rgb(53 184 255 / 0.35);
   }
 
   /* Abas e links da barra de título em fonte de texto: versalete só no título. */
@@ -703,4 +711,130 @@ html.motion [data-reveal-state="hidden"][data-reveal="fade"] {
   .banner-slide {
     animation: none;
   }
+}
+
+/*
+ * Kit visual NexusPK (public/kit): artes rasterizadas com texto embutido.
+ * Proporção sempre preservada (object-fit: contain); ao passar o mouse, brilho de cristal e leve elevação.
+ */
+.kit-icon {
+  filter: drop-shadow(0 2px 4px rgb(0 0 0 / 0.7));
+}
+.art-link {
+  border-radius: 10px;
+  transition:
+    transform 0.25s ease,
+    filter 0.25s ease;
+}
+.art-link:hover,
+.art-link:focus-visible {
+  filter: brightness(1.12) drop-shadow(0 0 14px rgb(53 184 255 / 0.45));
+}
+@media (prefers-reduced-motion: no-preference) {
+  .art-link:hover {
+    transform: translateY(-2px);
+  }
+}
+
+/* Botão do kit (.nx-game-button): safira com borda de ouro e brilho de cristal por dentro. */
+.nx-btn {
+  color: var(--color-silver);
+  background: linear-gradient(#1552a2, #082044);
+  border: 1px solid var(--color-gold-bright);
+  border-radius: 9px;
+  box-shadow:
+    inset 0 0 12px #35b8ff33,
+    0 6px 16px -8px rgb(0 0 0 / 0.9);
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.8);
+}
+.nx-btn:hover {
+  background: linear-gradient(#1c66c4, #0a2a5a);
+  box-shadow:
+    inset 0 0 14px #35b8ff55,
+    0 0 16px rgb(53 184 255 / 0.35);
+}
+
+/* Cabeçalho do portal: arte do kit de ponta a ponta, com o menu em moldura dourada logo abaixo. */
+.nx-banner {
+  background: #06101f;
+  border-bottom: 1px solid rgb(203 138 38 / 0.5);
+  box-shadow: inset 0 -30px 40px -20px #06101f;
+}
+.nx-navbar {
+  position: relative;
+  background: linear-gradient(180deg, #0f2a5c 0%, #081733 55%, #050d20 100%);
+  border: 2px solid transparent;
+  border-radius: 10px;
+  background-clip: padding-box;
+  box-shadow:
+    0 0 0 1px #6b4813,
+    inset 0 1px 0 rgb(255 212 107 / 0.25),
+    inset 0 0 18px rgb(53 184 255 / 0.12),
+    0 10px 28px -10px rgb(0 0 0 / 0.95);
+}
+.nx-navbar::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 11px;
+  padding: 2px;
+  background: linear-gradient(180deg, #ffe39a, #cb8a26 45%, #7a4f12 70%, #e6b45a);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+/* Cristais nas pontas do menu. */
+.nx-gem {
+  position: absolute;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  rotate: 45deg;
+  translate: 0 -50%;
+  background: radial-gradient(circle at 35% 35%, #bfe9ff, #35b8ff 35%, #0877de 70%, #04305f);
+  border: 2px solid #ffd46b;
+  box-shadow: 0 0 12px #35b8ff;
+  z-index: 1;
+}
+.nx-nav-item {
+  position: relative;
+}
+.nx-nav-item + .nx-nav-item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 22%;
+  bottom: 22%;
+  width: 1px;
+  background: linear-gradient(180deg, transparent, rgb(203 138 38 / 0.7), transparent);
+}
+.nx-nav-item[aria-current="page"],
+.nx-nav-item:hover {
+  color: var(--color-gold-bright);
+  background: radial-gradient(60% 80% at 50% 100%, rgb(53 184 255 / 0.22), transparent 70%);
+}
+
+/* Painéis da home no formato das pranchas: título centralizado com ícone e moldura dourada. */
+.nx-plate {
+  background: linear-gradient(180deg, #13336b, #0a1b3f);
+  border: 1px solid var(--color-bronze);
+  border-radius: 10px;
+  box-shadow:
+    inset 0 1px 0 rgb(255 212 107 / 0.3),
+    inset 0 0 16px rgb(53 184 255 / 0.15);
+}
+.nx-row {
+  border-bottom: 1px solid rgb(203 138 38 / 0.18);
+}
+.nx-pill-online {
+  background: radial-gradient(circle at 50% 50%, rgb(126 224 138 / 0.18), transparent 70%);
+}
+
+/* Emblemas da prancha vêm com o fundo do mockup: as bordas se dissolvem no fundo da página. */
+.nx-emblem {
+  -webkit-mask-image: radial-gradient(ellipse 62% 60% at 50% 48%, #000 62%, transparent 100%);
+  mask-image: radial-gradient(ellipse 62% 60% at 50% 48%, #000 62%, transparent 100%);
 }

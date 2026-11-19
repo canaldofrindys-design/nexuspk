@@ -10,6 +10,8 @@ import { eventCategories, type EventCategory } from "@/features/content/labels";
 import type { EventCalendar, EventOverview, EventSummary } from "@/features/content/types";
 import { Tabs } from "@/features/ranking/Tabs";
 import { apiSend } from "@/services/api";
+import { KitIcon, type KitIconName } from "@/components/ui/KitIcon";
+import { ArtLink, kitArt } from "@/components/ui/ArtLink";
 
 export const metadata: Metadata = { title: "Eventos", description: "Agenda e calendário de eventos do NexusPK." };
 
@@ -39,6 +41,16 @@ function url(s: State, change: Partial<State>) {
   return qs ? `/eventos?${qs}` : "/eventos";
 }
 
+/** Ícone do kit por tipo de evento (só onde há um que combine). */
+const categoryIcon: Partial<Record<EventCategory, KitIconName>> = {
+  boss: "boss",
+  pvp: "pvp",
+  drop: "recompensas",
+  invasao: "mapa",
+  especial: "eventos",
+  comemorativo: "trofeu",
+};
+
 const filter = (list: EventSummary[], category?: EventCategory) => (category ? list.filter((e) => e.category === category) : list);
 
 async function EventsBody({ searchParams }: { searchParams: Promise<Query> }) {
@@ -53,12 +65,19 @@ async function EventsBody({ searchParams }: { searchParams: Promise<Query> }) {
 
   return (
     <>
+      <nav aria-label="Destaques de eventos" className="mb-4 grid grid-cols-2 gap-2 sm:gap-3 lg:max-w-[620px]">
+        <ArtLink href={url(s, { category: "especial" })} art={kitArt.banners.eventosEspeciais} label="Eventos especiais" sizes="(min-width: 1024px) 300px, 50vw" />
+        <ArtLink href={url(s, { category: "boss" })} art={kitArt.banners.bossMundiais} label="Bosses mundiais" sizes="(min-width: 1024px) 300px, 50vw" />
+      </nav>
       <div className="mb-4">
         <Tabs
           label="Tipo de evento"
           tabs={[
             { href: url(s, { category: undefined }), label: "Todos", active: !s.category },
-            ...(Object.keys(eventCategories) as EventCategory[]).map((c) => ({ href: url(s, { category: c }), label: eventCategories[c], active: s.category === c })),
+            ...(Object.keys(eventCategories) as EventCategory[]).map((c) => {
+              const icon = categoryIcon[c];
+              return { href: url(s, { category: c }), label: eventCategories[c], icon: icon ? <KitIcon name={icon} size={20} /> : undefined, active: s.category === c };
+            }),
           ]}
         />
       </div>
@@ -92,18 +111,18 @@ async function EventsBody({ searchParams }: { searchParams: Promise<Query> }) {
         <div className="flex flex-col gap-4">
           {overview.ok ? (
             <>
-              <GameWindow title="Acontecendo agora">
+              <GameWindow title="Acontecendo agora" icon="boss">
                 <EventList events={filter(overview.data.live, s.category)} empty="Nenhum evento em andamento." />
               </GameWindow>
-              <GameWindow title="Próximos eventos">
+              <GameWindow title="Próximos eventos" icon="eventos">
                 <EventList events={filter(overview.data.upcoming, s.category)} empty="Nenhum evento agendado." />
               </GameWindow>
-              <GameWindow title="Encerrados recentemente">
+              <GameWindow title="Encerrados recentemente" icon="recompensas">
                 <EventList events={filter(overview.data.recent, s.category)} empty="Nenhum evento encerrado ainda." />
               </GameWindow>
             </>
           ) : (
-            <GameWindow title="Agenda">
+            <GameWindow title="Agenda" icon="eventos">
               <p className="text-sm text-data-bad">Agenda indisponível no momento. Tente de novo em instantes.</p>
             </GameWindow>
           )}
@@ -116,7 +135,10 @@ async function EventsBody({ searchParams }: { searchParams: Promise<Query> }) {
 export default function EventsPage({ searchParams }: PageProps<"/eventos">) {
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-10">
-      <h1 className="mb-1 font-display text-2xl text-gold-bright">Eventos</h1>
+      <h1 className="mb-1 flex items-center gap-3 font-display text-2xl text-gold-bright">
+        <KitIcon name="eventos" size={44} />
+        Eventos
+      </h1>
       <p className="mb-4 text-sm text-silver/70">
         Horários de Brasília. Os eventos são conduzidos pela equipe dentro do jogo; esta página é a agenda oficial.
       </p>

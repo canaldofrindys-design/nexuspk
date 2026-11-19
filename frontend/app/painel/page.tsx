@@ -14,6 +14,7 @@ import { apiSend } from "@/services/api";
 import Link from "next/link";
 import { PlayerTicketTable } from "@/features/support/PlayerTickets";
 import type { TicketList } from "@/features/support/types";
+import { KitIcon } from "@/components/ui/KitIcon";
 
 export const metadata: Metadata = { title: "Painel do jogador", robots: { index: false } };
 
@@ -37,7 +38,7 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 function CharactersWindow({ panel }: { panel: PlayerPanel }) {
   const characters = panel.game?.characters ?? [];
   return (
-    <GameWindow title="Personagens">
+    <GameWindow title="Personagens" icon="personagem">
       {!panel.gameDataAvailable ? (
         <p className="text-sm text-silver/70">Os dados do jogo estão indisponíveis no momento. Tente de novo em alguns minutos.</p>
       ) : characters.length === 0 ? (
@@ -98,7 +99,7 @@ function AccountWindow({ panel }: { panel: PlayerPanel }) {
   const game = panel.game;
   const vip = game?.vip;
   return (
-    <GameWindow title="Conta">
+    <GameWindow title="Conta" icon="conta">
       <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
         <Row label="Login">
           <span className="text-data-name">{panel.login}</span>
@@ -203,7 +204,7 @@ async function SupportWindow() {
   const r = token ? await apiSend<TicketList>("GET", "/api/v1/player/tickets", { token, ...(await clientContext()) }) : null;
   const active = r?.ok ? r.data.items.filter((t) => t.status !== "resolvido" && t.status !== "fechado").slice(0, 3) : [];
   return (
-    <GameWindow title="Suporte">
+    <GameWindow title="Suporte" icon="guia">
       {!r?.ok ? (
         <p className="text-sm text-silver/70">Não foi possível carregar os chamados agora.</p>
       ) : active.length === 0 ? (
@@ -227,7 +228,7 @@ async function Panel() {
   const panel = await loadPanel();
   if (panel === "error") {
     return (
-      <GameWindow title="Painel do jogador">
+      <GameWindow title="Painel do jogador" icon="conta">
         <p className="text-sm text-data-bad">Não foi possível carregar o painel. Tente de novo em instantes.</p>
       </GameWindow>
     );
@@ -253,7 +254,10 @@ async function Panel() {
 export default function PlayerPanelPage() {
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-10">
-      <h1 className="mb-4 font-display text-2xl text-gold-bright">Painel do jogador</h1>
+      <h1 className="mb-4 flex items-center gap-3 font-display text-2xl text-gold-bright">
+        <KitIcon name="conta" size={44} />
+        Painel do jogador
+      </h1>
       <Suspense fallback={<p className="text-sm text-silver/60">Carregando…</p>}>
         <Panel />
       </Suspense>

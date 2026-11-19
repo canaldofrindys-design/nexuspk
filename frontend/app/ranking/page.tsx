@@ -11,6 +11,8 @@ import { Pager } from "@/features/ranking/Pager";
 import { Tabs } from "@/features/ranking/Tabs";
 import type { ClanEntry, LevelEntry, PvpEntry, RankingPage } from "@/features/ranking/types";
 import { apiSend } from "@/services/api";
+import { KitIcon, PodiumMedal, type KitIconName } from "@/components/ui/KitIcon";
+import { ArtLink, kitArt } from "@/components/ui/ArtLink";
 
 export const metadata: Metadata = { title: "Ranking", description: "Ranking de nível, PvP e clãs do NexusPK." };
 
@@ -51,8 +53,14 @@ function CharacterLink({ name }: { name: string }) {
 }
 
 function Position({ n }: { n: number }) {
-  return <td className={`tabular w-10 py-1.5 ${n <= 3 ? "text-gold-bright" : "text-silver/70"}`}>{n}</td>;
+  return (
+    <td className={`tabular w-12 py-1.5 ${n <= 3 ? "text-gold-bright" : "text-silver/70"}`}>
+      {n <= 3 ? <PodiumMedal position={n} /> : n}
+    </td>
+  );
 }
+
+const periodIcon: Record<Period, KitIconName> = { geral: "rankingGeral", diario: "rankingDiario", semanal: "rankingSemanal", mensal: "eventos" };
 
 function LevelTable({ data, period }: { data: RankingPage<LevelEntry>; period: Period }) {
   const gains = period !== "geral";
@@ -144,7 +152,12 @@ function ClanTable({ data }: { data: RankingPage<ClanEntry> }) {
         {data.items.map((c) => (
           <tr key={c.name} className="border-t border-steel/60">
             <Position n={c.position} />
-            <td className="py-1.5 font-medium text-data-name">{c.name}</td>
+            <td className="py-1.5 font-medium text-data-name">
+              <span className="inline-flex items-center gap-1.5">
+                <KitIcon name="guilda" size={20} />
+                {c.name}
+              </span>
+            </td>
             <td className="tabular py-1.5 text-right text-data-info">{formatNumber(c.points)}</td>
             <td className="tabular py-1.5 text-right text-data-info">{c.members}</td>
             <td className="tabular py-1.5 text-right text-data-info">
@@ -194,13 +207,19 @@ async function RankingBody({ searchParams }: { searchParams: Promise<Query> }) {
   const result = await apiSend<RankingPage<LevelEntry & PvpEntry & ClanEntry>>("GET", path);
 
   const title = s.kind === "nivel" ? `Nível: ${periodLabel[s.period]}` : s.kind === "pvp" ? "PvP" : "Clãs";
+  const icon: KitIconName = s.kind === "nivel" ? periodIcon[s.period] : s.kind === "pvp" ? "pvp" : "guildasBandeira";
   return (
-    <GameWindow title={title}>
+    <GameWindow title={title} icon={icon}>
       <div className="mb-3 flex flex-col gap-2">
         {s.kind === "nivel" ? (
           <Tabs
             label="Período"
-            tabs={(Object.keys(periodLabel) as Period[]).map((p) => ({ href: url(s, { period: p }), label: periodLabel[p], active: s.period === p }))}
+            tabs={(Object.keys(periodLabel) as Period[]).map((p) => ({
+              href: url(s, { period: p }),
+              label: periodLabel[p],
+              icon: <KitIcon name={periodIcon[p]} size={22} />,
+              active: s.period === p,
+            }))}
           />
         ) : null}
         {s.kind === "pvp" ? (
@@ -262,9 +281,9 @@ async function KindTabs({ searchParams }: { searchParams: Promise<Query> }) {
     <Tabs
       label="Ranking"
       tabs={[
-        { href: url(s, { kind: "nivel" }), label: "Nível", active: s.kind === "nivel" },
-        { href: url(s, { kind: "pvp" }), label: "PvP", active: s.kind === "pvp" },
-        { href: url(s, { kind: "clas" }), label: "Clãs", active: s.kind === "clas" },
+        { href: url(s, { kind: "nivel" }), label: "Nível", icon: <KitIcon name="rankingGeral" size={24} />, active: s.kind === "nivel" },
+        { href: url(s, { kind: "pvp" }), label: "PvP", icon: <KitIcon name="pvp" size={24} />, active: s.kind === "pvp" },
+        { href: url(s, { kind: "clas" }), label: "Clãs", icon: <KitIcon name="guildasBandeira" size={24} />, active: s.kind === "clas" },
       ]}
     />
   );
@@ -275,11 +294,19 @@ export default function RankingPage({ searchParams }: PageProps<"/ranking">) {
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-10">
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-        <h1 className="font-display text-2xl text-gold-bright">Ranking</h1>
+        <h1 className="flex items-center gap-3 font-display text-2xl text-gold-bright">
+        <KitIcon name="trofeu" size={44} />
+        Ranking
+      </h1>
         <Link href="/personagens" className="text-sm text-arcane hover:underline">
           Buscar personagem
         </Link>
       </div>
+      <nav aria-label="Atalhos do ranking" className="mb-4 grid grid-cols-3 gap-2 sm:gap-3 lg:max-w-4xl">
+        <ArtLink href="/ranking?tipo=pvp" art={kitArt.banners.pvpLiberado} label="Ranking PvP" sizes="(min-width: 1024px) 290px, 33vw" />
+        <ArtLink href="/ranking?periodo=semanal" art={kitArt.banners.rankingSemanal} label="Ranking semanal" sizes="(min-width: 1024px) 290px, 33vw" />
+        <ArtLink href="/ranking?periodo=diario" art={kitArt.banners.rankingDiario} label="Ranking diário" sizes="(min-width: 1024px) 290px, 33vw" />
+      </nav>
       <Suspense fallback={null}>
         <div className="mb-4">
           <KindTabs searchParams={sp} />

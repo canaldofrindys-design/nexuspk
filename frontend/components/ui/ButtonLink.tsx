@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
 
 const variants = {
-  gold: "bg-gradient-to-b from-gold-bright to-gold text-night border border-gold-bright/60",
+  gold: "nx-btn",
   arcane: "bg-gradient-to-b from-arcane to-[#2f7fd1] text-night border border-arcane/60",
   ghost: "bg-night/60 text-gold border border-bronze hover:border-gold",
 } as const;

@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ClassIcon } from "@/components/ui/ClassBadge";
 import { GameWindow } from "@/components/ui/GameWindow";
+import { KitIcon } from "@/components/ui/KitIcon";
 import { classes } from "@/features/home/classes";
 
 export const metadata: Metadata = { title: "Classes", description: "As classes do NexusPK e o ranking de cada uma." };
@@ -21,7 +22,10 @@ export default function ClassesPage() {
         <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-r from-night via-night/80 to-night/30" />
         <div className="mx-auto grid max-w-7xl items-end gap-4 px-4 pt-10 md:grid-cols-[1fr_380px]">
           <div className="hero-fade self-center pb-8">
-            <h1 className="text-gilded font-display text-4xl sm:text-5xl">Classes</h1>
+            <h1 className="flex items-center gap-3">
+              <KitIcon name="classes" size={64} className="size-12 sm:size-16" />
+              <span className="text-gilded font-display text-4xl sm:text-5xl">Classes</span>
+            </h1>
             <p className="mt-3 max-w-xl text-silver/90">{classes.length} classes jogáveis. Cada uma tem ranking próprio por nível.</p>
           </div>
           <div className="px-layer hidden self-end md:block" style={{ "--px-depth": "-10%" } as React.CSSProperties}>

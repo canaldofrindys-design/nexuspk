@@ -2,28 +2,25 @@ import Link from "next/link";
 import { getCurrentPlayer } from "@/features/auth/session";
 
 const goldButton =
-  "btn-glow hidden rounded-sm border border-gold-bright/60 bg-gradient-to-b from-gold-bright to-gold px-3 py-1.5 text-sm font-semibold text-night sm:block";
+  "btn-glow hidden rounded-sm nx-btn px-3 py-1.5 text-sm font-semibold sm:block";
 
 export function GuestLinks() {
   return (
     <>
-      <Link href="/login" className="hidden px-2 text-sm text-silver hover:text-gold sm:block">
+      <Link href="/login" className={goldButton}>
         Entrar
-      </Link>
-      <Link href="/criar-conta" className={goldButton}>
-        Criar conta
       </Link>
     </>
   );
 }
 
-/** Mostra Entrar/Criar conta ou o login do jogador com link para o painel. */
+/** Mostra Entrar (o cadastro já está no menu) ou o link para o painel do jogador. */
 export async function HeaderAccount() {
   const player = await getCurrentPlayer();
   if (!player) return <GuestLinks />;
   return (
     <Link href="/painel" className={goldButton}>
-      Painel de {player.login}
+      Painel
     </Link>
   );
 }

@@ -8,6 +8,7 @@ import { Prose } from "@/features/content/Prose";
 import { formatDate } from "@/features/home/format";
 import { safeHref } from "@/features/site/links";
 import { loadSite } from "@/features/site/loadSite";
+import { KitIcon } from "@/components/ui/KitIcon";
 
 export const metadata: Metadata = { title: "Download", description: "Baixe o cliente do NexusPK, o launcher e as atualizações do jogo." };
 
@@ -41,7 +42,7 @@ async function Body() {
                   <a
                     href={d.href!}
                     {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                    className="btn-glow inline-flex shrink-0 items-center justify-center gap-2 rounded-sm border border-gold-bright/60 bg-gradient-to-b from-gold-bright to-gold px-4 py-2 text-sm font-semibold text-night"
+                    className="btn-glow inline-flex shrink-0 items-center justify-center gap-2 rounded-sm nx-btn px-4 py-2 text-sm font-semibold"
                   >
                     <Download className="size-4" aria-hidden />
                     Baixar
@@ -97,7 +98,10 @@ async function Body() {
 export default function DownloadPage() {
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-10">
-      <h1 className="mb-4 font-display text-2xl text-gold-bright">Download</h1>
+      <h1 className="mb-4 flex items-center gap-3 font-display text-2xl text-gold-bright">
+        <KitIcon name="download" size={44} />
+        Download
+      </h1>
       <Suspense fallback={<p className="text-sm text-silver/60">Carregando…</p>}>
         <Body />
       </Suspense>

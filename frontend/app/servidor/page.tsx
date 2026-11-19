@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { ButtonLink } from "@/components/ui/ButtonLink";
+import { ArtLink, kitArt } from "@/components/ui/ArtLink";
 import { GameWindow } from "@/components/ui/GameWindow";
 import { Prose } from "@/features/content/Prose";
 import { formatDate } from "@/features/home/format";
 import { CommunityLinks } from "@/features/site/CommunityLinks";
 import { loadSite } from "@/features/site/loadSite";
+import { KitIcon } from "@/components/ui/KitIcon";
 
 export const metadata: Metadata = { title: "O Servidor", description: "Informações sobre o servidor NexusPK: história, taxas e comunidade." };
 
@@ -30,7 +31,7 @@ async function Body() {
         {site.serverUpdatedUtc ? <p className="mt-4 text-xs text-silver/50">Atualizado em {formatDate(site.serverUpdatedUtc)}.</p> : null}
       </GameWindow>
       <div className="flex flex-col gap-4">
-        <GameWindow title="Taxas" as="aside">
+        <GameWindow title="Taxas" as="aside" icon="loja">
           {server.rates.length === 0 ? (
             <p className="text-sm text-silver/70">Taxas a publicar.</p>
           ) : (
@@ -45,7 +46,7 @@ async function Body() {
           )}
           <p className="mt-3 text-xs text-silver/60">Horários do site e dos eventos em horário de Brasília.</p>
         </GameWindow>
-        <GameWindow title="Comunidade" as="aside">
+        <GameWindow title="Comunidade" as="aside" icon="guildasBandeira">
           {server.communityLinks.length === 0 ? (
             <p className="text-sm text-silver/70">
               Fale com a equipe pela{" "}
@@ -58,12 +59,11 @@ async function Body() {
             <CommunityLinks links={server.communityLinks} />
           )}
         </GameWindow>
-        <GameWindow title="Começar a jogar" as="aside">
-          <div className="flex flex-wrap gap-2">
-            <ButtonLink href="/criar-conta">Criar conta</ButtonLink>
-            <ButtonLink href="/download" variant="ghost">
-              Baixar o jogo
-            </ButtonLink>
+        <GameWindow title="Começar a jogar" as="aside" icon="mapa">
+          <div className="grid gap-1.5">
+            <ArtLink href="/download" art={kitArt.botoes.downloadDoJogo} label="Download do jogo" sizes="290px" className="max-w-[290px]" />
+            <ArtLink href="/criar-conta" art={kitArt.botoes.criarConta} label="Criar conta" sizes="240px" className="max-w-[240px]" />
+            <ArtLink href="/suporte" art={kitArt.botoes.suporte} label="Suporte" sizes="210px" className="max-w-[210px]" />
           </div>
           <p className="mt-3 text-sm text-silver/70">
             Veja também o{" "}
@@ -85,7 +85,10 @@ async function Body() {
 export default function ServerPage() {
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-10">
-      <h1 className="mb-4 font-display text-2xl text-gold-bright">O Servidor</h1>
+      <h1 className="mb-4 flex items-center gap-3 font-display text-2xl text-gold-bright">
+        <KitIcon name="inicio" size={44} />
+        O Servidor
+      </h1>
       <Suspense fallback={<p className="text-sm text-silver/60">Carregando…</p>}>
         <Body />
       </Suspense>

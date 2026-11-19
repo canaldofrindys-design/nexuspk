@@ -6,6 +6,7 @@ import { ClassBadge } from "@/components/ui/ClassBadge";
 import { GameWindow } from "@/components/ui/GameWindow";
 import type { SearchResult } from "@/features/ranking/types";
 import { apiSend } from "@/services/api";
+import { KitIcon } from "@/components/ui/KitIcon";
 
 export const metadata: Metadata = { title: "Personagens", description: "Busque personagens do NexusPK." };
 
@@ -76,7 +77,10 @@ export default function CharactersPage({ searchParams }: PageProps<"/personagens
   const sp = searchParams as Promise<{ q?: string | string[] }>;
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-10">
-      <h1 className="mb-4 font-display text-2xl text-gold-bright">Personagens</h1>
+      <h1 className="mb-4 flex items-center gap-3 font-display text-2xl text-gold-bright">
+        <KitIcon name="personagem" size={44} />
+        Personagens
+      </h1>
       <GameWindow title="Buscar personagem">
         <Suspense fallback={null}>
           <SearchBox searchParams={sp} />
