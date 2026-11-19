@@ -5,6 +5,8 @@ Componentes: `components/ui/KitIcon.tsx` (ícones e medalhas) e `components/ui/A
 
 | Peça | Onde aparece |
 | --- | --- |
+| Paleta e CSS (`06_guia/estilo_base.css`) | Cores do tema (`globals.css`), janelas (`.game-window` = `.nx-game-panel`), botões (`.nx-btn` = `.nx-game-button`), menu `.nx-navbar` |
+| Prancha `home.png` | Ordem da home: banner + 3 botões, 6 cards, Ranking top geral, patentes, Bosses mundiais, Classes do jogo, Guerra de clãs, Status do servidor |
 | Ícones (20) | Menu do cabeçalho e do celular, atalhos do celular, títulos de páginas e janelas, abas do ranking e tipos de evento |
 | `inicio-castelo` | O Servidor (menu e título) |
 | `noticias` | Notícias, Quadro de avisos |
@@ -22,11 +24,13 @@ Componentes: `components/ui/KitIcon.tsx` (ícones e medalhas) e `components/ui/A
 | Banners 01–02 | Topo de Eventos (filtram Especial e Boss) |
 | Banners 03–05 | Topo do Ranking (PvP, semanal, diário) |
 | Banner 12 (destaque) | Home, no lugar do carrossel enquanto não houver banners no painel (setas e pontos removidos do recorte) |
-| Banner 13 (cabeçalho) | Topo de O Servidor |
-| Botões 06–08 | Abertura da home (Download, Cadastre-se, Começar a jogar) |
+| Banner 13 (cabeçalho) | Topo de todas as páginas, com o menu em moldura dourada logo abaixo |
+| Botões 06–08 | Ao lado do banner da home (Download, Cadastre-se, Começar a jogar) |
+| Recortes da prancha (Bosses mundiais grande, Guerra de clãs) | Home, ao lado de Classes do jogo |
+| Emblemas (7) | Faixa de patentes da home; ouro, prata e bronze também no pódio dos rankings |
 | Botões 01, 02, 05 | O Servidor (Começar a jogar) e Suporte (Abrir chamado) |
 | Medalhas ouro, prata, bronze | 1º, 2º e 3º lugar nos rankings |
 
-Ainda sem lugar, porque a página ou a regra não existe: botões "Doar / Cash" e "Guia do jogo" e as medalhas platina, diamante, mestre e grão-mestre (precisam de uma regra de faixa definida pela equipe). Os arquivos estão em `public/kit` prontos para uso.
+Ainda sem lugar, porque a página não existe: botões "Doar / Cash" e "Guia do jogo", e o item "Loja" do menu da prancha (no lugar dele entram Notícias e Classes). "Top Boss" da prancha vira "Top Mensal" até existir ranking de boss. Os arquivos estão em `public/kit` prontos para uso.
 
 O logo do pacote é o mesmo de `public/brand/logo-nexuspk.webp`, que foi mantido.

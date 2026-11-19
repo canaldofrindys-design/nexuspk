@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import Image from "next/image";
 import { ArtLink, kitArt } from "@/components/ui/ArtLink";
 import { GameWindow } from "@/components/ui/GameWindow";
 import { Prose } from "@/features/content/Prose";
@@ -86,19 +85,6 @@ async function Body() {
 export default function ServerPage() {
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-10">
-      {/* Cabeçalho do kit visual: arte com o logo, puramente decorativa (o título da página vem logo abaixo). */}
-      <div className="game-window mb-5 overflow-hidden">
-        <Image
-          src={kitArt.banners.cabecalho.src}
-          alt=""
-          width={kitArt.banners.cabecalho.width}
-          height={kitArt.banners.cabecalho.height}
-          sizes="(min-width: 1280px) 1248px, 100vw"
-          priority
-          unoptimized
-          className="h-auto min-h-[110px] w-full object-cover"
-        />
-      </div>
       <h1 className="mb-4 flex items-center gap-3 font-display text-2xl text-gold-bright">
         <KitIcon name="inicio" size={44} />
         O Servidor

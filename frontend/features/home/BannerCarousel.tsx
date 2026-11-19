@@ -54,14 +54,14 @@ export function BannerCarousel({ banners }: { banners: PublicBanner[] }) {
                 href={href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn-glow mt-3 inline-flex items-center rounded-sm border border-gold-bright/60 bg-gradient-to-b from-gold-bright to-gold px-3.5 py-1.5 text-sm font-semibold text-night"
+                className="btn-glow mt-3 inline-flex items-center rounded-sm nx-btn px-3.5 py-1.5 text-sm font-semibold"
               >
                 {current.linkLabel || "Saiba mais"}
               </a>
             ) : (
               <Link
                 href={href}
-                className="btn-glow mt-3 inline-flex items-center rounded-sm border border-gold-bright/60 bg-gradient-to-b from-gold-bright to-gold px-3.5 py-1.5 text-sm font-semibold text-night"
+                className="btn-glow mt-3 inline-flex items-center rounded-sm nx-btn px-3.5 py-1.5 text-sm font-semibold"
               >
                 {current.linkLabel || "Saiba mais"}
               </Link>

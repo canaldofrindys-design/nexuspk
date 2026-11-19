@@ -17,7 +17,7 @@ export function MobileMenu({ account }: { account?: ReactNode }) {
         aria-controls="mobile-nav"
         aria-label={open ? "Fechar menu" : "Abrir menu"}
         onClick={() => setOpen((v) => !v)}
-        className="grid size-9 place-items-center border border-bronze text-gold"
+        className="nx-btn grid size-10 place-items-center"
       >
         {open ? <X className="size-5" /> : <Menu className="size-5" />}
       </button>
@@ -25,7 +25,7 @@ export function MobileMenu({ account }: { account?: ReactNode }) {
         <nav
           id="mobile-nav"
           aria-label="Principal"
-          className="game-window absolute inset-x-0 top-[68px] z-50 grid gap-1 p-3"
+          className="game-window absolute inset-x-0 top-full z-50 mt-2 grid max-h-[75vh] gap-0.5 overflow-y-auto p-3"
           onClick={(e) => {
             if ((e.target as HTMLElement).closest("a")) setOpen(false);
           }}

@@ -42,7 +42,7 @@ async function Body() {
                   <a
                     href={d.href!}
                     {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                    className="btn-glow inline-flex shrink-0 items-center justify-center gap-2 rounded-sm border border-gold-bright/60 bg-gradient-to-b from-gold-bright to-gold px-4 py-2 text-sm font-semibold text-night"
+                    className="btn-glow inline-flex shrink-0 items-center justify-center gap-2 rounded-sm nx-btn px-4 py-2 text-sm font-semibold"
                   >
                     <Download className="size-4" aria-hidden />
                     Baixar
