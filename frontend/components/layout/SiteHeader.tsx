@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import { kitArt } from "@/components/ui/ArtLink";
@@ -10,30 +9,34 @@ import { NavLinks, NavList } from "./NavLinks";
 /**
  * Cabeçalho da prancha "home" do kit: arte com o logo e os heróis de ponta a ponta e, logo abaixo,
  * o menu em moldura dourada com cristais nas pontas. O menu fica preso no topo ao rolar.
- * No celular a arte é recortada no centro (logo) e o menu vira o botão de abrir.
+ * No celular entra o recorte central do kit (logo e cristal) e o menu vira o botão de abrir.
  */
 const quick = [
   { href: "/", label: "Início", icon: "inicio" },
+  { href: "/guias", label: "O Jogo", icon: "guia" },
   { href: "/ranking", label: "Ranking", icon: "trofeu" },
-  { href: "/eventos", label: "Eventos", icon: "eventos" },
   { href: "/download", label: "Download", icon: "download" },
 ] as const satisfies readonly { href: string; label: string; icon: KitIconName }[];
 
 export function SiteHeader() {
   const art = kitArt.banners.cabecalho;
+  const mobile = kitArt.banners.cabecalhoMobile;
   return (
     <>
       <div className="nx-banner relative">
         <Link href="/" aria-label="NexusPK, página inicial" className="block">
-          <Image
-            src={art.src}
-            alt=""
-            width={art.width}
-            height={art.height}
-            priority
-            unoptimized
-            className="mx-auto h-[118px] w-full object-cover object-center sm:h-[150px] lg:h-auto lg:max-h-[190px]"
-          />
+          {/* Recorte do kit Web Ready: no celular o centro (logo e cristal), sem cortar a arte com cover. */}
+          <picture>
+            <source media="(max-width: 640px)" srcSet={mobile.src} width={mobile.width} height={mobile.height} />
+            <img
+              src={art.src}
+              alt=""
+              width={art.width}
+              height={art.height}
+              fetchPriority="high"
+              className="mx-auto block h-auto w-full max-w-[1536px] object-contain"
+            />
+          </picture>
         </Link>
       </div>
       <header className="site-header sticky top-0 z-40 -mt-5 overflow-x-clip px-4 pt-1 pb-1" style={{ viewTransitionName: "site-header" }}>

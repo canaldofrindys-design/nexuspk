@@ -1,7 +1,7 @@
 import Image from "next/image";
 
 /**
- * Ícones do kit visual do NexusPK (public/kit/icones, PNG transparente convertido para WebP 160px).
+ * Ícones do kit visual do NexusPK (public/kit/icones, versão "-tight" do kit Web Ready, margem segura de 12px, WebP 160px).
  * Decorativos por padrão: o texto ao lado já diz o que é. Passe `label` quando o ícone estiver sozinho.
  */
 export const kitIcons = {
@@ -47,11 +47,11 @@ export function KitIcon({ name, size = 24, label, className = "" }: { name: KitI
   );
 }
 
-/** Medalhas do pódio (recortes do mockup, com fundo escuro): 1º ouro, 2º prata, 3º bronze. */
+/** Medalhas do pódio (recorte com canal alfa do kit Web Ready): 1º ouro, 2º prata, 3º bronze. */
 const podium = {
-  1: { src: "/kit/emblemas/ouro.webp", w: 113, label: "1º lugar" },
-  2: { src: "/kit/emblemas/prata.webp", w: 113, label: "2º lugar" },
-  3: { src: "/kit/emblemas/bronze.webp", w: 118, label: "3º lugar" },
+  1: { src: "/kit/emblemas/ouro.webp", w: 101, label: "1º lugar" },
+  2: { src: "/kit/emblemas/prata.webp", w: 108, label: "2º lugar" },
+  3: { src: "/kit/emblemas/bronze.webp", w: 105, label: "3º lugar" },
 } as const;
 
 export function PodiumMedal({ position, height = 26 }: { position: number; height?: number }) {

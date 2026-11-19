@@ -1283,3 +1283,433 @@ html.motion [data-reveal-state="hidden"][data-reveal="fade"] {
       linear-gradient(0deg, rgb(6 16 31 / 0.96) 0%, rgb(6 16 31 / 0.55) 60%, rgb(6 16 31 / 0.35) 100%);
   }
 }
+
+/* === kit web ready: prancha "portal" e páginas de conteúdo ===
+ * Peças do kit NexusPK_Portal_Web_Ready (nexuspk-assets.css): nunca ampliar acima do tamanho de
+ * origem, object-fit: contain e foco visível em cristal nos links com arte rasterizada.
+ */
+.art-link:focus-visible {
+  outline: 3px solid var(--color-arcane);
+  outline-offset: 4px;
+}
+
+/* Painéis laterais da prancha: moldura de ouro, título em faixa com cristal e linhas com filete. */
+.nx-panel {
+  background: linear-gradient(180deg, rgb(12 31 68 / 0.94), rgb(6 14 32 / 0.96));
+  border: 1px solid var(--color-bronze);
+  border-radius: 10px;
+  box-shadow:
+    inset 0 0 0 1px rgb(0 0 0 / 0.6),
+    inset 0 1px 0 rgb(255 212 107 / 0.25),
+    0 0 22px #0877de1f,
+    0 18px 36px -18px rgb(0 0 0 / 0.95);
+}
+.nx-panel-title {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0.35rem 0.75rem;
+  border-radius: 9px 9px 0 0;
+  background: linear-gradient(180deg, #16386f, #0a1a3d);
+  border-bottom: 1px solid rgb(203 138 38 / 0.7);
+  box-shadow: inset 0 -10px 18px -12px rgb(53 184 255 / 0.45);
+}
+.nx-panel-title__gem {
+  position: absolute;
+  left: -7px;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  rotate: 45deg;
+  translate: 0 -50%;
+  background: radial-gradient(circle at 35% 35%, #bfe9ff, #35b8ff 40%, #0877de 75%);
+  border: 1.5px solid #ffd46b;
+  box-shadow: 0 0 8px #35b8ff;
+}
+.nx-panel__list {
+  padding: 0.35rem 0.6rem 0.5rem;
+}
+.nx-panel__row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 42px;
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--color-silver);
+  background: linear-gradient(90deg, rgb(19 45 94 / 0.55), rgb(9 22 50 / 0.2));
+  border: 1px solid rgb(53 184 255 / 0.08);
+  transition:
+    color 0.2s,
+    border-color 0.2s,
+    background 0.2s;
+}
+.nx-panel__list > * + * {
+  margin-top: 0.35rem;
+}
+a.nx-panel__row:hover,
+a.nx-panel__row:focus-visible {
+  color: var(--color-gold-bright);
+  border-color: rgb(255 212 107 / 0.45);
+  background: linear-gradient(90deg, rgb(28 70 140 / 0.7), rgb(9 22 50 / 0.3));
+}
+.nx-panel__row dt,
+.nx-panel__row dd {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+}
+
+/* Retratos de classe: moldura de ouro e plaquinha com o nome, como na prancha. */
+.nx-portrait {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1.5px solid var(--color-bronze);
+  background: #0a1834;
+  box-shadow:
+    inset 0 0 0 1px rgb(0 0 0 / 0.7),
+    0 10px 20px -10px rgb(0 0 0 / 0.95);
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s,
+    transform 0.25s;
+}
+.nx-portrait:hover,
+.nx-portrait:focus-visible {
+  border-color: var(--color-gold-bright);
+  box-shadow: 0 0 16px rgb(53 184 255 / 0.45);
+}
+.nx-portrait__name {
+  display: block;
+  padding: 0.3rem 0.15rem;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--color-silver);
+  background: linear-gradient(180deg, #0d1f45, #050c1c);
+  border-top: 1px solid rgb(203 138 38 / 0.6);
+}
+.nx-portrait--more {
+  aspect-ratio: auto;
+  justify-content: flex-end;
+  height: 100%;
+}
+.nx-portrait--more > span:first-child {
+  flex: 1;
+  display: grid;
+  place-items: center;
+}
+
+/* Espaços de inventário (itens recortados da prancha já trazem a moldura). */
+.nx-slot {
+  display: block;
+  border-radius: 8px;
+  transition:
+    filter 0.2s,
+    transform 0.2s;
+}
+.nx-slot:hover,
+.nx-slot:focus-visible {
+  filter: brightness(1.15) drop-shadow(0 0 10px rgb(53 184 255 / 0.55));
+}
+@media (prefers-reduced-motion: no-preference) {
+  .nx-slot:hover {
+    transform: translateY(-2px);
+  }
+}
+
+/* Tiles do pé da prancha: o rótulo em HTML ocupa a plaquinha limpa da arte (de 68% a 85% da altura). */
+.nx-tile {
+  position: relative;
+  display: block;
+}
+.nx-tile__label {
+  position: absolute;
+  inset: 68% 7% auto;
+  height: 17%;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(11px, 1.05vw, 15px);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: #fff3c9;
+  text-shadow:
+    0 1px 0 rgb(0 0 0 / 0.9),
+    0 0 8px rgb(0 0 0 / 0.8);
+}
+@media (max-width: 639px) {
+  .nx-tile__label {
+    font-size: 13px;
+  }
+}
+
+.nx-orb {
+  filter: drop-shadow(0 0 8px rgb(53 184 255 / 0.25));
+}
+
+/* ---- Páginas de conteúdo: Guias, Manual e Instalação ---- */
+.guide-prose {
+  font-size: 15px;
+  line-height: 1.7;
+  color: rgb(244 238 229 / 0.9);
+}
+.guide-list {
+  display: grid;
+  gap: 0.4rem;
+}
+.guide-list li {
+  position: relative;
+  padding-left: 1.35rem;
+}
+.guide-list li::before {
+  content: "";
+  position: absolute;
+  left: 0.2rem;
+  top: 0.62em;
+  width: 7px;
+  height: 7px;
+  rotate: 45deg;
+  background: linear-gradient(135deg, #bfe9ff, #35b8ff 50%, #0877de);
+  box-shadow: 0 0 6px rgb(53 184 255 / 0.7);
+}
+.guide-steps {
+  display: grid;
+  gap: 0.75rem;
+}
+.guide-steps li {
+  display: flex;
+  gap: 0.85rem;
+  align-items: flex-start;
+}
+.guide-steps__n {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin-top: 0.1rem;
+  border-radius: 50%;
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: #1b1203;
+  background: radial-gradient(circle at 35% 30%, #fff3c9, #ffd46b 40%, #cb8a26 85%);
+  box-shadow:
+    0 0 0 2px #06101f,
+    0 0 0 3px rgb(203 138 38 / 0.8),
+    0 4px 10px rgb(0 0 0 / 0.6);
+}
+.guide-table-wrap {
+  overflow-x: auto;
+  border: 1px solid rgb(203 138 38 / 0.45);
+  border-radius: 8px;
+}
+.guide-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.guide-table thead th {
+  position: sticky;
+  top: 0;
+  padding: 0.55rem 0.75rem;
+  text-align: left;
+  font-family: var(--font-display);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-gold-bright);
+  background: linear-gradient(180deg, #16386f, #0c2350);
+  border-bottom: 1px solid rgb(203 138 38 / 0.6);
+}
+.guide-table tbody th,
+.guide-table tbody td {
+  padding: 0.5rem 0.75rem;
+  vertical-align: top;
+  text-align: left;
+  border-top: 1px solid rgb(53 184 255 / 0.1);
+}
+.guide-table tbody th {
+  font-weight: 600;
+  color: var(--color-data-name);
+  white-space: nowrap;
+}
+.guide-table tbody tr:nth-child(even) {
+  background: rgb(19 45 94 / 0.28);
+}
+.guide-fact {
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgb(22 56 111 / 0.6), rgb(8 20 46 / 0.6));
+  border: 1px solid rgb(203 138 38 / 0.45);
+  box-shadow: inset 0 1px 0 rgb(255 212 107 / 0.2);
+}
+.guide-note {
+  display: flex;
+  gap: 0.6rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.55;
+}
+.guide-note--info {
+  color: #d9ecff;
+  background: rgb(8 119 222 / 0.14);
+  border: 1px solid rgb(53 184 255 / 0.4);
+}
+.guide-note--alerta {
+  color: #ffe9b8;
+  background: rgb(203 138 38 / 0.14);
+  border: 1px solid rgb(255 212 107 / 0.45);
+}
+.guide-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-arcane);
+  background: rgb(8 119 222 / 0.12);
+  border: 1px solid rgb(53 184 255 / 0.35);
+  transition:
+    color 0.2s,
+    border-color 0.2s,
+    background 0.2s;
+}
+.guide-chip:hover,
+.guide-chip:focus-visible {
+  color: var(--color-gold-bright);
+  border-color: rgb(255 212 107 / 0.6);
+  background: rgb(203 138 38 / 0.14);
+}
+.guide-toc {
+  padding: 0.85rem;
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgb(12 31 68 / 0.85), rgb(6 14 32 / 0.9));
+  border: 1px solid rgb(203 138 38 / 0.5);
+}
+.guide-toc__link {
+  display: flex;
+  gap: 0.6rem;
+  padding: 0.4rem 0.55rem;
+  border-radius: 6px;
+  font-size: 14px;
+  white-space: nowrap;
+  color: rgb(244 238 229 / 0.85);
+  border: 1px solid transparent;
+}
+.guide-toc__link:hover,
+.guide-toc__link:focus-visible {
+  color: var(--color-gold-bright);
+  background: rgb(19 45 94 / 0.55);
+  border-color: rgb(53 184 255 / 0.2);
+}
+@media (max-width: 1023px) {
+  .guide-toc__link {
+    border-color: rgb(203 138 38 / 0.35);
+    background: rgb(19 45 94 / 0.4);
+  }
+}
+.guide-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  height: 100%;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  background: linear-gradient(140deg, rgb(12 42 91 / 0.85), rgb(6 16 31 / 0.9));
+  border: 1px solid rgb(203 138 38 / 0.55);
+  box-shadow: 0 14px 30px -18px rgb(0 0 0 / 0.95);
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s,
+    transform 0.25s;
+}
+.guide-card--compact {
+  align-items: center;
+  padding: 0.6rem 0.8rem;
+}
+.guide-card:hover,
+.guide-card:focus-visible {
+  border-color: var(--color-gold-bright);
+  box-shadow:
+    0 0 18px rgb(53 184 255 / 0.3),
+    0 14px 30px -18px rgb(0 0 0 / 0.95);
+}
+.guide-pillar {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  height: 100%;
+  padding: 1.25rem 1.25rem 1.1rem;
+  border-radius: 12px;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 80% at 100% 0%, rgb(53 184 255 / 0.18), transparent 60%),
+    linear-gradient(150deg, #10316a, #06101f);
+  border: 1px solid var(--color-bronze);
+  box-shadow:
+    inset 0 1px 0 rgb(255 212 107 / 0.3),
+    0 0 24px #0877de22,
+    0 18px 40px -18px rgb(0 0 0 / 0.9);
+  transition:
+    border-color 0.2s,
+    transform 0.25s;
+}
+.guide-pillar:hover,
+.guide-pillar:focus-visible {
+  border-color: var(--color-gold-bright);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .guide-card:hover,
+  .guide-pillar:hover {
+    transform: translateY(-2px);
+  }
+}
+.guide-pillar__icon {
+  width: 72px;
+  height: 72px;
+  margin-bottom: 0.25rem;
+}
+.install-file {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 8px;
+  background: rgb(19 45 94 / 0.35);
+  border: 1px solid rgb(53 184 255 / 0.15);
+}
+.install-file__n {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: #1b1203;
+  background: radial-gradient(circle at 35% 30%, #fff3c9, #ffd46b 40%, #cb8a26 85%);
+}

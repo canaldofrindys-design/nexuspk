@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { KitIcon } from "@/components/ui/KitIcon";
-import { mainNavigation } from "./navigation";
+import { isActive, mainNavigation } from "./navigation";
 
 /** Destaca a página atual (precisa do endereço, por isso fica dentro de um Suspense no cabeçalho). */
 export function NavLinks() {
@@ -17,7 +17,7 @@ export function NavList({ path }: { path?: string }) {
       {mainNavigation
         .filter((i) => !("extra" in i && i.extra))
         .map((item) => {
-          const active = path != null && (item.href === "/" ? path === "/" : path.startsWith(item.href));
+          const active = path != null && isActive(item, path);
           return (
             <li key={item.href} className="nx-nav-item flex flex-1">
               <Link
