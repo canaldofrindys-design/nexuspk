@@ -104,7 +104,28 @@ function Update-WebConfig([switch]$RealCertificate) {
 }
 
 # Nomes que um certificado cobre (SAN), em minúsculas.
-function Get-CertNames($Cert) { return @($Cert.DnsNameList | ForEach-Object { $_.Unicode.ToLowerInvariant() }) }
+# Propriedade que pode não existir no objeto (o Set-StrictMode do Common.ps1 daria erro), como texto.
+function Get-OptionalProperty($Object, [string]$Name) {
+    $p = $Object.PSObject.Properties[$Name]
+    if ($p -and $null -ne $p.Value) { return "$($p.Value)" }
+    return ''
+}
+
+# Lê a extensão SAN direto: o DnsNameList do PowerShell não existe em todo objeto de certificado.
+function Get-CertNames($Cert) {
+    $names = @()
+    $san = $Cert.Extensions | Where-Object { $_.Oid.Value -eq '2.5.29.17' } | Select-Object -First 1
+    if ($san) {
+        foreach ($part in ($san.Format($false) -split ',\s*')) {
+            if ($part -match '^[^=]*DNS[^=]*=\s*(.+)$') { $names += $Matches[1].Trim().ToLowerInvariant() }
+        }
+    }
+    if ($names.Count -eq 0) {
+        $cn = $Cert.GetNameInfo([System.Security.Cryptography.X509Certificates.X509NameType]::DnsName, $false)
+        if ($cn) { $names += $cn.ToLowerInvariant() }
+    }
+    return $names
+}
 
 function Test-CertCovers($Cert, [string[]]$Names) {
     $have = Get-CertNames $Cert
@@ -134,7 +155,8 @@ function Find-Wacs {
     # A tarefa de renovação do win-acme aponta para o wacs.exe instalado.
     foreach ($task in @(Get-ScheduledTask -ErrorAction SilentlyContinue | Where-Object { $_.TaskName -like 'win-acme*' })) {
         foreach ($action in @($task.Actions)) {
-            if ($action.Execute -and $action.Execute -like '*wacs.exe' -and (Test-Path $action.Execute)) { return $action.Execute }
+            $exe = Get-OptionalProperty $action 'Execute'
+            if ($exe -and $exe -like '*wacs.exe' -and (Test-Path $exe)) { return $exe }
         }
     }
     foreach ($dir in 'C:\win-acme', "$env:ProgramFiles\win-acme", 'C:\tools\win-acme', 'C:\wacs', "$env:ProgramData\win-acme") {
@@ -258,7 +280,14 @@ foreach ($s in @(Get-Website | Where-Object { $_.Name -ne $script:SiteName })) {
     foreach ($b in @(Get-WebBinding -Name $s.Name)) {
         $hostHeader = ("$($b.bindingInformation)" -split ':')[-1].ToLowerInvariant()
         if ($hosts -contains $hostHeader) {
-            $toMove += [pscustomobject]@{ Site = $s.Name; Protocol = $b.protocol; Info = $b.bindingInformation; CertHash = "$($b.certificateHash)"; CertStore = "$($b.certificateStoreName)" }
+            $hash = Get-OptionalProperty $b 'certificateHash'; $store = Get-OptionalProperty $b 'certificateStoreName'
+            if ($b.protocol -eq 'https' -and -not $hash) {
+                # Associação com SNI: o certificado fica no http.sys, por nome e porta.
+                $port = ("$($b.bindingInformation)" -split ':')[1]
+                $ssl = Get-Item "IIS:\SslBindings\!$port!$hostHeader" -ErrorAction SilentlyContinue
+                if ($ssl) { $hash = Get-OptionalProperty $ssl 'Thumbprint'; $store = Get-OptionalProperty $ssl 'Store' }
+            }
+            $toMove += [pscustomobject]@{ Site = $s.Name; Protocol = $b.protocol; Info = $b.bindingInformation; CertHash = $hash; CertStore = $store }
         }
     }
 }
