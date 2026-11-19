@@ -106,10 +106,30 @@ A troca é só no IIS: os dois sites estão na mesma VPS, e o domínio principal
 - [ ] Decidido o que fazer com as contas web, notícias e chamados do `KLVN Studio` (migrar ou começar do zero). Os e-mails dessas contas permitiriam que jogadores antigos recuperassem a senha pelo portal.
 - [ ] Certificado do domínio principal disponível para o site novo (o win-acme pode emitir um que cubra os dois nomes).
 - [ ] Aviso publicado no site antigo e nas redes com dia e hora.
-- [ ] Lista dos endereços antigos mais acessados (cadastro, ranking, download), para redirecionar depois.
+- [x] Endereços antigos redirecionados no próprio portal (`redirects()` em `frontend/next.config.ts`): `/painel/cadastrar` → `/criar-conta`, `/painel/recuperar` → `/recuperar-conta`, `/rankings/*` e `/rank/*` → `/ranking`, `/wiki/*` → `/guias`, `/notice/*` → `/noticias`, `/index.php` → `/`, e `www.<domínio>` → `<domínio>`. `/download` tem o mesmo endereço nos dois sites.
+- [ ] Se o captcha (Cloudflare Turnstile) estiver ligado: acrescentar o domínio principal em Turnstile > o widget > Hostnames, senão o cadastro e o login falham no domínio novo.
+- [ ] O certificado do domínio precisa cobrir também o `www` (o do site antigo só cobre o nome sem `www`).
 - [ ] Pastas que o jogo e o launcher chamam ligadas ao portal (`Connect-LegacyPaths.ps1`, ver [`LIGACOES-DO-JOGO.md`](LIGACOES-DO-JOGO.md)) e conferidas pelo subdomínio: `http://<subdomínio>/updater/version.txt` e um clã dentro do jogo apontando para o subdomínio, se der para testar.
 
-### Na hora (cerca de 15 minutos, num horário de pouco movimento)
+### Na hora, com o script (recomendado)
+
+Num PowerShell como administrador na VPS:
+
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass
+C:\NexusPortal\current\deploy\Switch-PortalDomain.ps1 -Domain seudominio.com -WhatIf   # só mostra o que faria
+C:\NexusPortal\current\deploy\Switch-PortalDomain.ps1 -Domain seudominio.com -AcceptLetsEncryptTerms
+```
+
+O script acha o site antigo pelas associações, faz backup (configuração do IIS, zip da pasta do site antigo em `C:\Backups`, cópia do `portal.json`), passa o domínio e o `www` para o portal, pede o certificado dos dois nomes ao win-acme já instalado (só com `-AcceptLetsEncryptTerms` ele aceita os termos do Let's Encrypt por você; sem, usa o certificado que já existe), troca o `PublicBaseUrl`, liga o http -> https e confere página inicial, `www`, clã e launcher pelo domínio. **Se a conferência falhar, desfaz tudo sozinho.** O site antigo continua ligado pelo IP.
+
+| Quero | Comando |
+|---|---|
+| Desfazer a troca | `Switch-PortalDomain.ps1 -Rollback` |
+| Parar o site antigo (dias depois) | `Switch-PortalDomain.ps1 -StopOldSite`: só para se ninguém (jogo, launcher) chamou o site antigo depois da troca, pelos registros do IIS. Não para o pool dele, que as pastas do jogo no portal usam |
+| Já tenho o certificado | `-CertificateThumbprint <impressão digital>` |
+
+### Na hora, à mão (cerca de 15 minutos, num horário de pouco movimento)
 
 1. Guarde a configuração do IIS:
    ```powershell
@@ -130,6 +150,6 @@ Volta todas as associações do IIS como estavam. Desfaça também o `PublicBase
 
 ### Depois da troca
 
-- Redirecionar os endereços antigos mais usados para as páginas novas (regras do URL Rewrite no site NexusPortal).
+- Conferir os redirecionamentos dos endereços antigos (por exemplo `https://seudominio.com/painel/cadastrar` deve abrir `/criar-conta`).
 - Deixar o site antigo em `antigo.seudominio.com` por 30 dias e então desligá-lo. Os bancos `KLVN Studio` e `NexusPKAdmin` continuam intocados até vocês decidirem.
 - O subdomínio de teste pode continuar apontando para o portal ou ser removido das associações.
