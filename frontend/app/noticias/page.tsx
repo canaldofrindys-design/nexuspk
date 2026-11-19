@@ -1,3 +1,4 @@
+import { PageHero } from "@/components/scene/PageHero";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
@@ -9,7 +10,6 @@ import { formatDate } from "@/features/home/format";
 import { Pager } from "@/features/ranking/Pager";
 import { Tabs } from "@/features/ranking/Tabs";
 import { apiSend } from "@/services/api";
-import { KitIcon } from "@/components/ui/KitIcon";
 
 export const metadata: Metadata = { title: "Notícias", description: "Notícias, atualizações e manutenções do NexusPK." };
 
@@ -82,14 +82,19 @@ async function NewsBody({ searchParams }: { searchParams: Promise<Query> }) {
 
 export default function NewsListPage({ searchParams }: PageProps<"/noticias">) {
   return (
+    <>
+      <PageHero
+        scene="mercado-entardecer"
+        icon="noticias"
+        eyebrow="Direto da praça da vila"
+        title="Notícias"
+        lead="Atualizações do jogo, avisos de manutenção, eventos e novidades publicados pela equipe do NexusPK."
+      />
     <div className="mx-auto w-full max-w-4xl px-4 py-10">
-      <h1 className="mb-4 flex items-center gap-3 font-display text-2xl text-gold-bright">
-        <KitIcon name="noticias" size={44} />
-        Notícias
-      </h1>
       <Suspense fallback={<p className="text-sm text-silver/60">Carregando…</p>}>
         <NewsBody searchParams={searchParams as Promise<Query>} />
       </Suspense>
     </div>
+    </>
   );
 }

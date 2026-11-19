@@ -838,3 +838,448 @@ html.motion [data-reveal-state="hidden"][data-reveal="fade"] {
   -webkit-mask-image: radial-gradient(ellipse 62% 60% at 50% 48%, #000 62%, transparent 100%);
   mask-image: radial-gradient(ellipse 62% 60% at 50% 48%, #000 62%, transparent 100%);
 }
+
+/* ------------------------------------------------------------------------------------------
+ * Cenários pintados (fase 18): fundo que troca com esmaecer ao rolar, banner animado da home,
+ * capítulos ilustrados e abertura das páginas internas. Arte em public/art/cenas.
+ * ------------------------------------------------------------------------------------------ */
+
+/* Fundo preso à tela, atrás do céu de estrelas. O SceneBackdrop liga a camada do trecho que
+ * está no meio da tela; as outras esmaecem. O véu noturno mantém o texto legível. */
+.scene-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  overflow: hidden;
+  pointer-events: none;
+}
+.scene-backdrop__track {
+  position: absolute;
+  inset: -6vh 0;
+}
+.scene-backdrop__layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  scale: 1.06;
+  filter: saturate(0.9);
+  transition:
+    opacity 1.6s cubic-bezier(0.4, 0, 0.2, 1),
+    scale 2.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.scene-backdrop__layer[data-on] {
+  opacity: 1;
+  scale: 1.02;
+}
+.scene-backdrop__veil {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 1.2s ease;
+  background:
+    radial-gradient(120% 90% at 50% 40%, transparent 0%, rgb(4 8 20 / 0.55) 75%),
+    linear-gradient(180deg, rgb(6 16 31 / 0.72) 0%, rgb(6 16 31 / 0.58) 40%, rgb(6 16 31 / 0.66) 70%, rgb(6 16 31 / 0.86) 100%);
+}
+.scene-backdrop[data-active] .scene-backdrop__veil {
+  opacity: 1;
+}
+
+@keyframes scene-track {
+  from {
+    translate: 0 4vh;
+  }
+  to {
+    translate: 0 -4vh;
+  }
+}
+@keyframes scene-breathe {
+  from {
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+  to {
+    transform: scale(1.08) translate3d(-1.2%, -0.8%, 0);
+  }
+}
+
+/* ---- Banner animado da home ---- */
+@property --glow-x {
+  syntax: "<percentage>";
+  inherits: true;
+  initial-value: 78%;
+}
+@property --glow-y {
+  syntax: "<percentage>";
+  inherits: true;
+  initial-value: 34%;
+}
+@property --glow-c {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: rgb(255 170 70 / 0.55);
+}
+@property --particle {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #ffd46b;
+}
+
+.hero-banner {
+  display: flex;
+  flex-direction: column;
+  min-height: clamp(560px, calc(100svh - 150px), 780px);
+  transition:
+    --glow-x 1.8s ease,
+    --glow-y 1.8s ease,
+    --glow-c 1.8s ease,
+    --particle 1.8s ease;
+}
+.hero-banner[data-mood="sun"] {
+  --glow-x: 78%;
+  --glow-y: 36%;
+  --glow-c: rgb(255 165 60 / 0.55);
+  --particle: #ffd46b;
+}
+.hero-banner[data-mood="moon"] {
+  --glow-x: 32%;
+  --glow-y: 8%;
+  --glow-c: rgb(120 190 255 / 0.5);
+  --particle: #8fe3ff;
+}
+.hero-banner[data-mood="day"] {
+  --glow-x: 86%;
+  --glow-y: 12%;
+  --glow-c: rgb(160 230 255 / 0.4);
+  --particle: rgb(255 250 230 / 0.9);
+}
+.hero-banner__scene {
+  position: absolute;
+  inset: -12% 0;
+  z-index: -30;
+}
+.hero-banner__slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 1.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.hero-banner__slide[data-on] {
+  opacity: 1;
+  z-index: 1;
+}
+.hero-banner__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  scale: 1.04;
+}
+.hero-banner__slide[data-on] .hero-banner__img {
+  animation: hero-banner-zoom 14s cubic-bezier(0.25, 0.1, 0.25, 1) both;
+}
+@keyframes hero-banner-zoom {
+  from {
+    scale: 1.04;
+    translate: 0 0;
+  }
+  to {
+    scale: 1.16;
+    translate: -1.5% -1%;
+  }
+}
+.hero-banner__glow {
+  position: absolute;
+  inset: 0;
+  z-index: -26;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  background: radial-gradient(38% 46% at var(--glow-x) var(--glow-y), var(--glow-c), transparent 70%);
+  animation: hero-glow 6s ease-in-out infinite;
+}
+@keyframes hero-glow {
+  50% {
+    opacity: 0.6;
+  }
+}
+.hero-banner__rays {
+  left: var(--glow-x);
+  top: var(--glow-y);
+  width: 140%;
+  translate: -50% -50%;
+  opacity: 0.8;
+}
+.hero-banner__particles {
+  position: absolute;
+  inset: 0;
+  z-index: -8;
+  overflow: hidden;
+  pointer-events: none;
+}
+.hero-banner__particles span {
+  position: absolute;
+  bottom: -12px;
+  left: var(--x);
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  background: var(--particle);
+  box-shadow:
+    0 0 6px var(--particle),
+    0 0 14px var(--particle);
+  opacity: 0;
+  animation: particle-rise var(--dur) linear var(--delay) infinite;
+}
+@keyframes particle-rise {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0);
+  }
+  12% {
+    opacity: 0.9;
+  }
+  50% {
+    transform: translate3d(var(--sway), -40vh, 0);
+  }
+  85% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(calc(var(--sway) * -0.6), -82vh, 0);
+  }
+}
+.hero-banner__shade {
+  position: absolute;
+  inset: 0;
+  z-index: -4;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgb(6 16 31 / 0.92) 0%, rgb(6 16 31 / 0.66) 32%, rgb(6 16 31 / 0.12) 62%, transparent 80%),
+    linear-gradient(0deg, var(--color-night) 0%, rgb(6 16 31 / 0.4) 16%, transparent 34%),
+    linear-gradient(180deg, rgb(6 16 31 / 0.55) 0%, transparent 20%);
+}
+.hero-banner__arrow {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  border: 1px solid rgb(255 212 107 / 0.6);
+  background: rgb(6 16 31 / 0.6);
+  color: var(--color-gold-bright);
+  backdrop-filter: blur(4px);
+  transition:
+    background 0.2s,
+    box-shadow 0.2s;
+}
+.hero-banner__arrow:hover {
+  background: rgb(12 42 91 / 0.85);
+  box-shadow: 0 0 16px rgb(53 184 255 / 0.4);
+}
+.hero-banner__dot {
+  padding: 10px 0;
+}
+.hero-banner__bar {
+  display: block;
+  height: 3px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: rgb(244 238 229 / 0.22);
+}
+.hero-banner__fill {
+  display: block;
+  height: 100%;
+  transform-origin: 0 50%;
+  scale: 0 1;
+  background: linear-gradient(90deg, var(--color-bronze), var(--color-gold-bright));
+  box-shadow: 0 0 8px rgb(255 212 107 / 0.8);
+}
+.hero-banner__fill[data-state="run"] {
+  animation: hero-fill var(--dur) linear both;
+}
+.hero-banner__fill[data-state="full"] {
+  scale: 1 1;
+}
+.hero-banner__fill[data-state="done"] {
+  scale: 1 1;
+  opacity: 0.45;
+}
+@keyframes hero-fill {
+  to {
+    scale: 1 1;
+  }
+}
+
+/* ---- Capítulos da home ---- */
+.chapter__numeral {
+  position: absolute;
+  top: 1.5rem;
+  right: 3%;
+  z-index: -1;
+  font-family: var(--font-display);
+  font-size: clamp(7rem, 18vw, 15rem);
+  font-weight: 700;
+  line-height: 1;
+  color: transparent;
+  -webkit-text-stroke: 1px rgb(255 212 107 / 0.16);
+  pointer-events: none;
+  user-select: none;
+}
+.chapter:nth-child(even) .chapter__numeral {
+  right: auto;
+  left: 3%;
+}
+.chapter-art__img {
+  transition: scale 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.chapter-art:hover .chapter-art__img {
+  scale: 1.05;
+}
+/* Faixa de luz que atravessa a gravura de tempos em tempos. */
+.chapter-art__light {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  background: linear-gradient(115deg, transparent 38%, rgb(255 236 190 / 0.2) 50%, transparent 62%) no-repeat;
+  background-size: 260% 100%;
+  background-position: 160% 0;
+}
+.chapter-art__corner {
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  border-color: var(--color-gold-bright);
+  filter: drop-shadow(0 0 6px rgb(255 212 107 / 0.6));
+  pointer-events: none;
+}
+.chapter-art__corner--tl {
+  top: -7px;
+  left: -7px;
+  border-top: 2px solid;
+  border-left: 2px solid;
+  border-top-left-radius: 6px;
+}
+.chapter-art__corner--br {
+  right: -7px;
+  bottom: -7px;
+  border-right: 2px solid;
+  border-bottom: 2px solid;
+  border-bottom-right-radius: 6px;
+}
+.chapter-card {
+  transition:
+    translate 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.25s,
+    box-shadow 0.35s;
+}
+.chapter-card:hover,
+.chapter-card:focus-within {
+  border-color: var(--color-gold-bright);
+  box-shadow:
+    0 0 0 1px rgb(255 212 107 / 0.25),
+    0 0 26px rgb(53 184 255 / 0.25),
+    0 20px 50px -20px rgb(0 0 0 / 0.9);
+}
+.chapter-card__icon {
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.chapter-card:hover .chapter-card__icon {
+  transform: scale(1.12) rotate(-6deg);
+}
+
+/* ---- Abertura das páginas internas ---- */
+.page-hero {
+  display: flex;
+  align-items: flex-end;
+  min-height: clamp(250px, 40vh, 400px);
+}
+.page-hero > .hero-fade {
+  width: 100%;
+}
+.page-hero__shade {
+  background:
+    linear-gradient(90deg, rgb(6 16 31 / 0.92) 0%, rgb(6 16 31 / 0.6) 45%, rgb(6 16 31 / 0.2) 100%),
+    linear-gradient(0deg, rgb(6 16 31 / 0.95) 0%, transparent 55%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .page-hero__img {
+    animation: hero-kenburns 36s ease-in-out infinite alternate;
+  }
+  .chapter-art__light {
+    animation: chapter-sweep 9s ease-in-out 1.5s infinite;
+  }
+  .chapter-card:hover {
+    translate: 0 -3px;
+  }
+  @supports (animation-timeline: scroll()) {
+    .scene-backdrop__track {
+      animation: scene-track linear both;
+      animation-timeline: scroll(root);
+    }
+    .chapter__numeral {
+      animation: numeral-drift linear both;
+      animation-timeline: view();
+    }
+  }
+  html.no-sda .scene-backdrop__track {
+    translate: 0 calc((0.5 - var(--scroll-p, 0)) * 8vh);
+  }
+}
+@keyframes chapter-sweep {
+  0% {
+    background-position: 160% 0;
+  }
+  45%,
+  100% {
+    background-position: -60% 0;
+  }
+}
+@keyframes numeral-drift {
+  from {
+    translate: 0 60px;
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+  to {
+    translate: 0 -60px;
+    opacity: 0.3;
+  }
+}
+
+/* Desktop: o fundo "respira" devagar (no celular fica parado para poupar bateria). */
+@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+  .scene-backdrop__layer[data-on] {
+    animation: scene-breathe 40s ease-in-out infinite alternate;
+  }
+}
+
+/* Celular e tablet: texto do banner embaixo, sombra mais forte, menos partículas e sem raios. */
+@media (max-width: 1023px) {
+  .hero-banner {
+    min-height: max(600px, calc(100svh - 172px));
+  }
+  .hero-banner__scene {
+    inset: -6% 0;
+  }
+  .hero-banner__shade {
+    background:
+      linear-gradient(0deg, var(--color-night) 0%, rgb(6 16 31 / 0.9) 38%, rgb(6 16 31 / 0.35) 66%, rgb(6 16 31 / 0.15) 100%),
+      linear-gradient(180deg, rgb(6 16 31 / 0.5) 0%, transparent 20%);
+  }
+  .hero-banner__rays {
+    display: none;
+  }
+  .hero-banner__particles span:nth-child(n + 11) {
+    display: none;
+  }
+  .page-hero__shade {
+    background:
+      linear-gradient(0deg, rgb(6 16 31 / 0.96) 0%, rgb(6 16 31 / 0.55) 60%, rgb(6 16 31 / 0.35) 100%);
+  }
+}

@@ -22,6 +22,7 @@ export default function CreateAccountPage() {
   return (
     <AuthPanel
       title="Criar conta"
+      scene="jornada"
       aside={
         <GameWindow title="Antes de criar" as="aside">
           <ul className="flex flex-col gap-2 text-sm text-silver/80">

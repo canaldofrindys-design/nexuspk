@@ -34,3 +34,26 @@ Componentes: `components/ui/KitIcon.tsx` (ícones e medalhas) e `components/ui/A
 Ainda sem lugar, porque a página não existe: botões "Doar / Cash" e "Guia do jogo", e o item "Loja" do menu da prancha (no lugar dele entram Notícias e Classes). "Top Boss" da prancha vira "Top Mensal" até existir ranking de boss. Os arquivos estão em `public/kit` prontos para uso.
 
 O logo do pacote é o mesmo de `public/brand/logo-nexuspk.webp`, que foi mantido.
+
+## Cenários pintados e movimento (fase 18)
+
+Sete paisagens em `frontend/public/art/cenas/`, em WebP com três larguras (640, 1024 e 1448/1600 px, de 60 a 350 KB). O registro fica em `components/scene/scenes.ts`.
+
+| Cena | Onde aparece |
+| --- | --- |
+| `vale-dourado` (vale ao entardecer) | 1ª cena do banner da home, fundo da prancha da home, Ranking, Personagens |
+| `luar` (trilha de cristais sob a lua) | 2ª cena do banner, capítulo "Eventos, bosses e PvP", Eventos, Classes |
+| `jornada` (aventureiro na estrada) | 3ª cena do banner, capítulo "Primeiros passos", Download, Criar conta |
+| `mercado-entardecer` (feira ao pôr do sol) | capítulo "Notícias e comunidade", Notícias |
+| `vila-conversa` (moradores na praça) | bloco "Acontecendo no NexusPK" da home, Suporte, Meus chamados |
+| `vila-riacho` (vila com riacho e ponte) | O Servidor, Painel do jogador, Entrar e Recuperar conta |
+| `torre-vigia` (torre à beira do penhasco) | capítulo "Status, conta e suporte", Status do servidor |
+
+Peças de movimento:
+
+- **Banner animado** (`features/home/HeroBanner.tsx`): três cenas com esmaecer cruzado, aproximação lenta, brilho de sol ou lua, névoa e partículas; troca a cada 8 s e pausa com mouse, foco, aba oculta ou banner fora da tela. Setas, marcadores e as teclas ← → trocam a cena.
+- **Fundo que troca ao rolar** (`components/scene/SceneBackdrop.tsx`): qualquer bloco com `data-scene="<cena>"` muda o fundo do site para aquela cena, com esmaecer de 1,6 s, véu noturno e parallax leve. Cada cena só é baixada quando o trecho dela chega perto.
+- **Abertura das páginas** (`components/scene/PageHero.tsx`): cenário em parallax com névoa e título em ouro.
+- **Capítulos da home** (`features/home/HomeChapters.tsx`): gravura emoldurada com parallax próprio, faixa de luz, numeral romano que flutua com a rolagem e cartões que entram em sequência.
+
+Com "reduzir movimento" no sistema não há troca automática, partículas, parallax nem entradas: o conteúdo aparece parado. No celular vai sempre o arquivo de 1024 px, o fundo não "respira" e o banner usa menos partículas e nenhum raio de luz.

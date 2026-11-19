@@ -1,3 +1,4 @@
+import { PageHero } from "@/components/scene/PageHero";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
@@ -6,7 +7,6 @@ import { GameWindow } from "@/components/ui/GameWindow";
 import { formatDateTime, formatTime } from "@/features/home/format";
 import type { StatusReport } from "@/features/support/types";
 import { apiSend } from "@/services/api";
-import { KitIcon } from "@/components/ui/KitIcon";
 
 export const metadata: Metadata = {
   title: "Status do servidor",
@@ -167,15 +167,20 @@ async function Body() {
 
 export default function StatusPage() {
   return (
+    <>
+      <PageHero
+        scene="torre-vigia"
+        icon="online"
+        eyebrow="Vigia do servidor"
+        title="Status do servidor"
+        lead="Situação do login e dos canais, histórico das últimas horas e as próximas manutenções programadas."
+      />
     <div className="mx-auto w-full max-w-7xl px-4 py-10">
-      <h1 className="mb-4 flex items-center gap-3 font-display text-2xl text-gold-bright">
-        <KitIcon name="online" size={44} />
-        Status do servidor
-      </h1>
       <Suspense fallback={<p className="text-sm text-silver/60">Verificando…</p>}>
         <Body />
       </Suspense>
       <p className="mt-4 text-xs text-silver/50">Horários de Brasília.</p>
     </div>
+    </>
   );
 }

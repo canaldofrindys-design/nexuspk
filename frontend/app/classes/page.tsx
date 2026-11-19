@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: "Classes", description: "As classes d
 export default function ClassesPage() {
   return (
     <>
-      <section className="px-scope relative isolate overflow-hidden border-b border-gold/40">
+      <section data-scene="luar" className="px-scope relative isolate overflow-hidden border-b border-gold/40">
         <div
           aria-hidden
           className="px-layer absolute inset-x-0 -inset-y-[18%] -z-20"

@@ -35,7 +35,7 @@ async function Body({ searchParams }: { searchParams: Promise<Q> }) {
 
 export default function PlayerTicketsPage({ searchParams }: PageProps<"/painel/suporte">) {
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-10">
+    <div data-scene="vila-conversa" className="mx-auto w-full max-w-5xl px-4 py-10">
       <p className="mb-2 text-sm">
         <Link href="/painel" className="text-arcane hover:underline">
           Painel do jogador
