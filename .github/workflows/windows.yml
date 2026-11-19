@@ -146,7 +146,9 @@ jobs:
 
       - name: Troca do domínio principal, parar o site antigo e voltar (Switch-PortalDomain.ps1)
         shell: powershell
-        run: ./deploy/tests/Test-DomainSwitch.ps1
+        run: |
+          try { ./deploy/tests/Test-DomainSwitch.ps1 }
+          catch { Write-Host "::error::$($_.Exception.Message) (linha $($_.InvocationInfo.ScriptLineNumber) de $($_.InvocationInfo.ScriptName))"; throw }
 
       - name: Ligar https sem domínio (Enable-PortalHttps.ps1), duas vezes
         shell: powershell
