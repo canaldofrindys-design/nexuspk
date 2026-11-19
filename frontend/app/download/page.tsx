@@ -1,3 +1,4 @@
+import { PageHero } from "@/components/scene/PageHero";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
@@ -8,7 +9,6 @@ import { Prose } from "@/features/content/Prose";
 import { formatDate } from "@/features/home/format";
 import { safeHref } from "@/features/site/links";
 import { loadSite } from "@/features/site/loadSite";
-import { KitIcon } from "@/components/ui/KitIcon";
 
 export const metadata: Metadata = { title: "Download", description: "Baixe o cliente do NexusPK, o launcher e as atualizações do jogo." };
 
@@ -97,14 +97,19 @@ async function Body() {
 
 export default function DownloadPage() {
   return (
+    <>
+      <PageHero
+        scene="jornada"
+        icon="download"
+        eyebrow="Prepare a sua jornada"
+        title="Download"
+        lead="Cliente completo, launcher e atualizações do NexusPK, com versão, tamanho e os requisitos para rodar o jogo."
+      />
     <div className="mx-auto w-full max-w-7xl px-4 py-10">
-      <h1 className="mb-4 flex items-center gap-3 font-display text-2xl text-gold-bright">
-        <KitIcon name="download" size={44} />
-        Download
-      </h1>
       <Suspense fallback={<p className="text-sm text-silver/60">Carregando…</p>}>
         <Body />
       </Suspense>
     </div>
+    </>
   );
 }

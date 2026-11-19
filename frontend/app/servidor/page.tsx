@@ -1,3 +1,4 @@
+import { PageHero } from "@/components/scene/PageHero";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
@@ -8,7 +9,6 @@ import { Prose } from "@/features/content/Prose";
 import { formatDate } from "@/features/home/format";
 import { CommunityLinks } from "@/features/site/CommunityLinks";
 import { loadSite } from "@/features/site/loadSite";
-import { KitIcon } from "@/components/ui/KitIcon";
 
 export const metadata: Metadata = { title: "O Servidor", description: "Informações sobre o servidor NexusPK: história, taxas e comunidade." };
 
@@ -84,14 +84,19 @@ async function Body() {
 
 export default function ServerPage() {
   return (
+    <>
+      <PageHero
+        scene="vila-riacho"
+        icon="inicio"
+        eyebrow="Conheça o NexusPK"
+        title="O Servidor"
+        lead="A história do servidor, as taxas atuais e os canais oficiais da comunidade, mantidos pela equipe."
+      />
     <div className="mx-auto w-full max-w-7xl px-4 py-10">
-      <h1 className="mb-4 flex items-center gap-3 font-display text-2xl text-gold-bright">
-        <KitIcon name="inicio" size={44} />
-        O Servidor
-      </h1>
       <Suspense fallback={<p className="text-sm text-silver/60">Carregando…</p>}>
         <Body />
       </Suspense>
     </div>
+    </>
   );
 }

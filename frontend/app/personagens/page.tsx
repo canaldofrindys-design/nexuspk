@@ -1,3 +1,4 @@
+import { PageHero } from "@/components/scene/PageHero";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
@@ -6,7 +7,6 @@ import { ClassBadge } from "@/components/ui/ClassBadge";
 import { GameWindow } from "@/components/ui/GameWindow";
 import type { SearchResult } from "@/features/ranking/types";
 import { apiSend } from "@/services/api";
-import { KitIcon } from "@/components/ui/KitIcon";
 
 export const metadata: Metadata = { title: "Personagens", description: "Busque personagens do NexusPK." };
 
@@ -76,11 +76,15 @@ async function SearchBox({ searchParams }: { searchParams: Promise<{ q?: string 
 export default function CharactersPage({ searchParams }: PageProps<"/personagens">) {
   const sp = searchParams as Promise<{ q?: string | string[] }>;
   return (
+    <>
+      <PageHero
+        scene="vale-dourado"
+        icon="personagem"
+        eyebrow="Perfis públicos"
+        title="Personagens"
+        lead="Procure qualquer personagem pelo nome para ver classe, nível, posição no ranking e resultados de PvP."
+      />
     <div className="mx-auto w-full max-w-3xl px-4 py-10">
-      <h1 className="mb-4 flex items-center gap-3 font-display text-2xl text-gold-bright">
-        <KitIcon name="personagem" size={44} />
-        Personagens
-      </h1>
       <GameWindow title="Buscar personagem">
         <Suspense fallback={null}>
           <SearchBox searchParams={sp} />
@@ -90,5 +94,6 @@ export default function CharactersPage({ searchParams }: PageProps<"/personagens
         </Suspense>
       </GameWindow>
     </div>
+    </>
   );
 }

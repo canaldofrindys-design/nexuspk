@@ -1,3 +1,4 @@
+import { PageHero } from "@/components/scene/PageHero";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
@@ -292,16 +293,20 @@ async function KindTabs({ searchParams }: { searchParams: Promise<Query> }) {
 export default function RankingPage({ searchParams }: PageProps<"/ranking">) {
   const sp = searchParams as Promise<Query>;
   return (
+    <>
+      <PageHero
+        scene="vale-dourado"
+        icon="trofeu"
+        eyebrow="Os mais fortes do vale"
+        title="Ranking"
+        lead="Geral por nível, por classe, de clãs e de PvP, além dos níveis ganhos no dia, na semana e no mês. Atualizado direto do servidor."
+        aside={
+          <Link href="/personagens" className="nx-btn btn-glow inline-flex items-center px-4 py-2 font-display text-sm font-bold tracking-wide uppercase">
+            Buscar personagem
+          </Link>
+        }
+      />
     <div className="mx-auto w-full max-w-7xl px-4 py-10">
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-        <h1 className="flex items-center gap-3 font-display text-2xl text-gold-bright">
-        <KitIcon name="trofeu" size={44} />
-        Ranking
-      </h1>
-        <Link href="/personagens" className="text-sm text-arcane hover:underline">
-          Buscar personagem
-        </Link>
-      </div>
       <nav aria-label="Atalhos do ranking" className="mb-4 grid grid-cols-3 gap-2 sm:gap-3 lg:max-w-4xl">
         <ArtLink href="/ranking?tipo=pvp" art={kitArt.banners.pvpLiberado} label="Ranking PvP" sizes="(min-width: 1024px) 290px, 33vw" />
         <ArtLink href="/ranking?periodo=semanal" art={kitArt.banners.rankingSemanal} label="Ranking semanal" sizes="(min-width: 1024px) 290px, 33vw" />
@@ -316,5 +321,6 @@ export default function RankingPage({ searchParams }: PageProps<"/ranking">) {
         <RankingBody searchParams={sp} />
       </Suspense>
     </div>
+    </>
   );
 }

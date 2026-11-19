@@ -58,7 +58,7 @@ async function Article({ params }: { params: Promise<{ slug: string }> }) {
 
 export default function NewsArticlePage({ params }: PageProps<"/noticias/[slug]">) {
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-10">
+    <div data-scene="mercado-entardecer" className="mx-auto w-full max-w-3xl px-4 py-10">
       <Link href="/noticias" className="mb-4 inline-block text-sm text-arcane hover:underline">
         Todas as notícias
       </Link>

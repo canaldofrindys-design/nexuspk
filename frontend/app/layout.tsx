@@ -3,6 +3,7 @@ import { Cinzel, Inter } from "next/font/google";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { MotionEngine } from "@/components/motion/MotionEngine";
+import { SceneBackdrop } from "@/components/scene/SceneBackdrop";
 import { Suspense } from "react";
 import "./globals.css";
 
@@ -18,6 +19,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="pt-BR" className={`${cinzel.variable} ${inter.variable}`} data-scroll-behavior="smooth">
       <body className="flex min-h-dvh flex-col antialiased">
+        <Suspense fallback={null}>
+          <SceneBackdrop />
+        </Suspense>
         <SiteHeader />
         <main className="flex-1">{children}</main>
         <SiteFooter />

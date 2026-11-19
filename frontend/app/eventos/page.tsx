@@ -1,3 +1,4 @@
+import { PageHero } from "@/components/scene/PageHero";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
@@ -134,17 +135,19 @@ async function EventsBody({ searchParams }: { searchParams: Promise<Query> }) {
 
 export default function EventsPage({ searchParams }: PageProps<"/eventos">) {
   return (
+    <>
+      <PageHero
+        scene="luar"
+        icon="eventos"
+        eyebrow="Agenda oficial"
+        title="Eventos"
+        lead="Bosses mundiais, PvP, invasões e datas comemorativas. Os eventos são conduzidos pela equipe dentro do jogo e todos os horários seguem o horário de Brasília."
+      />
     <div className="mx-auto w-full max-w-7xl px-4 py-10">
-      <h1 className="mb-1 flex items-center gap-3 font-display text-2xl text-gold-bright">
-        <KitIcon name="eventos" size={44} />
-        Eventos
-      </h1>
-      <p className="mb-4 text-sm text-silver/70">
-        Horários de Brasília. Os eventos são conduzidos pela equipe dentro do jogo; esta página é a agenda oficial.
-      </p>
       <Suspense fallback={<p className="text-sm text-silver/60">Carregando…</p>}>
         <EventsBody searchParams={searchParams as Promise<Query>} />
       </Suspense>
     </div>
+    </>
   );
 }
