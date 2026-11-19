@@ -41,6 +41,42 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  /**
+   * Endereços do site antigo (PHP) que jogadores, buscadores e favoritos ainda usam.
+   * As pastas que o jogo e o launcher chamam (ServerMain, Clan, ClanContent, updater...)
+   * são aplicações do IIS e nem chegam aqui. Ver docs/DEPLOYMENT.md, "Troca do site".
+   */
+  async redirects() {
+    const legacy: [string, string][] = [
+      ["/index.php", "/"],
+      ["/painel/cadastrar", "/criar-conta"],
+      ["/painel/ativar", "/confirmar-email"],
+      ["/painel/recuperar", "/recuperar-conta"],
+      ["/painel/login", "/login"],
+      ["/painel/logado", "/painel"],
+      ["/painel/sair", "/login"],
+      ["/painel/support/:path*", "/painel/suporte"],
+      ["/painel/admin/:path*", "/admin"],
+      ["/painel/:old(dashboard|settings|nick|classe|skills|status|notification|personagens|donate|mydonate|confirmardonate|banido)/:path*", "/painel"],
+      ["/rankings/:path*", "/ranking"],
+      ["/rank/:path*", "/ranking"],
+      ["/wiki/regras", "/guias/regras"],
+      ["/wiki/aging", "/guias/aging"],
+      ["/wiki/:path*", "/guias"],
+      ["/notice/:path*", "/noticias"],
+      ["/logs/:path*", "/ranking"],
+    ];
+    return [
+      // www.<domínio> -> <domínio>, mantendo o caminho.
+      {
+        source: "/:path*",
+        has: [{ type: "host" as const, value: "www\\.(?<domain>.+)" }],
+        destination: "https://:domain/:path*",
+        permanent: true,
+      },
+      ...legacy.map(([source, destination]) => ({ source, destination, permanent: true })),
+    ];
+  },
   async headers() {
     return [
       {
