@@ -339,7 +339,8 @@ Save-State $state
 try {
     Write-Step 'Passando o domínio para o portal'
     foreach ($m in $toMove) {
-        Remove-WebBinding -Name $m.Site -Protocol $m.Protocol -BindingInformation $m.Info
+        $info = $m.Info
+        Get-WebBinding -Name $m.Site -Protocol $m.Protocol | Where-Object { $_.bindingInformation -eq $info } | Remove-WebBinding
         Write-Ok "removido do site antigo: $($m.Protocol) $($m.Info)"
     }
     foreach ($h in $hosts) {

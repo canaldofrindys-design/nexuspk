@@ -67,7 +67,7 @@ Assert-That 'volta: portal continua no endereço de teste' ($r.Status -eq 200) "
 
 # Deixa o laboratório como estava para os próximos passos.
 foreach ($h in $domain, $www) {
-    foreach ($p in @(@('http', "*:80:$h"), @('https', "*:443:$h"))) { Remove-WebBinding -Name 'Legado' -Protocol $p[0] -BindingInformation $p[1] -ErrorAction SilentlyContinue }
+    Get-WebBinding -Name 'Legado' | Where-Object { $_.bindingInformation -like "*:$h" } | Remove-WebBinding
 }
 
 Complete-Test

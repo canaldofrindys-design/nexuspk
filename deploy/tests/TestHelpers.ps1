@@ -4,7 +4,11 @@ $script:Failures = 0
 
 function Assert-That([string]$Name, [bool]$Condition, [string]$Detail = '') {
     if ($Condition) { Write-Host "ok   - $Name" -ForegroundColor Green }
-    else { Write-Host "FAIL - $Name $Detail" -ForegroundColor Red; $script:Failures++ }
+    else {
+        Write-Host "FAIL - $Name $Detail" -ForegroundColor Red; $script:Failures++
+        # Anotação do GitHub: aparece no resumo da execução sem precisar abrir o log.
+        if ($env:GITHUB_ACTIONS) { Write-Host "::error::FAIL - $Name $Detail" }
+    }
 }
 
 function Invoke-Api([string]$Method, [string]$Path, [string]$Body) {
