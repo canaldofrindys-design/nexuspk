@@ -1,21 +1,20 @@
 import { Suspense } from "react";
 import { AgendaWindow } from "@/features/home/AgendaWindow";
 import { BannerCarousel } from "@/features/home/BannerCarousel";
-import { FeatureCards } from "@/features/home/FeatureCards";
+import { ActionButtons, FeatureCards } from "@/features/home/FeatureCards";
 import { HeroBanner } from "@/features/home/HeroBanner";
 import { HomeChapters } from "@/features/home/HomeChapters";
 import { NoticeBoard } from "@/features/home/NoticeBoard";
 import {
-  BossesCard,
-  ClanWarCard,
   ClassesStrip,
-  HomeActions,
+  ItemSlots,
+  PortalTiles,
   RankEmblems,
   RankingLinks,
+  RankingPeriods,
   ServerStatusPanel,
 } from "@/features/home/PortalSections";
 import { RankingWindow } from "@/features/home/RankingWindow";
-import { WelcomeBanner } from "@/features/home/WelcomeBanner";
 import { loadHome } from "@/features/home/loadHome";
 import { KitIcon } from "@/components/ui/KitIcon";
 import { connection } from "next/server";
@@ -23,9 +22,9 @@ import { connection } from "next/server";
 /**
  * Home em quatro partes, cada uma com o seu cenário no fundo (o fundo troca com esmaecer ao rolar):
  * 1) banner animado com três cenas (vale ao entardecer, luar e estrada);
- * 2) a prancha "home" do kit visual: banner de boas-vindas (ou os banners do painel) com
- *    Download / Cadastre-se / Começar a jogar, faixa de seis cards, ranking, patentes, bosses,
- *    classes, guerra de clãs e status do servidor;
+ * 2) a prancha "portal" do kit visual: banners do painel (quando houver), faixa de cinco banners,
+ *    faixa de botões e o quadro em três colunas (ranking geral e status | classes, itens, patentes
+ *    e atividades | rankings, bandeiras e orbes);
  * 3) quatro capítulos ilustrados (primeiros passos, eventos e PvP, comunidade, status e conta);
  * 4) o que está acontecendo agora: avisos, agenda e top 10, com dados ao vivo.
  * No celular tudo vira uma coluna, na mesma ordem.
@@ -35,30 +34,27 @@ async function Portal() {
   const home = await loadHome();
   return (
     <div id="portal" data-scene="vale-dourado" className="mx-auto flex max-w-7xl scroll-mt-20 flex-col gap-4 px-4 pt-6 pb-10">
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_330px]">
-        <div data-reveal="zoom">{home?.banners?.length ? <BannerCarousel banners={home.banners} /> : <WelcomeBanner />}</div>
-        <HomeActions />
-      </div>
+      {home?.banners?.length ? (
+        <div data-reveal="zoom">
+          <BannerCarousel banners={home.banners} />
+        </div>
+      ) : null}
 
       <FeatureCards />
+      <ActionButtons />
 
-      <div className="grid gap-4 lg:grid-cols-[240px_minmax(0,1fr)_260px] lg:items-start">
-        <RankingLinks />
+      <div className="nx-board grid gap-4 lg:grid-cols-[250px_minmax(0,1fr)_250px] lg:items-start">
         <div className="flex flex-col gap-4">
-          <RankEmblems />
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-[1fr_1.75fr_0.85fr] md:items-stretch">
-            <div className="self-center">
-              <BossesCard />
-            </div>
-            <div className="col-span-2 row-start-2 md:col-span-1 md:row-start-auto">
-              <ClassesStrip />
-            </div>
-            <div className="self-center">
-              <ClanWarCard />
-            </div>
-          </div>
+          <RankingLinks />
+          <ServerStatusPanel home={home} />
         </div>
-        <ServerStatusPanel home={home} />
+        <div className="flex min-w-0 flex-col gap-4">
+          <ClassesStrip />
+          <ItemSlots />
+          <RankEmblems />
+          <PortalTiles />
+        </div>
+        <RankingPeriods />
       </div>
     </div>
   );

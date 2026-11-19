@@ -1,58 +1,47 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArtLink, kitArt, rankEmblems } from "@/components/ui/ArtLink";
+import { pranchaArt, rankEmblems } from "@/components/ui/ArtLink";
 import { KitIcon, type KitIconName } from "@/components/ui/KitIcon";
 import { classes } from "./classes";
 import { formatNumber } from "./format";
 import type { HomeSnapshot } from "./types";
 
 /*
- * Blocos da home na ordem da prancha "home" do kit visual (05_pranchas_e_mockups/home.png).
+ * Corpo da home na ordem da prancha "portal" do kit visual (05_pranchas_e_mockups/portal.png):
+ * coluna esquerda com Ranking geral e Status do servidor; centro com classes, itens, patentes e os
+ * cinco tiles; coluna direita com Rankings, bandeiras de clã e orbes.
  * Nenhum número vem da arte: status, jogadores e taxas saem da API (/api/v1/home).
  */
 
-/** Título de painel da prancha: plaquinha dourada, ícone e texto em caixa alta centralizados. */
-export function Plate({ icon, title, subtitle }: { icon: KitIconName; title: string; subtitle?: string }) {
+/** Título de painel da prancha: faixa dourada com ícone e texto em caixa alta. */
+export function PanelTitle({ icon, title, id }: { icon?: KitIconName; title: string; id: string }) {
   return (
-    <div className="nx-plate flex items-center justify-center gap-2.5 px-3 py-2">
-      <KitIcon name={icon} size={40} />
-      <div className="text-center leading-tight">
-        <h2 className="font-display text-lg font-bold tracking-wide text-gold-bright uppercase [text-shadow:0_2px_4px_rgb(0_0_0/0.8)]">{title}</h2>
-        {subtitle ? <p className="font-display text-[11px] tracking-[0.2em] text-gold-bright/80 uppercase">{subtitle}</p> : null}
-      </div>
+    <div className="nx-panel-title">
+      <span aria-hidden className="nx-panel-title__gem" />
+      {icon ? <KitIcon name={icon} size={30} /> : null}
+      <h2 id={id} className="font-display text-[15px] font-bold tracking-wide text-gold-bright uppercase [text-shadow:0_2px_4px_rgb(0_0_0/0.8)]">
+        {title}
+      </h2>
     </div>
   );
 }
 
-/** Coluna à direita do banner: Download do jogo, Cadastre-se agora e Começar a jogar. */
-export function HomeActions() {
-  return (
-    <nav aria-label="Comece aqui" className="mx-auto grid w-full max-w-[330px] gap-2 lg:mx-0 lg:max-w-none lg:content-center">
-      <ArtLink href="/download" art={kitArt.botoes.downloadHome} label="Download do jogo" sizes="330px" priority />
-      <ArtLink href="/criar-conta" art={kitArt.botoes.cadastroHome} label="Cadastre-se agora: criar conta" sizes="330px" priority />
-      <ArtLink href="/servidor" art={kitArt.botoes.jogarHome} label="Começar a jogar: conheça o servidor" sizes="330px" priority />
-    </nav>
-  );
-}
-
-const rankingLinks = [
+const topLinks = [
   { href: "/ranking", label: "Top Level", icon: "rankingGeral" },
-  { href: "/ranking?tipo=pvp", label: "Top PvP", icon: "pvp" },
-  { href: "/ranking?tipo=clas", label: "Top Clã", icon: "guilda" },
-  { href: "/ranking?periodo=mensal", label: "Top Mensal", icon: "eventos" },
-  { href: "/ranking?periodo=semanal", label: "Top Semanal", icon: "rankingSemanal" },
-  { href: "/ranking?periodo=diario", label: "Top Diário", icon: "rankingDiario" },
+  { href: "/ranking?tipo=pvp", label: "Top Kill (PvP)", icon: "pvp" },
+  { href: "/ranking?tipo=clas", label: "Top Clã", icon: "guildasBandeira" },
+  { href: "/personagens", label: "Buscar personagem", icon: "personagem" },
 ] as const satisfies readonly { href: string; label: string; icon: KitIconName }[];
 
-/** Painel "Ranking / Top geral": atalhos para cada ranking que o portal publica. */
+/** Painel "Ranking geral" (coluna esquerda da prancha). */
 export function RankingLinks() {
   return (
-    <section aria-label="Rankings" className="game-window p-2">
-      <Plate icon="trofeu" title="Ranking" subtitle="Top geral" />
-      <ul className="mt-2 px-1">
-        {rankingLinks.map((r) => (
-          <li key={r.href} className="nx-row last:border-0">
-            <Link href={r.href} className="flex items-center gap-3 px-2 py-2 text-[15px] text-silver transition-colors hover:text-gold-bright">
+    <section aria-labelledby="ranking-geral-t" className="nx-panel">
+      <PanelTitle icon="rankingGeral" title="Ranking geral" id="ranking-geral-t" />
+      <ul className="nx-panel__list">
+        {topLinks.map((r) => (
+          <li key={r.href}>
+            <Link href={r.href} className="nx-panel__row">
               <KitIcon name={r.icon} size={26} />
               {r.label}
             </Link>
@@ -63,24 +52,48 @@ export function RankingLinks() {
   );
 }
 
-/** Faixa de emblemas de patente da prancha (arte do kit). Leva ao ranking. */
-export function RankEmblems() {
+const periodLinks = [
+  { href: "/ranking?periodo=diario", label: "Ranking diário", icon: "rankingDiario" },
+  { href: "/ranking?periodo=semanal", label: "Ranking semanal", icon: "rankingSemanal" },
+  { href: "/ranking?periodo=mensal", label: "Ranking mensal", icon: "eventos" },
+  { href: "/ranking?tipo=clas", label: "Ranking de clãs", icon: "guilda" },
+  { href: "/ranking", label: "Hall da fama", icon: "trofeu" },
+] as const satisfies readonly { href: string; label: string; icon: KitIconName }[];
+
+/** Painel "Rankings" (coluna direita), com as bandeiras de clã e os orbes da prancha. */
+export function RankingPeriods() {
   return (
-    <Link href="/ranking" className="art-link block" aria-label="Patentes do NexusPK: ver o ranking">
-      <ul className="grid grid-cols-4 items-end justify-items-center gap-x-1 gap-y-2 sm:grid-cols-7 lg:gap-x-0">
-        {rankEmblems.map((e) => (
-          <li key={e.name}>
-            <Image src={e.src} alt="" width={e.width} height={e.height} unoptimized className="nx-emblem h-auto w-[84px] object-contain sm:w-full sm:max-w-[124px]" />
-          </li>
+    <div className="flex flex-col gap-4">
+      <section aria-labelledby="rankings-t" className="nx-panel">
+        <PanelTitle icon="rankingGeral" title="Rankings" id="rankings-t" />
+        <ul className="nx-panel__list">
+          {periodLinks.map((r) => (
+            <li key={r.label}>
+              <Link href={r.href} className="nx-panel__row">
+                <KitIcon name={r.icon} size={26} />
+                {r.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
+      <Link href="/ranking?tipo=clas" aria-label="Clãs: ver o ranking de clãs" className="art-link grid grid-cols-5 justify-items-center gap-1 px-1">
+        {[0, 1, 2, 3, 4].map((i) => (
+          <Image key={i} src={`/kit/prancha/bandeira-${i}.webp`} alt="" width={56} height={80} unoptimized className="h-auto w-full max-w-[52px]" />
         ))}
-      </ul>
-    </Link>
+      </Link>
+      <div aria-hidden className="grid grid-cols-5 justify-items-center gap-1 px-1">
+        {[0, 1, 2, 3, 4].map((i) => (
+          <Image key={i} src={`/kit/prancha/orbe-${i}.webp`} alt="" width={62} height={62} unoptimized className="nx-orb h-auto w-full max-w-[50px]" />
+        ))}
+      </div>
+    </div>
   );
 }
 
 const availability = {
-  online: { text: "Online", className: "text-data-ok", dot: "bg-data-ok shadow-[0_0_12px_#7ee08a]" },
-  offline: { text: "Offline", className: "text-data-bad", dot: "bg-data-bad shadow-[0_0_12px_#ff5a4a]" },
+  online: { text: "Servidor online", className: "text-data-ok", dot: "bg-data-ok shadow-[0_0_12px_#7ee08a]" },
+  offline: { text: "Servidor offline", className: "text-data-bad", dot: "bg-data-bad shadow-[0_0_12px_#ff5a4a]" },
   partial: { text: "Parcial", className: "text-data-name", dot: "bg-data-name" },
   unknown: { text: "Verificando", className: "text-silver/70", dot: "bg-silver/50" },
 } as const;
@@ -99,33 +112,30 @@ export function ServerStatusPanel({ home }: { home: HomeSnapshot | null }) {
   const rates = Object.entries(home?.server.rates ?? {}).slice(0, 4);
   const players = home?.status.playersOnline;
   return (
-    <section aria-labelledby="status-title" className="game-window p-2">
-      <div className="nx-plate px-3 py-1.5 text-center">
-        <h2 id="status-title" className="font-display text-sm font-bold tracking-wide text-silver uppercase">
-          Status do servidor
-        </h2>
-      </div>
-      <p className={`nx-pill-online mt-2 flex items-center justify-center gap-2 py-1 font-display text-lg font-bold uppercase ${s.className}`}>
-        <span aria-hidden className={`inline-block size-3.5 rounded-full ${s.dot}`} />
-        {home ? s.text : "API indisponível"}
-      </p>
-      <dl className="mt-1 px-2">
+    <section aria-labelledby="status-title" className="nx-panel">
+      <PanelTitle title="Status do servidor" id="status-title" />
+      <dl className="nx-panel__list">
+        <div className="nx-panel__row">
+          <span aria-hidden className={`ml-1.5 inline-block size-3.5 shrink-0 rounded-full ${s.dot}`} />
+          <dt className="sr-only">Estado</dt>
+          <dd className={`ml-1 font-semibold ${s.className}`}>{home ? s.text : "API indisponível"}</dd>
+        </div>
         {players != null ? (
-          <div className="nx-row flex items-center gap-3 py-1.5">
+          <div className="nx-panel__row">
             <KitIcon name="online" size={26} />
-            <dt className="flex-1 text-silver/90">Jogadores online</dt>
+            <dt className="flex-1">Jogadores online</dt>
             <dd className="tabular text-data-info">{formatNumber(players)}</dd>
           </div>
         ) : null}
         {rates.map(([label, value]) => (
-          <div key={label} className="nx-row flex items-center gap-3 py-1.5 last:border-0">
+          <div key={label} className="nx-panel__row">
             <KitIcon name={rateIcon(label)} size={26} />
-            <dt className="flex-1 text-silver/90">{label}</dt>
+            <dt className="flex-1">{label}</dt>
             <dd className="tabular font-semibold text-silver">{value}</dd>
           </div>
         ))}
       </dl>
-      <p className="mt-1 px-2 pb-1 text-center text-xs">
+      <p className="px-3 pt-1 pb-2.5 text-center text-xs">
         <Link href="/status" className="text-arcane hover:underline">
           Login, canais e manutenções
         </Link>
@@ -134,40 +144,101 @@ export function ServerStatusPanel({ home }: { home: HomeSnapshot | null }) {
   );
 }
 
-/** As seis classes da prancha (Lutador, Mecânico, Arqueira, Pikeman, Assassina, Sacerdotisa). */
-const featured = [1, 2, 3, 4, 9, 8];
+/** As sete classes da prancha (Lutador, Mecânico, Arqueira, Pikeman, Atalanta, Cavaleiro, Mago). */
+const featured = [1, 2, 3, 4, 5, 6, 7];
 
 export function ClassesStrip() {
   const list = featured.map((code) => classes.find((c) => c.code === code)!);
   return (
-    <section aria-labelledby="classes-title" className="game-window flex h-full flex-col px-2 pt-1.5 pb-2">
-      <h2 id="classes-title" className="text-center font-display text-sm font-bold tracking-wide text-gold-bright uppercase">
-        <Link href="/classes" className="hover:underline">
-          Classes do jogo
-        </Link>
-      </h2>
-      <ul className="mt-1.5 grid flex-1 grid-cols-6 gap-1.5">
+    <nav aria-label="Classes do jogo">
+      <ul className="grid grid-cols-4 gap-2 sm:grid-cols-7">
         {list.map((c) => (
           <li key={c.code}>
-            <Link href={`/classes#${c.code}`} className="group flex flex-col items-center gap-1">
-              <span className="block overflow-hidden rounded-md border border-bronze shadow-[0_6px_14px_-6px_rgb(0_0_0/0.9)] group-hover:border-gold-bright group-hover:shadow-[0_0_14px_rgb(53_184_255/0.45)]">
-                <Image src={c.icon} alt="" width={84} height={84} className="size-full object-cover" />
-              </span>
-              <span className="max-w-full truncate text-[10px] font-semibold tracking-tighter text-silver group-hover:text-gold-bright md:text-[9px] xl:text-[10px]">{c.name}</span>
+            <Link href={`/classes#${c.code}`} className="nx-portrait group">
+              <Image src={c.icon} alt="" width={84} height={84} className="aspect-square w-full object-cover" />
+              <span className="nx-portrait__name">{c.name}</span>
+            </Link>
+          </li>
+        ))}
+        <li className="sm:hidden">
+          <Link href="/classes" className="nx-portrait nx-portrait--more">
+            <span className="font-display text-2xl text-gold-bright">+3</span>
+            <span className="nx-portrait__name">Todas</span>
+          </Link>
+        </li>
+      </ul>
+    </nav>
+  );
+}
+
+/** Itens da prancha em espaços de inventário. Cada um leva ao capítulo do manual ou guia que explica o sistema. */
+const itemLinks: Record<string, string> = {
+  "pocao-hp": "/manual#evolucao",
+  "pocao-mp": "/manual#evolucao",
+  pergaminho: "/guias/missoes-amanda",
+  cristal: "/manual#itens",
+  bigorna: "/guias/aging",
+  martelo: "/manual#aprimoramento",
+  "sheltom-rubi": "/guias/aging#tabela",
+  "sheltom-safira": "/manual#aprimoramento",
+  bau: "/eventos",
+  chave: "/manual#itens",
+  asas: "/manual#itens",
+};
+
+export function ItemSlots() {
+  return (
+    <nav aria-label="Sistemas do jogo">
+      <ul className="grid grid-cols-6 gap-1.5 sm:grid-cols-11">
+        {pranchaArt.itens.map((it) => (
+          <li key={it.key}>
+            <Link href={itemLinks[it.key]} title={it.name} className="nx-slot">
+              <Image src={`/kit/prancha/item-${it.key}.webp`} alt={it.name} width={it.width} height={it.height} unoptimized className="h-auto w-full object-contain" />
             </Link>
           </li>
         ))}
       </ul>
-    </section>
+    </nav>
   );
 }
 
-export function BossesCard() {
+/** Patentes (medalhas do kit Web Ready com canal alfa). Levam ao ranking. */
+export function RankEmblems() {
   return (
-    <ArtLink href="/eventos?categoria=boss" art={kitArt.banners.bossesGrande} label="Bosses mundiais: eventos de boss" sizes="(min-width: 1024px) 260px, 50vw" />
+    <Link href="/ranking" className="art-link block" aria-label="Patentes do NexusPK: ver o ranking">
+      <ul className="grid grid-cols-4 items-end justify-items-center gap-x-1 gap-y-2 sm:grid-cols-7">
+        {rankEmblems.map((e) => (
+          <li key={e.name}>
+            <Image src={e.src} alt="" width={e.width} height={e.height} unoptimized className="h-[72px] w-auto object-contain sm:h-[88px] xl:h-[96px]" />
+          </li>
+        ))}
+      </ul>
+    </Link>
   );
 }
 
-export function ClanWarCard() {
-  return <ArtLink href="/ranking?tipo=clas" art={kitArt.banners.guerraDeClas} label="Guerra de clãs: ranking de clãs" sizes="(min-width: 1024px) 220px, 50vw" />;
+/** Os cinco tiles do pé da prancha. O rótulo é HTML sobre a plaquinha limpa da arte. */
+const tiles = [
+  { href: "/eventos?categoria=boss", art: pranchaArt.tiles.bosses, label: "Bosses" },
+  { href: "/eventos", art: pranchaArt.tiles.eventos, label: "Eventos" },
+  { href: "/manual#pvp", art: pranchaArt.tiles.pvp, label: "Arena PvP" },
+  { href: "/manual#pvp", art: pranchaArt.tiles.castelo, label: "Bless Castle" },
+  { href: "/ranking?tipo=clas", art: pranchaArt.tiles.guerra, label: "Clãs" },
+] as const;
+
+export function PortalTiles() {
+  return (
+    <nav aria-label="Atividades">
+      <ul className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+        {tiles.map((t, i) => (
+          <li key={t.label} className={i === 4 ? "col-span-2 mx-auto w-1/2 sm:col-span-1 sm:w-auto" : undefined}>
+            <Link href={t.href} className="nx-tile art-link">
+              <Image src={t.art.src} alt="" width={t.art.width} height={t.art.height} unoptimized className="h-auto w-full" />
+              <span className="nx-tile__label">{t.label}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
 }

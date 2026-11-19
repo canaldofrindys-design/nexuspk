@@ -42,44 +42,75 @@ export function ArtLink({
 /** Peças do kit (public/kit), com o tamanho real de cada recorte para preservar a proporção. */
 export const kitArt = {
   cards: {
-    pvp: { src: "/kit/cards/pvp-card.webp", width: 243, height: 112 },
-    boss: { src: "/kit/cards/boss-card.webp", width: 248, height: 111 },
-    eventos: { src: "/kit/cards/eventos-card.webp", width: 236, height: 113 },
-    rankingGeral: { src: "/kit/cards/ranking-geral-card.webp", width: 242, height: 113 },
-    rankingDiario: { src: "/kit/cards/ranking-diario-card.webp", width: 241, height: 113 },
-    rankingSemanal: { src: "/kit/cards/ranking-semanal-card.webp", width: 246, height: 112 },
+    pvp: { src: "/kit/cards/pvp-card.webp", width: 243, height: 115 },
+    boss: { src: "/kit/cards/boss-card.webp", width: 244, height: 116 },
+    eventos: { src: "/kit/cards/eventos-card.webp", width: 235, height: 116 },
+    rankingGeral: { src: "/kit/cards/ranking-geral-card.webp", width: 241, height: 116 },
+    rankingDiario: { src: "/kit/cards/ranking-diario-card.webp", width: 239, height: 116 },
+    rankingSemanal: { src: "/kit/cards/ranking-semanal-card.webp", width: 242, height: 115 },
   },
   banners: {
-    eventosEspeciais: { src: "/kit/cards/eventos-especiais.webp", width: 298, height: 113 },
-    bossMundiais: { src: "/kit/cards/boss-mundiais.webp", width: 292, height: 113 },
-    pvpLiberado: { src: "/kit/cards/pvp-liberado.webp", width: 281, height: 113 },
-    rankingSemanal: { src: "/kit/cards/ranking-semanal.webp", width: 289, height: 113 },
-    rankingDiario: { src: "/kit/cards/ranking-diario.webp", width: 284, height: 113 },
-    destaque: { src: "/kit/cards/banner-destaque.webp", width: 1042, height: 212 },
+    eventosEspeciais: { src: "/kit/cards/eventos-especiais.webp", width: 298, height: 105 },
+    bossMundiais: { src: "/kit/cards/boss-mundiais.webp", width: 291, height: 107 },
+    pvpLiberado: { src: "/kit/cards/pvp-liberado.webp", width: 280, height: 106 },
+    rankingSemanal: { src: "/kit/cards/ranking-semanal.webp", width: 285, height: 107 },
+    rankingDiario: { src: "/kit/cards/ranking-diario.webp", width: 273, height: 108 },
+    destaque: { src: "/kit/cards/banner-destaque.webp", width: 1142, height: 212 },
+    /** Recorte do centro para o celular (kit Web Ready): logo e cristal preservados. */
+    destaqueMobile: { src: "/kit/cards/banner-destaque-mobile.webp", width: 560, height: 212 },
     cabecalho: { src: "/kit/cards/cabecalho-nexuspk.webp", width: 1536, height: 182 },
+    cabecalhoMobile: { src: "/kit/cards/cabecalho-nexuspk-mobile.webp", width: 720, height: 182 },
     /** Recortes da prancha "home" (05_pranchas_e_mockups/home.png). */
     bossesGrande: { src: "/kit/cards/bosses-mundiais-grande.webp", width: 268, height: 124 },
     guerraDeClas: { src: "/kit/cards/guerra-de-clas.webp", width: 224, height: 124 },
   },
   botoes: {
-    downloadDoJogo: { src: "/kit/botoes/download-do-jogo.webp", width: 357, height: 84 },
-    criarConta: { src: "/kit/botoes/criar-conta.webp", width: 276, height: 84 },
-    doacoes: { src: "/kit/botoes/doacoes-cash.webp", width: 256, height: 84 },
-    guia: { src: "/kit/botoes/guia-do-jogo.webp", width: 272, height: 84 },
-    suporte: { src: "/kit/botoes/suporte.webp", width: 240, height: 84 },
-    downloadHome: { src: "/kit/botoes/download-home.webp", width: 333, height: 73 },
-    cadastroHome: { src: "/kit/botoes/cadastro-home.webp", width: 333, height: 68 },
-    jogarHome: { src: "/kit/botoes/jogar-agora-home.webp", width: 333, height: 69 },
+    downloadDoJogo: { src: "/kit/botoes/download-do-jogo.webp", width: 352, height: 67 },
+    criarConta: { src: "/kit/botoes/criar-conta.webp", width: 263, height: 66 },
+    doacoes: { src: "/kit/botoes/doacoes-cash.webp", width: 251, height: 67 },
+    guia: { src: "/kit/botoes/guia-do-jogo.webp", width: 269, height: 67 },
+    suporte: { src: "/kit/botoes/suporte.webp", width: 229, height: 67 },
+    downloadHome: { src: "/kit/botoes/download-home.webp", width: 331, height: 66 },
+    cadastroHome: { src: "/kit/botoes/cadastro-home.webp", width: 331, height: 68 },
+    jogarHome: { src: "/kit/botoes/jogar-agora-home.webp", width: 332, height: 69 },
   },
 } as const satisfies Record<string, Record<string, Art>>;
 
-/** Emblemas de patente da prancha, na ordem do mockup (cada recorte já traz o nome na plaquinha). */
+/**
+ * Peças recortadas da prancha "portal" (05_pranchas_e_mockups/portal.png) com recorte fino:
+ * fundo do mockup removido (transparência real) e, nos tiles, a plaquinha limpa para o rótulo em HTML
+ * (a arte trazia textos como "PvP em breve", que não são dados reais).
+ */
+export const pranchaArt = {
+  tiles: {
+    bosses: { src: "/kit/prancha/tile-bosses.webp", width: 170, height: 118 },
+    eventos: { src: "/kit/prancha/tile-eventos.webp", width: 168, height: 117 },
+    pvp: { src: "/kit/prancha/tile-pvp.webp", width: 167, height: 117 },
+    castelo: { src: "/kit/prancha/tile-castelo.webp", width: 169, height: 118 },
+    guerra: { src: "/kit/prancha/tile-guerra.webp", width: 167, height: 118 },
+  },
+  itens: [
+    { key: "pocao-hp", name: "Poções de HP", width: 73, height: 70 },
+    { key: "pocao-mp", name: "Poções de MP", width: 73, height: 70 },
+    { key: "pergaminho", name: "Pergaminhos e missões", width: 72, height: 70 },
+    { key: "cristal", name: "Cristais de invocação", width: 74, height: 72 },
+    { key: "bigorna", name: "Aging", width: 73, height: 70 },
+    { key: "martelo", name: "Ferreiro e mix", width: 74, height: 70 },
+    { key: "sheltom-rubi", name: "Sheltoms", width: 74, height: 70 },
+    { key: "sheltom-safira", name: "Force Orbs", width: 74, height: 70 },
+    { key: "bau", name: "Recompensas", width: 63, height: 58 },
+    { key: "chave", name: "Relíquias", width: 74, height: 70 },
+    { key: "asas", name: "Montarias e skins", width: 74, height: 70 },
+  ],
+} as const;
+
+/** Emblemas de patente (kit Web Ready: recorte com canal alfa, sem o fundo do mockup). Cada um já traz o nome na plaquinha. */
 export const rankEmblems = [
-  { name: "Bronze", src: "/kit/emblemas/bronze.webp", width: 118, height: 105 },
-  { name: "Prata", src: "/kit/emblemas/prata.webp", width: 113, height: 105 },
-  { name: "Ouro", src: "/kit/emblemas/ouro.webp", width: 113, height: 105 },
-  { name: "Platina", src: "/kit/emblemas/platina.webp", width: 133, height: 105 },
-  { name: "Diamante", src: "/kit/emblemas/diamante.webp", width: 136, height: 105 },
-  { name: "Mestre", src: "/kit/emblemas/mestre.webp", width: 145, height: 105 },
-  { name: "Grão-Mestre", src: "/kit/emblemas/grao-mestre.webp", width: 128, height: 105 },
+  { name: "Bronze", src: "/kit/emblemas/bronze.webp", width: 105, height: 105 },
+  { name: "Prata", src: "/kit/emblemas/prata.webp", width: 108, height: 105 },
+  { name: "Ouro", src: "/kit/emblemas/ouro.webp", width: 101, height: 105 },
+  { name: "Platina", src: "/kit/emblemas/platina.webp", width: 108, height: 105 },
+  { name: "Diamante", src: "/kit/emblemas/diamante.webp", width: 120, height: 105 },
+  { name: "Mestre", src: "/kit/emblemas/mestre.webp", width: 114, height: 105 },
+  { name: "Grão-Mestre", src: "/kit/emblemas/grao-mestre.webp", width: 113, height: 105 },
 ] as const;
