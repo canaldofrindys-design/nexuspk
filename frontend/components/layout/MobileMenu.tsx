@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
+import { KitIcon } from "@/components/ui/KitIcon";
 import { mainNavigation } from "./navigation";
 
 /** Menu do celular. `account` traz os links da conta (Entrar/Criar conta ou Painel), renderizados no servidor. */
@@ -30,7 +31,8 @@ export function MobileMenu({ account }: { account?: ReactNode }) {
           }}
         >
           {mainNavigation.map((item) => (
-            <Link key={item.href} href={item.href} className="px-2 py-2 text-silver hover:text-gold">
+            <Link key={item.href} href={item.href} className="flex items-center gap-3 px-2 py-1.5 text-silver hover:text-gold">
+              <KitIcon name={item.icon} size={30} />
               {item.label}
             </Link>
           ))}

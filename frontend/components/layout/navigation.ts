@@ -1,18 +1,20 @@
+import type { KitIconName } from "@/components/ui/KitIcon";
+
 /**
  * Menu principal: só páginas que existem. Guia e enciclopédia (monstros, bosses, mapas, itens)
  * entram quando tiverem conteúdo real. O Servidor e Download têm o texto editado no painel.
  */
 export const mainNavigation = [
-  { href: "/servidor", label: "Servidor" },
-  { href: "/noticias", label: "Notícias" },
-  { href: "/eventos", label: "Eventos" },
-  { href: "/ranking", label: "Ranking" },
-  { href: "/classes", label: "Classes" },
-  { href: "/personagens", label: "Personagens", wide: true },
-  { href: "/status", label: "Status", wide: true },
-  { href: "/suporte", label: "Suporte" },
-  { href: "/download", label: "Download" },
-] as const;
+  { href: "/servidor", label: "Servidor", icon: "inicio" },
+  { href: "/noticias", label: "Notícias", icon: "noticias" },
+  { href: "/eventos", label: "Eventos", icon: "eventos" },
+  { href: "/ranking", label: "Ranking", icon: "trofeu" },
+  { href: "/classes", label: "Classes", icon: "classes" },
+  { href: "/personagens", label: "Personagens", wide: true, icon: "personagem" },
+  { href: "/status", label: "Status", wide: true, icon: "online" },
+  { href: "/suporte", label: "Suporte", icon: "guia" },
+  { href: "/download", label: "Download", icon: "download" },
+] as const satisfies readonly { href: string; label: string; icon: KitIconName; wide?: boolean }[];
 
 export const footerColumns = [
   {

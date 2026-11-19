@@ -44,6 +44,7 @@ export function NoticeBoard({ news, events }: { news: HomeNewsItem[]; events: Ho
   return (
     <GameWindow
       title="Quadro de avisos"
+      icon="noticias"
       actions={
         <div role="tablist" aria-label="Filtrar avisos" className="flex gap-1">
           {tabs.map((t) => (

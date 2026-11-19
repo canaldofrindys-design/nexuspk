@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ButtonLink } from "@/components/ui/ButtonLink";
+import { ArtLink, kitArt } from "@/components/ui/ArtLink";
 import { Countdown } from "@/features/content/Countdown";
 import { eventLabel, newsLabel } from "@/features/content/labels";
 import { formatDateTime, formatNumber } from "./format";
@@ -145,17 +145,14 @@ export function HomeHero({ home }: { home: HomeSnapshot | null }) {
             <Highlight home={home} />
           </div>
 
+          {/* Botões do kit visual (prancha "home"): Download, Cadastre-se e Começar a jogar. */}
           <div
-            className="hero-in relative order-6 mx-auto mt-4 grid w-full max-w-md grid-cols-2 gap-3 lg:mx-0 lg:w-auto lg:max-w-none lg:order-none lg:mt-6 lg:flex lg:flex-wrap"
+            className="hero-in relative order-6 mx-auto mt-4 grid w-full max-w-[300px] grid-cols-1 gap-1.5 lg:mx-0 lg:mt-6 lg:max-w-[690px] lg:order-none lg:grid-cols-3 lg:gap-2.5"
             style={{ "--in-delay": "440ms" } as React.CSSProperties}
           >
-            <ButtonLink href="/criar-conta" size="lg" shine className="justify-center px-3! whitespace-nowrap lg:px-5!">
-              Criar conta
-            </ButtonLink>
-            <ButtonLink href="/painel" size="lg" variant="ghost" className="justify-center px-3! whitespace-nowrap lg:px-5!">
-              <span className="min-[380px]:hidden">Meu painel</span>
-              <span className="hidden min-[380px]:inline">Painel do jogador</span>
-            </ButtonLink>
+            <ArtLink href="/download" art={kitArt.botoes.downloadHome} label="Download do jogo" sizes="(min-width: 1024px) 230px, 300px" priority />
+            <ArtLink href="/criar-conta" art={kitArt.botoes.cadastroHome} label="Cadastre-se agora: criar conta" sizes="(min-width: 1024px) 230px, 300px" priority />
+            <ArtLink href="/servidor" art={kitArt.botoes.jogarHome} label="Começar a jogar: conheça o servidor" sizes="(min-width: 1024px) 230px, 300px" priority />
           </div>
 
           <ul

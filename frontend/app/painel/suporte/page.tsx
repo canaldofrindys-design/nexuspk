@@ -9,6 +9,7 @@ import { Pager } from "@/features/ranking/Pager";
 import { PlayerTicketTable } from "@/features/support/PlayerTickets";
 import type { TicketList } from "@/features/support/types";
 import { apiSend } from "@/services/api";
+import { KitIcon } from "@/components/ui/KitIcon";
 
 export const metadata: Metadata = { title: "Meus chamados", robots: { index: false } };
 
@@ -41,7 +42,10 @@ export default function PlayerTicketsPage({ searchParams }: PageProps<"/painel/s
         </Link>
       </p>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-display text-2xl text-gold-bright">Meus chamados</h1>
+        <h1 className="flex items-center gap-3 font-display text-2xl text-gold-bright">
+        <KitIcon name="guia" size={44} />
+        Meus chamados
+      </h1>
         <Link href="/painel/suporte/novo" className="border border-gold bg-gold/15 px-3 py-1.5 text-sm text-gold-bright hover:bg-gold/25">
           Abrir chamado
         </Link>

@@ -704,3 +704,26 @@ html.motion [data-reveal-state="hidden"][data-reveal="fade"] {
     animation: none;
   }
 }
+
+/*
+ * Kit visual NexusPK (public/kit): artes rasterizadas com texto embutido.
+ * Proporção sempre preservada (object-fit: contain); ao passar o mouse, brilho de cristal e leve elevação.
+ */
+.kit-icon {
+  filter: drop-shadow(0 2px 4px rgb(0 0 0 / 0.7));
+}
+.art-link {
+  border-radius: 10px;
+  transition:
+    transform 0.25s ease,
+    filter 0.25s ease;
+}
+.art-link:hover,
+.art-link:focus-visible {
+  filter: brightness(1.12) drop-shadow(0 0 14px rgb(53 184 255 / 0.45));
+}
+@media (prefers-reduced-motion: no-preference) {
+  .art-link:hover {
+    transform: translateY(-2px);
+  }
+}

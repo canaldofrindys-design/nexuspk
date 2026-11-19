@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import { GuestLinks, HeaderAccount, MobileAccount, MobileGuestLinks } from "./HeaderAccount";
+import { KitIcon } from "@/components/ui/KitIcon";
 import { MobileMenu } from "./MobileMenu";
 import { mainNavigation } from "./navigation";
 
@@ -22,13 +23,14 @@ export function SiteHeader() {
             className="h-11 w-auto drop-shadow-[0_0_12px_rgb(95_178_255/0.35)]"
           />
         </Link>
-        <nav aria-label="Principal" className="hidden gap-4 text-sm text-silver lg:flex xl:gap-5">
+        <nav aria-label="Principal" className="hidden gap-3 text-sm text-silver lg:flex xl:gap-4">
           {mainNavigation.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className={`py-1 tracking-wide transition-colors hover:text-gold-bright ${"wide" in item && item.wide ? "hidden xl:inline" : ""}`}
+              className={`nav-link group flex items-center gap-1 py-1 whitespace-nowrap tracking-wide transition-colors hover:text-gold-bright ${"wide" in item && item.wide ? "hidden xl:flex" : ""}`}
             >
+              <KitIcon name={item.icon} size={20} className="transition-transform group-hover:scale-110" />
               {item.label}
             </Link>
           ))}

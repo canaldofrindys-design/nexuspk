@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { ClassBadge } from "@/components/ui/ClassBadge";
 import { GameWindow } from "@/components/ui/GameWindow";
+import { PodiumMedal } from "@/components/ui/KitIcon";
 import type { RankedCharacter } from "./types";
 
 export function RankingWindow({ players, available }: { players: RankedCharacter[]; available: boolean }) {
   return (
     <GameWindow
       title="Ranking"
+      icon="rankingGeral"
       actions={
         <Link href="/ranking" className="text-xs text-silver/80 hover:text-gold">
           Ver ranking completo
@@ -22,7 +24,7 @@ export function RankingWindow({ players, available }: { players: RankedCharacter
           <caption className="sr-only">Cinco personagens de maior nível</caption>
           <thead>
             <tr className="text-left text-xs text-silver/60">
-              <th scope="col" className="w-8 py-1 font-normal">#</th>
+              <th scope="col" className="w-10 py-1 font-normal">#</th>
               <th scope="col" className="py-1 font-normal">Personagem</th>
               <th scope="col" className="py-1 font-normal">Classe</th>
               <th scope="col" className="py-1 text-right font-normal">Nível</th>
@@ -31,7 +33,9 @@ export function RankingWindow({ players, available }: { players: RankedCharacter
           <tbody>
             {players.map((p) => (
               <tr key={p.name} className={`border-t border-steel/60 ${p.position > 5 ? "hidden md:table-row" : ""}`}>
-                <td className={`tabular py-1.5 ${p.position <= 3 ? "text-gold-bright" : "text-silver/70"}`}>{p.position}</td>
+                <td className={`tabular py-1.5 ${p.position <= 3 ? "text-gold-bright" : "text-silver/70"}`}>
+                  {p.position <= 3 ? <PodiumMedal position={p.position} height={22} /> : p.position}
+                </td>
                 <td className="py-1.5 font-medium text-data-name">{p.name}</td>
                 <td className="py-1.5 text-silver/80">
                   <ClassBadge code={p.classCode} name={p.className} />

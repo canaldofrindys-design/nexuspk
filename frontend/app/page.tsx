@@ -3,12 +3,14 @@ import { AccountWindow } from "@/features/home/AccountWindow";
 import { AgendaWindow } from "@/features/home/AgendaWindow";
 import { BannerCarousel } from "@/features/home/BannerCarousel";
 import { ClassShowcase } from "@/features/home/ClassShowcase";
+import { FeatureCards } from "@/features/home/FeatureCards";
 import { HomeHero } from "@/features/home/HomeHero";
 import { QuickBar } from "@/features/home/QuickBar";
 import { NoticeBoard } from "@/features/home/NoticeBoard";
 import { RankingWindow } from "@/features/home/RankingWindow";
 import { ServerSheet } from "@/features/home/ServerSheet";
 import { StatusWindow } from "@/features/home/StatusWindow";
+import { WelcomeBanner } from "@/features/home/WelcomeBanner";
 import { loadHome } from "@/features/home/loadHome";
 import { connection } from "next/server";
 
@@ -27,7 +29,10 @@ async function Portal() {
         <div className="relative z-10 -mt-4 lg:hidden">
           <QuickBar />
         </div>
-        <div className="relative z-10 flex flex-col gap-4 lg:-mt-6 lg:grid lg:grid-cols-[240px_minmax(0,1fr)_300px] xl:grid-cols-[270px_minmax(0,1fr)_320px] lg:items-start">
+        <div className="relative z-10 lg:-mt-6">
+          <FeatureCards />
+        </div>
+        <div className="relative z-10 flex flex-col gap-4 lg:grid lg:grid-cols-[240px_minmax(0,1fr)_300px] xl:grid-cols-[270px_minmax(0,1fr)_320px] lg:items-start">
           <div className="contents lg:flex lg:flex-col lg:gap-4">
             <div className="order-4 lg:order-none">
               <AccountWindow />
@@ -37,11 +42,9 @@ async function Portal() {
             </div>
           </div>
           <div className="contents lg:flex lg:flex-col lg:gap-4">
-            {home?.banners?.length ? (
-              <div className="order-0 lg:order-none">
-                <BannerCarousel banners={home.banners} />
-              </div>
-            ) : null}
+            <div className="order-0 lg:order-none">
+              {home?.banners?.length ? <BannerCarousel banners={home.banners} /> : <WelcomeBanner />}
+            </div>
             <div className="order-1 lg:order-none">
               <NoticeBoard news={home?.news ?? []} events={[...(home?.activeEvents ?? []), ...(home?.upcomingEvents ?? [])]} />
             </div>

@@ -13,7 +13,7 @@ const label = {
 export function StatusWindow({ status }: { status: HomeSnapshot["status"] | null }) {
   const state = label[status?.availability ?? "unknown"];
   return (
-    <GameWindow title="Servidor">
+    <GameWindow title="Servidor" icon="online">
       <dl className="grid grid-cols-[1fr_auto] gap-y-1.5 text-sm">
         <dt>Estado</dt>
         <dd className={`text-right font-semibold ${state.className}`}>{status ? state.text : "API indisponível"}</dd>

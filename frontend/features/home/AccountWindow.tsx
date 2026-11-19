@@ -9,7 +9,7 @@ export async function AccountWindow() {
   const player = await getCurrentPlayer();
   if (player) {
     return (
-      <GameWindow title="Conta">
+      <GameWindow title="Conta" icon="conta">
         <p className="mb-3 text-sm">
           Conectado como <span className="font-medium text-data-name">{player.login}</span>.
         </p>
@@ -18,7 +18,7 @@ export async function AccountWindow() {
     );
   }
   return (
-    <GameWindow title="Conta">
+    <GameWindow title="Conta" icon="conta">
       <LoginForm next="/painel" />
       <div className="mt-3 flex justify-between gap-2 text-sm">
         <Link href="/criar-conta" className="text-gold hover:underline">

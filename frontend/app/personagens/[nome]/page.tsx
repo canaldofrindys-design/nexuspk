@@ -33,7 +33,7 @@ async function Profile({ params }: { params: Promise<{ nome: string }> }) {
   const c = result.data;
   return (
     <div className="grid gap-4 md:grid-cols-2">
-      <GameWindow title={c.name}>
+      <GameWindow title={c.name} icon="personagem">
         <div className="mb-3 flex items-center gap-3 border-b border-steel/60 pb-3">
           <ClassIcon code={c.classCode} name={c.className} size={64} />
           <div>
@@ -56,7 +56,7 @@ async function Profile({ params }: { params: Promise<{ nome: string }> }) {
           <Row label="Clã">{c.clan ?? "sem clã"}</Row>
         </dl>
       </GameWindow>
-      <GameWindow title="PvP">
+      <GameWindow title="PvP" icon="pvp">
         {c.pvp ? (
           <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
             <Row label="Posição no ranking PvP">
