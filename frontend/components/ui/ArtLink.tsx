@@ -15,6 +15,7 @@ export function ArtLink({
   className = "",
   sizes,
   priority = false,
+  imgClassName = "h-auto w-full object-contain",
 }: {
   href: string;
   art: Art;
@@ -22,9 +23,15 @@ export function ArtLink({
   className?: string;
   sizes?: string;
   priority?: boolean;
+  /** Classe da imagem: padrão ocupa a largura; use altura fixa para alinhar peças de tamanhos diferentes. */
+  imgClassName?: string;
 }) {
   return (
-    <Link href={href} className={`art-link group block ${className}`} title={label}>
+    <Link
+      href={href}
+      className={`art-link group block ${className}`}
+      title={label}
+    >
       <Image
         src={art.src}
         alt={label}
@@ -33,7 +40,7 @@ export function ArtLink({
         sizes={sizes}
         priority={priority}
         unoptimized
-        className="h-auto w-full object-contain"
+        className={imgClassName}
       />
     </Link>
   );
@@ -45,34 +52,106 @@ export const kitArt = {
     pvp: { src: "/kit/cards/pvp-card.webp", width: 243, height: 115 },
     boss: { src: "/kit/cards/boss-card.webp", width: 244, height: 116 },
     eventos: { src: "/kit/cards/eventos-card.webp", width: 235, height: 116 },
-    rankingGeral: { src: "/kit/cards/ranking-geral-card.webp", width: 241, height: 116 },
-    rankingDiario: { src: "/kit/cards/ranking-diario-card.webp", width: 239, height: 116 },
-    rankingSemanal: { src: "/kit/cards/ranking-semanal-card.webp", width: 242, height: 115 },
+    rankingGeral: {
+      src: "/kit/cards/ranking-geral-card.webp",
+      width: 241,
+      height: 116,
+    },
+    rankingDiario: {
+      src: "/kit/cards/ranking-diario-card.webp",
+      width: 239,
+      height: 116,
+    },
+    rankingSemanal: {
+      src: "/kit/cards/ranking-semanal-card.webp",
+      width: 242,
+      height: 115,
+    },
   },
   banners: {
-    eventosEspeciais: { src: "/kit/cards/eventos-especiais.webp", width: 298, height: 105 },
-    bossMundiais: { src: "/kit/cards/boss-mundiais.webp", width: 291, height: 107 },
-    pvpLiberado: { src: "/kit/cards/pvp-liberado.webp", width: 280, height: 106 },
-    rankingSemanal: { src: "/kit/cards/ranking-semanal.webp", width: 285, height: 107 },
-    rankingDiario: { src: "/kit/cards/ranking-diario.webp", width: 273, height: 108 },
-    destaque: { src: "/kit/cards/banner-destaque.webp", width: 1142, height: 212 },
+    eventosEspeciais: {
+      src: "/kit/cards/eventos-especiais.webp",
+      width: 298,
+      height: 105,
+    },
+    bossMundiais: {
+      src: "/kit/cards/boss-mundiais.webp",
+      width: 291,
+      height: 107,
+    },
+    pvpLiberado: {
+      src: "/kit/cards/pvp-liberado.webp",
+      width: 280,
+      height: 106,
+    },
+    rankingSemanal: {
+      src: "/kit/cards/ranking-semanal.webp",
+      width: 285,
+      height: 107,
+    },
+    rankingDiario: {
+      src: "/kit/cards/ranking-diario.webp",
+      width: 273,
+      height: 108,
+    },
+    destaque: {
+      src: "/kit/cards/banner-destaque.webp",
+      width: 1142,
+      height: 212,
+    },
     /** Recorte do centro para o celular (kit Web Ready): logo e cristal preservados. */
-    destaqueMobile: { src: "/kit/cards/banner-destaque-mobile.webp", width: 560, height: 212 },
-    cabecalho: { src: "/kit/cards/cabecalho-nexuspk.webp", width: 1536, height: 182 },
-    cabecalhoMobile: { src: "/kit/cards/cabecalho-nexuspk-mobile.webp", width: 720, height: 182 },
+    destaqueMobile: {
+      src: "/kit/cards/banner-destaque-mobile.webp",
+      width: 560,
+      height: 212,
+    },
+    cabecalho: {
+      src: "/kit/cards/cabecalho-nexuspk.webp",
+      width: 1536,
+      height: 182,
+    },
+    cabecalhoMobile: {
+      src: "/kit/cards/cabecalho-nexuspk-mobile.webp",
+      width: 720,
+      height: 182,
+    },
     /** Recortes da prancha "home" (05_pranchas_e_mockups/home.png). */
-    bossesGrande: { src: "/kit/cards/bosses-mundiais-grande.webp", width: 268, height: 124 },
-    guerraDeClas: { src: "/kit/cards/guerra-de-clas.webp", width: 224, height: 124 },
+    bossesGrande: {
+      src: "/kit/cards/bosses-mundiais-grande.webp",
+      width: 268,
+      height: 124,
+    },
+    guerraDeClas: {
+      src: "/kit/cards/guerra-de-clas.webp",
+      width: 224,
+      height: 124,
+    },
   },
   botoes: {
-    downloadDoJogo: { src: "/kit/botoes/download-do-jogo.webp", width: 352, height: 67 },
+    downloadDoJogo: {
+      src: "/kit/botoes/download-do-jogo.webp",
+      width: 352,
+      height: 67,
+    },
     criarConta: { src: "/kit/botoes/criar-conta.webp", width: 263, height: 66 },
     doacoes: { src: "/kit/botoes/doacoes-cash.webp", width: 251, height: 67 },
     guia: { src: "/kit/botoes/guia-do-jogo.webp", width: 269, height: 67 },
     suporte: { src: "/kit/botoes/suporte.webp", width: 229, height: 67 },
-    downloadHome: { src: "/kit/botoes/download-home.webp", width: 331, height: 66 },
-    cadastroHome: { src: "/kit/botoes/cadastro-home.webp", width: 331, height: 68 },
-    jogarHome: { src: "/kit/botoes/jogar-agora-home.webp", width: 332, height: 69 },
+    downloadHome: {
+      src: "/kit/botoes/download-home.webp",
+      width: 331,
+      height: 66,
+    },
+    cadastroHome: {
+      src: "/kit/botoes/cadastro-home.webp",
+      width: 331,
+      height: 68,
+    },
+    jogarHome: {
+      src: "/kit/botoes/jogar-agora-home.webp",
+      width: 332,
+      height: 69,
+    },
   },
 } as const satisfies Record<string, Record<string, Art>>;
 
@@ -109,8 +188,23 @@ export const rankEmblems = [
   { name: "Bronze", src: "/kit/emblemas/bronze.webp", width: 105, height: 105 },
   { name: "Prata", src: "/kit/emblemas/prata.webp", width: 108, height: 105 },
   { name: "Ouro", src: "/kit/emblemas/ouro.webp", width: 101, height: 105 },
-  { name: "Platina", src: "/kit/emblemas/platina.webp", width: 108, height: 105 },
-  { name: "Diamante", src: "/kit/emblemas/diamante.webp", width: 120, height: 105 },
+  {
+    name: "Platina",
+    src: "/kit/emblemas/platina.webp",
+    width: 108,
+    height: 105,
+  },
+  {
+    name: "Diamante",
+    src: "/kit/emblemas/diamante.webp",
+    width: 120,
+    height: 105,
+  },
   { name: "Mestre", src: "/kit/emblemas/mestre.webp", width: 114, height: 105 },
-  { name: "Grão-Mestre", src: "/kit/emblemas/grao-mestre.webp", width: 113, height: 105 },
+  {
+    name: "Grão-Mestre",
+    src: "/kit/emblemas/grao-mestre.webp",
+    width: 113,
+    height: 105,
+  },
 ] as const;

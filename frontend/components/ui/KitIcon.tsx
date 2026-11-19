@@ -1,7 +1,7 @@
 import Image from "next/image";
 
 /**
- * Ícones do kit visual do NexusPK (public/kit/icones, versão "-tight" do kit Web Ready, margem segura de 12px, WebP 160px).
+ * Ícones do kit visual do NexusPK (public/kit/icones, recortados de novo da prancha 05_pranchas_e_mockups/icones.png (os PNGs avulsos do kit vinham cortados num quadrado), caixa 160×160 com 8% de margem e centralizados).
  * Decorativos por padrão: o texto ao lado já diz o que é. Passe `label` quando o ícone estiver sozinho.
  */
 export const kitIcons = {

@@ -252,13 +252,15 @@ body::before {
       animation-timeline: scroll(root);
       animation-range: 0 180px;
     }
+    /* O texto da abertura só some quando ele mesmo sai pelo topo da tela: antes sumia pela rolagem
+     * da página e deixava uma faixa de cenário vazia (com o "Role" solto) entre o menu e o portal. */
     .hero-fade {
       animation: hero-fade-out linear both;
-      animation-timeline: scroll(root);
-      animation-range: 0 75vh;
+      animation-timeline: view();
+      animation-range: exit 10% exit 100%;
     }
     .hero-fade--fast {
-      animation-range: 0 25vh;
+      animation-range: exit 0% exit 60%;
     }
   }
 
@@ -1336,8 +1338,8 @@ html.motion [data-reveal-state="hidden"][data-reveal="fade"] {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  min-height: 42px;
-  padding: 0.3rem 0.6rem;
+  min-height: 38px;
+  padding: 0.25rem 0.6rem;
   border-radius: 6px;
   font-size: 14px;
   font-weight: 600;
@@ -1352,7 +1354,22 @@ html.motion [data-reveal-state="hidden"][data-reveal="fade"] {
     background 0.2s;
 }
 .nx-panel__list > * + * {
-  margin-top: 0.35rem;
+  margin-top: 0.3rem;
+}
+/* Painel que estica até o fim da coluna: as linhas se distribuem na altura. */
+.nx-panel--fill {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+.nx-panel--fill > .nx-panel__list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+}
+.nx-panel--fill > .nx-panel__list > * + * {
+  margin-top: 0;
 }
 a.nx-panel__row:hover,
 a.nx-panel__row:focus-visible {
