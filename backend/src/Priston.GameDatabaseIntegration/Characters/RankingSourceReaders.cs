@@ -28,7 +28,7 @@ internal sealed class PvpRankingReader(IGameDbConnectionFactory connections, IOp
     }
 }
 
-/// <summary>Ranking de clãs de <c>ClanDB.dbo.CL</c>. Não lê ClanZang (líder), que pode ser uma conta.</summary>
+/// <summary>Ranking de clãs de <c>ClanDB.dbo.CL</c>. Lê ClanZang (personagem líder); a conta do líder (UserID) não.</summary>
 internal sealed class ClanRankingReader(IGameDbConnectionFactory connections, IOptions<GameDatabaseOptions> options) : IClanRankingReader
 {
     public async Task<IReadOnlyList<ClanRow>> ReadAllAsync(CancellationToken ct)
@@ -37,7 +37,7 @@ internal sealed class ClanRankingReader(IGameDbConnectionFactory connections, IO
         var sql = $"""
             SELECT ClanName AS Name, MemCnt AS Members, ISNULL(Cpoint, 0) AS Points, ISNULL(CWin, 0) AS Wins,
                    ISNULL(CFail, 0) AS Losses, RegiDate AS CreatedLocal,
-                   ISNULL(MIconCnt, 0) AS IconId
+                   ISNULL(MIconCnt, 0) AS IconId, NULLIF(LTRIM(RTRIM(ClanZang)), '') AS Leader
             FROM {Quote(o.ClanDatabase)}.dbo.CL
             WHERE ClanName IS NOT NULL AND LTRIM(RTRIM(ClanName)) <> ''
             """;
@@ -67,5 +67,39 @@ internal sealed class CharacterClanReader(IGameDbConnectionFactory connections, 
         }
 
         return map;
+    }
+}
+
+/// <summary>
+/// SoD do mês em <c>sodDB.dbo.SOD2Record&lt;aamm&gt;</c> (uma tabela por mês, criada pelo servidor do jogo), como o
+/// ranking Bellatra do site antigo. O nome da tabela sai só da data; a existência é conferida antes da consulta.
+/// </summary>
+internal sealed class SodRankingReader(IGameDbConnectionFactory connections, IOptions<GameDatabaseOptions> options) : ISodRankingReader
+{
+    public async Task<SodPlayerRow?> ReadTopAsync(DateOnly month, CancellationToken ct)
+    {
+        var o = options.Value;
+        var table = "SOD2Record" + month.ToString("yyMM", System.Globalization.CultureInfo.InvariantCulture);
+        var db = Quote(o.SodDatabase);
+        await using var conn = await connections.OpenReadAsync(ct).ConfigureAwait(false);
+        var exists = await conn.ExecuteScalarAsync<int>(new CommandDefinition(
+            $"SELECT COUNT(*) FROM {db}.INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = @table",
+            new { table }, commandTimeout: o.CommandTimeoutSeconds, cancellationToken: ct)).ConfigureAwait(false);
+        if (exists == 0)
+        {
+            return null;
+        }
+
+        var sql = $"""
+            SELECT TOP 1 CAST(LTRIM(RTRIM(s.CharName)) AS nvarchar(50)) AS Name, CAST(ISNULL(s.CharType, 0) AS int) AS ClassCode,
+                   CAST(ISNULL(s.GLevel, 0) AS int) AS Level, CAST(ISNULL(s.Point, 0) AS int) AS Points
+            FROM {db}.dbo.{Quote(table)} AS s
+            WHERE s.Point > 0 AND s.CharName IS NOT NULL AND LTRIM(RTRIM(s.CharName)) <> ''
+              AND NOT EXISTS (
+                  SELECT 1 FROM {Quote(o.UserDatabase)}.dbo.GameMasters AS gm
+                  WHERE gm.Account COLLATE DATABASE_DEFAULT = s.UserID COLLATE DATABASE_DEFAULT)
+            ORDER BY s.Point DESC, s.GLevel DESC
+            """;
+        return await conn.QuerySingleOrDefaultAsync<SodPlayerRow>(new CommandDefinition(sql, commandTimeout: o.CommandTimeoutSeconds, cancellationToken: ct)).ConfigureAwait(false);
     }
 }

@@ -34,5 +34,8 @@ public sealed class GameDatabaseOptions
 
     public string CoinShopDatabase { get; set; } = "CoinShopDB";
 
+    /// <summary>Banco do SoD (Bellatra), com uma tabela SOD2Record&lt;aamm&gt; por mês.</summary>
+    public string SodDatabase { get; set; } = "sodDB";
+
     public int CommandTimeoutSeconds { get; set; } = 15;
 }

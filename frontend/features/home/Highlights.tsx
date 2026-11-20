@@ -1,9 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
-import { pranchaArt } from "@/components/ui/ArtLink";
+import type { ReactNode } from "react";
 import { ClassIcon } from "@/components/ui/ClassBadge";
 import { GameWindow } from "@/components/ui/GameWindow";
 import { KitIcon, PodiumMedal } from "@/components/ui/KitIcon";
+import { ClanEmblem } from "./ClanEmblem";
 import { formatNumber } from "./format";
 import { PanelTitle } from "./PortalSections";
 import { nextBlessCastle, serverEvents } from "./serverEvents";
@@ -50,56 +51,116 @@ export function BattlePointsPanel({ home }: { home: HomeSnapshot | null }) {
   );
 }
 
-function LeaderBody({ leader, empty, points }: { leader: HomeClanLeader | null | undefined; empty: string; points: boolean }) {
+const brtDate = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "numeric" });
+
+function Fact({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex items-baseline justify-between gap-2 border-t border-steel/50 py-1 first:border-t-0">
+      <dt className="text-silver/60">{label}</dt>
+      <dd className="min-w-0 text-right text-silver">{children}</dd>
+    </div>
+  );
+}
+
+function CharacterLine({ name, classCode, className, level }: { name: string; classCode: number; className: string; level: number | null }) {
+  return (
+    <Link href={`/personagens/${encodeURIComponent(name)}`} className="inline-flex max-w-full items-center gap-1.5 hover:text-gold" title={className || undefined}>
+      {classCode ? <ClassIcon code={classCode} name={className} size={18} /> : null}
+      <span className="truncate font-semibold text-data-name">{name}</span>
+      {level != null ? <span className="tabular shrink-0 text-xs text-silver/70">Nv {level}</span> : null}
+    </Link>
+  );
+}
+
+function LeaderBody({ leader, empty, sod }: { leader: HomeClanLeader | null | undefined; empty: string; sod: boolean }) {
   if (!leader?.available) {
-    return <p className="text-sm text-silver/70">Indisponível no momento.</p>;
+    return <p className="py-2 text-center text-sm text-silver/70">Indisponível no momento.</p>;
   }
   if (!leader.clan) {
-    return <p className="text-sm text-silver/80">{empty}</p>;
+    return <p className="py-2 text-center text-sm text-silver/80">{empty}</p>;
   }
   const c = leader.clan;
   return (
     <>
-      <p className="text-gilded font-display text-xl leading-tight font-bold break-words">{c.name}</p>
-      <p className="mt-1 text-xs text-silver/80">
-        {formatNumber(c.members)} {c.members === 1 ? "membro" : "membros"}
-        {points ? (
-          <>
-            {" · "}
-            <span className="tabular text-data-info">{formatNumber(c.points)} pontos</span>
-          </>
+      <div className="flex items-center gap-3">
+        <ClanEmblem iconId={c.iconId ?? 0} name={c.name} size={44} />
+        <div className="min-w-0">
+          <p className="text-[11px] tracking-wider text-silver/60 uppercase">Clã</p>
+          <p className="text-gilded font-display text-base leading-tight font-bold [overflow-wrap:anywhere]">{c.name}</p>
+        </div>
+      </div>
+      <dl className="mt-2 text-xs">
+        {c.leader ? (
+          <Fact label="Líder">
+            <CharacterLine {...c.leader} />
+          </Fact>
         ) : null}
-      </p>
+        <Fact label="Membros">
+          <span className="tabular">{formatNumber(c.members)}</span>
+        </Fact>
+        {c.points > 0 ? (
+          <Fact label="Pontos no SoD">
+            <span className="tabular text-data-info">{formatNumber(c.points)}</span>
+            {c.sodPosition && !sod ? <span className="text-silver/60"> ({c.sodPosition}º)</span> : null}
+          </Fact>
+        ) : null}
+        {(c.wins ?? 0) + (c.losses ?? 0) > 0 ? (
+          <Fact label="Vitórias / derrotas">
+            <span className="tabular">
+              <span className="text-data-ok">{formatNumber(c.wins ?? 0)}</span> / <span className="text-data-bad">{formatNumber(c.losses ?? 0)}</span>
+            </span>
+          </Fact>
+        ) : null}
+        {c.createdUtc ? (
+          <Fact label="Fundado em">
+            <span className="tabular">{brtDate.format(new Date(c.createdUtc))}</span>
+          </Fact>
+        ) : null}
+      </dl>
     </>
+  );
+}
+
+function SodTopPlayer({ leader }: { leader: HomeClanLeader | null | undefined }) {
+  const p = leader?.available ? leader.topPlayer : null;
+  if (!p) return null;
+  return (
+    <div className="mt-2 rounded-md border border-gold/30 bg-night/40 px-2.5 py-2 text-xs">
+      <p className="mb-1 flex items-center gap-1.5 text-[11px] tracking-wider text-gold-bright uppercase">
+        <PodiumMedal position={1} height={16} />
+        Melhor do mês
+      </p>
+      <CharacterLine name={p.name} classCode={p.classCode} className={p.className} level={p.level} />
+      <p className="mt-0.5 text-silver/70">
+        <span className="tabular text-data-info">{formatNumber(p.points)} pontos</span>
+        {p.clan ? <> · clã {p.clan}</> : null}
+      </p>
+    </div>
   );
 }
 
 function LeaderPanel({
   id,
   title,
-  art,
   leader,
   empty,
-  points,
+  sod,
   note,
 }: {
   id: string;
   title: string;
-  art: { src: string; width: number; height: number };
   leader: HomeClanLeader | null | undefined;
   empty: string;
-  points: boolean;
+  sod: boolean;
   note: string;
 }) {
   return (
     <section aria-labelledby={id} className="nx-panel nx-panel--fill">
-      <PanelTitle icon="guildasBandeira" title={title} id={id} />
-      <div className="flex flex-1 flex-col items-center justify-center gap-2 px-4 py-3 text-center">
-        <Image src={art.src} alt="" width={art.width} height={art.height} unoptimized className="h-auto w-24 rounded-md border border-bronze/60" />
-        <div>
-          <LeaderBody leader={leader} empty={empty} points={points} />
-        </div>
-        <p className="text-xs text-silver/60">{note}</p>
+      <PanelTitle icon={sod ? "trofeu" : "guildasBandeira"} title={title} id={id} />
+      <div className="flex flex-1 flex-col justify-center px-3 py-3">
+        <LeaderBody leader={leader} empty={empty} sod={sod} />
+        {sod ? <SodTopPlayer leader={leader} /> : null}
+        <p className="mt-2 text-center text-[11px] text-silver/55">{note}</p>
       </div>
     </section>
   );
@@ -114,19 +175,17 @@ export function LeadersColumn({ home }: { home: HomeSnapshot | null }) {
       <LeaderPanel
         id="lider-bc-t"
         title="Líder do Bless Castle"
-        art={pranchaArt.tiles.castelo}
         leader={home?.blessCastle}
         empty="O castelo está sem dono."
-        points={false}
+        sod={false}
         note={`Próxima guerra: domingo, ${brt.format(nextBlessCastle())}, 16:00`}
       />
       <LeaderPanel
         id="lider-sod-t"
         title="Líder do SoD"
-        art={pranchaArt.tiles.pvp}
         leader={home?.sodLeader}
         empty="Nenhum clã pontuou no SoD ainda."
-        points
+        sod
         note="Clã com mais pontos no Survival of the Death"
       />
       <Link

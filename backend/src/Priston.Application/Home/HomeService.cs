@@ -1,3 +1,4 @@
+using Priston.Domain.Characters;
 using Microsoft.Extensions.Options;
 using Priston.Application.Characters;
 using Priston.Application.Content;
@@ -10,14 +11,34 @@ public sealed record HomeNewsItem(string Slug, string Category, string Title, st
 
 public sealed record HomeEventItem(string Slug, string Name, string Category, DateTimeOffset StartsAtUtc, DateTimeOffset? EndsAtUtc);
 
-/// <summary>Clã em destaque na home (dono do Bless Castle ou líder do SoD). Sem o líder do clã, que pode ser uma conta.</summary>
-public sealed record HomeClan(string Name, int Members, int Points);
+/// <summary>Personagem em destaque na home. <paramref name="Level"/> null: o personagem não está na LevelTable.</summary>
+public sealed record HomeCharacter(string Name, int ClassCode, string ClassName, int? Level);
+
+/// <summary>
+/// Clã em destaque na home (dono do Bless Castle ou líder do SoD).
+/// <paramref name="IconId"/>: número do emblema (CL.MIconCnt, imagem em /ClanContent/&lt;número&gt;.bmp).
+/// <paramref name="Leader"/>: personagem líder do clã (CL.ClanZang).
+/// </summary>
+public sealed record HomeClan(
+    string Name,
+    int Members,
+    int Points,
+    int Wins = 0,
+    int Losses = 0,
+    DateTimeOffset? CreatedUtc = null,
+    int IconId = 0,
+    HomeCharacter? Leader = null,
+    int? SodPosition = null);
+
+/// <summary>Melhor personagem do SoD no mês.</summary>
+public sealed record HomeSodPlayer(string Name, int ClassCode, string ClassName, int Level, int Points, string? Clan);
 
 /// <summary>
 /// <paramref name="Available"/> false: a fonte falhou (banco ou arquivo do jogo). Com a fonte no ar e
 /// <paramref name="Clan"/> null, não há líder (castelo sem dono, ninguém pontuou no SoD).
+/// <paramref name="TopPlayer"/>: só no SoD, o personagem com mais pontos no mês (null sem tabela do mês ou sem acesso).
 /// </summary>
-public sealed record HomeClanLeader(bool Available, HomeClan? Clan);
+public sealed record HomeClanLeader(bool Available, HomeClan? Clan, HomeSodPlayer? TopPlayer = null);
 
 public sealed record HomeServerInfo(string Name, string Tagline, IReadOnlyDictionary<string, string> Rates, IReadOnlyList<LinkItem> CommunityLinks);
 
@@ -46,8 +67,12 @@ public sealed class HomeService(
     IOptions<ServerPresentationOptions> presentation,
     SiteContentService? site = null,
     RankingQueryService? rankings = null,
-    IBlessCastleOwnerReader? blessCastle = null)
+    IBlessCastleOwnerReader? blessCastle = null,
+    ISodRankingReader? sodPlayers = null,
+    TimeProvider? clock = null)
 {
+    private static readonly TimeZoneInfo GameTimeZone = TimeZoneInfo.FindSystemTimeZoneById(Priston.Domain.Time.RankingPeriods.TimeZoneId);
+
     /// <summary>Quantos personagens o ranking de BP da home mostra.</summary>
     public const int BattlePointsTop = 5;
 
@@ -162,13 +187,36 @@ public sealed class HomeService(
             return (unavailable, unavailable);
         }
 
-        var sodTop = clans
+        // Classe e nível do líder vêm da LevelTable (mesmo cache do ranking). Sem ela, só o nome.
+        IReadOnlyList<RankedCharacter> characters = [];
+        try
+        {
+            characters = await ranking.GetLevelRankingAsync(ct).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+        }
+
+        var byName = characters
+            .GroupBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+
+        var sodOrder = clans
             .Where(c => c.Points > 0)
             .OrderByDescending(c => c.Points)
             .ThenByDescending(c => c.Members)
             .ThenBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
-            .FirstOrDefault();
-        var sod = new HomeClanLeader(true, sodTop is null ? null : ToHome(sodTop));
+            .ToList();
+        HomeClan Detail(ClanRow c)
+        {
+            var position = sodOrder.IndexOf(c);
+            return new HomeClan(
+                c.Name, c.Members, c.Points, c.Wins, c.Losses, ToUtc(c.CreatedLocal), c.IconId,
+                Character(c.Leader, byName), position < 0 ? null : position + 1);
+        }
+
+        var sodTop = sodOrder.FirstOrDefault();
+        var sod = new HomeClanLeader(true, sodTop is null ? null : Detail(sodTop), await TopSodPlayerAsync(ct).ConfigureAwait(false));
 
         var castle = unavailable;
         if (blessCastle is not null)
@@ -177,7 +225,7 @@ public sealed class HomeService(
             {
                 var owner = await blessCastle.ReadOwnerIconIdAsync(ct).ConfigureAwait(false);
                 var clan = owner is null ? null : clans.FirstOrDefault(c => c.IconId == owner.Value);
-                castle = new HomeClanLeader(true, clan is null ? null : ToHome(clan));
+                castle = new HomeClanLeader(true, clan is null ? null : Detail(clan));
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
@@ -188,7 +236,48 @@ public sealed class HomeService(
         return (castle, sod);
     }
 
-    private static HomeClan ToHome(ClanRow c) => new(c.Name, c.Members, c.Points);
+    /// <summary>Melhor personagem do SoD no mês corrente (Brasília). Falha ou sem acesso ao sodDB: null.</summary>
+    private async Task<HomeSodPlayer?> TopSodPlayerAsync(CancellationToken ct)
+    {
+        if (sodPlayers is null || rankings is null)
+        {
+            return null;
+        }
+
+        try
+        {
+            var local = TimeZoneInfo.ConvertTime((clock ?? TimeProvider.System).GetUtcNow(), GameTimeZone);
+            var row = await sodPlayers.ReadTopAsync(new DateOnly(local.Year, local.Month, 1), ct).ConfigureAwait(false);
+            if (row is null)
+            {
+                return null;
+            }
+
+            var clans = await rankings.GetClanByCharacterAsync(ct).ConfigureAwait(false);
+            var cls = CharacterClassNames.ToPortuguese(CharacterClassNames.FromCode(row.ClassCode));
+            return new HomeSodPlayer(row.Name, row.ClassCode, cls, row.Level, row.Points, clans.GetValueOrDefault(row.Name));
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            return null;
+        }
+    }
+
+    private static HomeCharacter? Character(string? name, Dictionary<string, RankedCharacter> byName)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return null;
+        }
+
+        var n = name.Trim();
+        return byName.TryGetValue(n, out var c)
+            ? new HomeCharacter(c.Name, c.ClassCode, c.ClassName, c.Level)
+            : new HomeCharacter(n, 0, string.Empty, null);
+    }
+
+    private static DateTimeOffset? ToUtc(DateTime? local) =>
+        local is null ? null : new DateTimeOffset(TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(local.Value, DateTimeKind.Unspecified), GameTimeZone), TimeSpan.Zero);
 
     private static HomeEventItem ToHome(EventSummary e) => new(e.Slug, e.Name, e.Category, e.StartsUtc, e.EndsUtc);
 }
