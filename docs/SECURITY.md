@@ -8,9 +8,11 @@ Este documento descreve o que o portal faz para se proteger, o que foi testado e
 |---|---|---|---|
 | `portal_game_read` | jogo | só `SELECT` nas tabelas mapeadas | personagens, ranking, login |
 | `portal_game_write` | `accountdb` | `SELECT`, `INSERT`, `UPDATE` em `<letra>GameUser` | cadastro e troca de senha. Vazio = desligado |
+| `portal_game_admin` | bancos do jogo | `db_datareader` + `db_datawriter` (dados, sem DDL) | só o painel da equipe: contas, banimento, coins, VIP, rankings e editores. Vazio = funções do jogo desligadas |
 | `portal_app` | PortalDB | leitura e escrita só no banco do portal | sessões, conteúdo, chamados, auditoria |
 
 - Todas as consultas usam parâmetros (Dapper). O único texto montado na consulta é o nome da tabela do shard, escolhido de uma lista fixa (`<letra>GameUser`), nunca vindo do usuário.
+- Editores do painel (tabelas configuradas pelo superadministrador): banco, tabela e colunas são conferidos no catálogo do SQL Server (`sys.databases`, `sys.tables`, `sys.columns`) e passam por `SqlIdentifier.Quote` (só letras, números e `_`). Os valores vão sempre como parâmetro tipado.
 - As connection strings ficam em variáveis de ambiente do servidor. O frontend não tem nenhuma: ele só fala com a API.
 - O SQL Server não deve ficar exposto à internet. Na VPS, a porta 1433 fica fechada no firewall e a API conecta por `127.0.0.1`.
 - O banco do jogo não teve a estrutura alterada. Tudo que é do portal fica no PortalDB (migrações `0001` a `0006`).
@@ -43,6 +45,7 @@ O navegador nunca vê o token em JavaScript. O Next lê o cookie no servidor e r
 |---|---|---|
 | Geral | 120 por minuto por IP | toda a API |
 | Sensível (`auth`) | 10 por minuto por IP, janela deslizante | login, cadastro, recuperação, troca de senha, login da equipe, abrir e responder chamado, lembretes de evento |
+| Painel do jogo (`game-admin`) | 40 por minuto por IP, janela deslizante | banir, tirar VIP, apagar linha, zerar e restaurar ranking, ligar/desligar, configurar tabela |
 
 Chamadas internas do próprio Next (rede local) passam sem limite; o IP do jogador vai no `X-Forwarded-For`, e a API usa a última entrada, que é a que o IIS acrescentou.
 
@@ -68,7 +71,8 @@ Os anexos do suporte (`/painel/suporte/<id>/anexo/<anexo>` e `/admin/chamados/<i
 ## 6. Autorização
 
 - A API confere a sessão e a permissão em cada chamada; o frontend esconder um botão não é proteção.
-- Permissões da equipe: `ViewDashboard`, `ManageContent`, `ViewAudit`, `ManageStaff`, `ManageSupport` (detalhes em `ADMIN.md`).
+- Permissões da equipe: `ViewDashboard`, `ManageContent`, `ViewAudit`, `ManageStaff`, `ManageSupport`, `ViewAccounts`, `ManageAccounts`, `ManageEconomy`, `ManageGameData`, `ViewGameLogs`, `ControlServer`, `ResetRankings`, `ConfigureGameSources` (detalhes em `ADMIN.md`).
+- Ações destrutivas no jogo pedem a senha do membro de novo; cinco erros bloqueiam a conta da equipe por 15 minutos e encerram as sessões dela.
 - O jogador só vê os próprios chamados e anexos. Chamado de outra conta responde 404, sem dizer que existe.
 - Notas internas e seus anexos nunca saem para o jogador.
 

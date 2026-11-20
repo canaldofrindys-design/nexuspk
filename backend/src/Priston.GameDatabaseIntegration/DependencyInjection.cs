@@ -28,6 +28,10 @@ public static class DependencyInjection
         services.AddSingleton<ICharacterClanReader, CharacterClanReader>();
         services.AddSingleton<IGameAccountStore, GameAccountStore>();
         services.AddSingleton<Priston.Application.Player.IPlayerGameDataReader, Player.PlayerGameDataReader>();
+        services.AddSingleton<Priston.Application.GameAdmin.IGameAdminAccountStore, Admin.GameAdminAccountStore>();
+        services.AddSingleton<Priston.Application.GameAdmin.IRankingResetStore, Admin.RankingResetStore>();
+        services.AddSingleton<Priston.Application.GameAdmin.IGameSchemaReader, Admin.GameSchemaReader>();
+        services.AddSingleton<Priston.Application.GameAdmin.IGameTableStore, Admin.GameTableStore>();
         services.AddHealthChecks().AddCheck<GameDatabaseHealthCheck>(HealthCheckName, tags: ["ready"]);
         return services;
     }

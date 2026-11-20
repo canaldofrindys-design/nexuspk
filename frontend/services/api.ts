@@ -114,7 +114,7 @@ export async function apiFetchRaw(path: string, token: string): Promise<Response
 export async function apiSend<T>(
   method: "GET" | "POST" | "PUT" | "DELETE",
   path: string,
-  options: { body?: unknown; token?: string; clientIp?: string; userAgent?: string } = {},
+  options: { body?: unknown; token?: string; clientIp?: string; userAgent?: string; timeoutMs?: number } = {},
 ): Promise<ApiResult<T>> {
   const headers = headersFor(options);
   if (options.body !== undefined) headers["Content-Type"] = "application/json";
@@ -126,7 +126,7 @@ export async function apiSend<T>(
       headers,
       body: options.body === undefined ? undefined : JSON.stringify(options.body),
       cache: "no-store",
-      signal: AbortSignal.timeout(10000),
+      signal: AbortSignal.timeout(options.timeoutMs ?? 10000),
     });
   } catch {
     return { ok: false, status: 0, error: unreachable };

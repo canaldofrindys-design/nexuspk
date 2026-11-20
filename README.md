@@ -48,6 +48,7 @@ Endpoints:
 - `GET /api/v1/home` — dados da página inicial (ranking de BP, líderes do Bless Castle e do SoD, status, avisos).
 - `GET /api/v1/site` — textos do servidor, downloads, redes sociais e banners; `GET /api/v1/media/{id}` — imagens enviadas pelo painel.
 - `POST /api/v1/auth/register|login|logout|recover|reset-password|confirm-email`, `GET /api/v1/auth/me|options` — contas (ver `docs/CONTAS.md`).
+- `/api/v1/admin/accounts`, `/server`, `/rankings`, `/game-tables` — funções do jogo no painel da equipe (ver `docs/ADMIN.md`).
 
 Teste de integração local (precisa de Docker): ver o cabeçalho de `scripts/integration-auth.sh`.
 
@@ -55,6 +56,7 @@ Teste de integração local (precisa de Docker): ver o cabeçalho de `scripts/in
 
 - O banco original do jogo **não é alterado** sem autorização. A API só lê; a escrita
   (cadastro e troca de senha) usa um login SQL separado, com permissão apenas nessas tabelas
-  (`database/scripts/permissoes-portal.sql`).
+  (`database/scripts/permissoes-portal.sql`). O painel da equipe usa outro login, `portal_game_admin`
+  (`database/scripts/permissoes-admin-jogo.sql`), que muda dados mas nunca a estrutura das tabelas.
 - Nenhum nome de tabela ou coluna é inventado: tudo vem do `DATABASE_MAPPING.md`.
 - Nenhum dado simulado: status, online e rankings mostram só o que vier de fontes reais.

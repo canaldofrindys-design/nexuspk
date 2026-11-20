@@ -52,6 +52,13 @@ builder.Services.AddQuartz(q =>
         .StartNow()
         .WithSimpleSchedule(s => s.WithIntervalInMinutes(5).RepeatForever()));
 
+    var banExpiry = new JobKey(nameof(BanExpiryJob));
+    q.AddJob<BanExpiryJob>(banExpiry);
+    q.AddTrigger(t => t.ForJob(banExpiry)
+        .WithIdentity($"{nameof(BanExpiryJob)}-trigger")
+        .StartNow()
+        .WithSimpleSchedule(s => s.WithIntervalInMinutes(5).RepeatForever()));
+
     var serverProbe = new JobKey(nameof(ServerProbeJob));
     q.AddJob<ServerProbeJob>(serverProbe);
     q.AddTrigger(t => t.ForJob(serverProbe)

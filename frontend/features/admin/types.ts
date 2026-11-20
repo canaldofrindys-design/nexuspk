@@ -1,4 +1,18 @@
-export type Capability = "ViewDashboard" | "ManageContent" | "ViewAudit" | "ManageStaff" | "ManageSupport" | "ManageSite";
+export type Capability =
+  | "ViewDashboard"
+  | "ManageContent"
+  | "ViewAudit"
+  | "ManageStaff"
+  | "ManageSupport"
+  | "ManageSite"
+  | "ViewAccounts"
+  | "ManageAccounts"
+  | "ManageEconomy"
+  | "ManageGameData"
+  | "ViewGameLogs"
+  | "ControlServer"
+  | "ResetRankings"
+  | "ConfigureGameSources";
 
 export type StaffMe = {
   id: number;
@@ -102,3 +116,129 @@ export const roleLabels: Record<string, string> = {
 
 export const newsStatusLabels = { draft: "Rascunho", published: "Publicada", archived: "Arquivada" } as const;
 export const eventStatusLabels = { draft: "Rascunho", published: "Publicado", cancelled: "Cancelado" } as const;
+
+/** Resposta das ações do painel do jogo. */
+export type GameOk<T = unknown> = { message: string | null; data: T };
+
+export type AccountHit = { login: string; matchedCharacter: string | null; blocked: boolean; deleted: boolean; registDay: string | null };
+
+export type GameBan = {
+  id: number;
+  gameLogin: string;
+  reason: string;
+  bannedBy: string;
+  bannedUtc: string;
+  expiresUtc: string | null;
+  liftedUtc: string | null;
+  liftedBy: string | null;
+  liftReason: string | null;
+};
+
+export type AccountVip = {
+  playerName: string | null;
+  plan: number | null;
+  planLabel: string;
+  startLocal: string | null;
+  endLocal: string | null;
+  endsUtc: string | null;
+  active: boolean;
+};
+
+export type DiagnosticCheck = { key: string; level: "ok" | "info" | "aviso" | "problema"; title: string; detail: string };
+
+export type AccountView = {
+  login: string;
+  registeredUtc: string | null;
+  lastDayUtc: string | null;
+  blocked: boolean;
+  deleted: boolean;
+  coins: number | null;
+  gameMasterLevel: number | null;
+  characters: { name: string; className: string; level: number | null; clan: string | null }[];
+  vips: AccountVip[];
+  pvp: { nick: string | null; battlePoints: number | null; weeklyBattlePoints: number; kills: number; deaths: number }[];
+  portal: { gameLogin: string; email: string | null; emailConfirmedUtc: string | null; createdUtc: string; lastLoginUtc: string | null } | null;
+  activePortalSessions: number;
+  bans: GameBan[];
+  activity: AuditEntry[];
+  diagnostics: DiagnosticCheck[];
+  vipPlans: Record<string, string>;
+};
+
+export type ServerProcess = {
+  key: string;
+  name: string;
+  state: "stopped" | "running" | "runningOtherOwner" | "missing";
+  instances: number;
+  startedUtc: string | null;
+  note: string | null;
+};
+
+export type ServerPage = { enabled: boolean; processes: ServerProcess[]; confirmWords: { start: string; stop: string; restart: string } };
+
+export type RankingBackup = { id: number; kind: string; createdBy: string; createdUtc: string; rows: number; restoredUtc: string | null; restoredBy: string | null };
+
+export type RankingsPage = { enabled: boolean; confirmWord: string; kinds: { key: string; label: string; description: string }[]; backups: RankingBackup[] };
+
+export type GameFunctionSummary = {
+  key: string;
+  label: string;
+  description: string;
+  mode: "edit" | "insert" | "readonly";
+  configured: boolean;
+  source: string | null;
+  canWrite: boolean;
+  canConfigure: boolean;
+};
+
+export type GameColumnView = {
+  name: string;
+  type: string;
+  maxChars: number;
+  nullable: boolean;
+  identity: boolean;
+  computed: boolean;
+  hasDefault: boolean;
+  supported: boolean;
+  insertable: boolean;
+  isKey: boolean;
+  isEditable: boolean;
+  isSearch: boolean;
+  isAccount: boolean;
+};
+
+export type GameSourceBinding = {
+  functionKey: string;
+  database: string;
+  table: string;
+  keyColumns: string[];
+  editableColumns: string[];
+  searchColumns: string[];
+  accountColumn: string | null;
+  allowInsert: boolean;
+  allowDelete: boolean;
+  newestFirst: boolean;
+  updatedBy: string;
+  updatedUtc: string;
+};
+
+export type BrowseView = {
+  function: GameFunctionSummary;
+  binding: GameSourceBinding;
+  columns: GameColumnView[];
+  rows: Record<string, string | null>[];
+  page: number;
+  hasMore: boolean;
+  canEdit: boolean;
+  canInsert: boolean;
+  canDelete: boolean;
+};
+
+export type SourceConfigPage = {
+  function: { key: string; label: string; description: string; mode: "edit" | "insert" | "readonly"; suggestedDatabases: string[] };
+  binding: GameSourceBinding | null;
+  databases: string[] | null;
+  message: string | null;
+};
+
+export type TableSuggestion = { name: string; rows: number; suggested: boolean };

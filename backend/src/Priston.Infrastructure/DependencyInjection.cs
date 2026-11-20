@@ -48,6 +48,11 @@ public static class DependencyInjection
         services.AddSingleton<Priston.Application.Content.IEventReader, Content.EventReader>();
         services.AddSingleton<Priston.Application.Content.IEventReminderStore, Content.EventReminderStore>();
         services.AddSingleton<Priston.Application.Player.IPlayerActivityReader, PlayerActivityReader>();
+        services.AddSingleton<Priston.Application.GameAdmin.IGameBanStore, Admin.GameBanStore>();
+        services.AddSingleton<Priston.Application.GameAdmin.IAccountActivityReader, Admin.AccountActivityReader>();
+        services.AddSingleton<Priston.Application.GameAdmin.IRankingBackupStore, Admin.RankingBackupStore>();
+        services.AddSingleton<Priston.Application.GameAdmin.IGameSourceBindingStore, Admin.GameSourceBindingStore>();
+        services.AddSingleton<Priston.Application.GameAdmin.IServerProcessController, ServerProcessController>();
         services.AddOptions<SmtpOptions>().Bind(configuration.GetSection(SmtpOptions.SectionName));
         services.AddSingleton<IEmailSender, SmtpEmailSender>();
         services.AddOptions<CaptchaOptions>().Bind(configuration.GetSection(CaptchaOptions.SectionName));
