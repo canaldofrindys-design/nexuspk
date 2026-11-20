@@ -51,6 +51,7 @@ public static class DependencyInjection
         services.AddSingleton<Priston.Application.GameAdmin.IGameBanStore, Admin.GameBanStore>();
         services.AddSingleton<Priston.Application.GameAdmin.IAccountActivityReader, Admin.AccountActivityReader>();
         services.AddSingleton<Priston.Application.GameAdmin.IRankingBackupStore, Admin.RankingBackupStore>();
+        services.AddSingleton<Priston.Application.Characters.IRankingExclusionSource, Admin.RankingExclusionStore>();
         services.AddSingleton<Priston.Application.GameAdmin.IGameSourceBindingStore, Admin.GameSourceBindingStore>();
         services.AddSingleton<Priston.Application.GameAdmin.IServerProcessController, ServerProcessController>();
         services.AddOptions<SmtpOptions>().Bind(configuration.GetSection(SmtpOptions.SectionName));

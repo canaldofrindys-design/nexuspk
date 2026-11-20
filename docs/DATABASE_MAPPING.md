@@ -60,6 +60,7 @@ Bancos que existem no servidor e **não** foram extraídos: BattleEvents, Billin
 | Ranking geral (EXP) | `CharGameRecordLg` ou `TopLevel` | `Exp` / `XP` | Depende da confirmação acima |
 | Ranking PvP | `[UserDB].dbo.BattlePoints` | `Nick, BPs, DPs, BPsSemanal, KillsPvP, MortesPvP, PontosPvP, IsReiPvP, SodSemanal` | Confirmado (usado hoje) |
 | Excluir GMs do ranking | `[UserDB].dbo.GameMasters` | `Account, GameMasterLevel` | Confirmado |
+| Esconder equipe e testes do ranking | `[PortalDB].dbo.RankingExclusion` (migração 0009) | `Kind` = conta, personagem ou prefixo do nome; `Value` | Lista do portal; editar com `database/scripts/esconder-do-ranking.sql`. Classe fora de 1 a 11 ("Desconhecida") também fica fora |
 | VIP | `[ServerDB].dbo.Vip` | `AccountID, PlayerName, IdVip, DateStart, DateEnd` | Confirmado |
 | Jogadores online | Conexões TCP abertas na porta do servidor do jogo (sem tabela) | — | `GameOnRecord`/`GameOutRecord` pararam em 2022; `inuse` e `ClanDB.CT` não voltam a 0 ao sair (11/11/2026). O portal conta as conexões, desligado até conferir com a janela do servidor (INSTALLATION.md) |
 | Status do servidor (online/offline) | Teste de porta TCP do servidor de jogo (`GAME_SERVER_IP`/`PORT` do admin antigo) | — | Sem tabela; verificação ativa pelo Worker |

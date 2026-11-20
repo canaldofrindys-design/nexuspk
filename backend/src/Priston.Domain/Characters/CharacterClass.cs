@@ -37,6 +37,12 @@ public static class CharacterClassNames
         [CharacterClass.Warrior] = "Guerreira",
     };
 
+    /// <summary>
+    /// true quando o código é uma das 11 classes do jogo. Personagem com classe 0 ou fora da lista (sobra de troca de
+    /// classe, personagem de teste ou da equipe) aparece como "Desconhecida" e fica fora dos rankings públicos.
+    /// </summary>
+    public static bool IsKnown(int code) => PtBr.ContainsKey(FromCode(code));
+
     public static CharacterClass FromCode(int code) =>
         Enum.IsDefined(typeof(CharacterClass), code) ? (CharacterClass)code : CharacterClass.Unknown;
 
