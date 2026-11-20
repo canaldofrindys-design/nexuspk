@@ -8,7 +8,7 @@
 
   Modo normal (troca):
     1. confere o portal e acha o site antigo (o que tem o domínio nas associações);
-    2. backup: configuração do IIS (appcmd), zip da pasta do site antigo e cópia do portal.json;
+    2. backup: configuração do IIS (appcmd), cópia da pasta do site antigo (robocopy) e do portal.json;
     3. tira o domínio e o www do site antigo e põe no portal (http 80 e https 443 com SNI);
     4. certificado: usa -CertificateThumbprint, ou um que já cubra os dois nomes, ou pede um novo ao
        Let's Encrypt pelo win-acme já instalado (renova sozinho e atualiza o IIS);
@@ -354,11 +354,16 @@ if (Test-Path $paths.ConfigFile) {
     Write-Ok "portal.json copiado ($jsonBackup)"
 }
 if (-not $SkipFileBackup) {
-    $zip = Join-Path $BackupDir "site-antigo-$stamp.zip"
+    $copy = Join-Path $BackupDir "site-antigo-$stamp"
     $physical = [Environment]::ExpandEnvironmentVariables($oldInfo.physicalPath)
-    Write-Host "    compactando $physical (pode levar alguns minutos)..."
-    Compress-Archive -Path (Join-Path $physical '*') -DestinationPath $zip -CompressionLevel Optimal
-    Write-Ok "pasta do site antigo em $zip ($([math]::Round((Get-Item $zip).Length / 1MB)) MB)"
+    Write-Host "    copiando $physical para $copy (pode levar alguns minutos)..."
+    # robocopy em vez de Compress-Archive: rápido e não para num arquivo aberto por outro processo (só o pula).
+    & robocopy.exe $physical $copy /E /R:1 /W:1 /NFL /NDL /NJH /NP | Out-Null
+    $code = $LASTEXITCODE
+    if ($code -ge 16 -or -not (Test-Path $copy)) { throw "a cópia da pasta do site antigo falhou (robocopy $code). Nada foi alterado." }
+    $mb = [math]::Round(((Get-ChildItem $copy -Recurse -File -ErrorAction SilentlyContinue | Measure-Object Length -Sum).Sum) / 1MB)
+    if ($code -ge 8) { Write-Warn "alguns arquivos em uso não foram copiados (robocopy $code); o resto está em $copy" }
+    Write-Ok "pasta do site antigo copiada para $copy ($mb MB)"
 }
 
 $state = [ordered]@{

@@ -38,7 +38,7 @@ Assert-That 'site antigo sem o domínio' (@(Get-WebBinding -Name 'Legado' | Wher
 Assert-That 'site antigo continua pela porta própria' (@(Get-WebBinding -Name 'Legado' | Where-Object { $_.bindingInformation -eq '*:8081:' }).Count -eq 1)
 $json = Get-Content -Raw C:\NexusPortal\config\portal.json
 Assert-That 'PublicBaseUrl trocado' ($json -match "`"PublicBaseUrl`"\s*:\s*`"https://$([regex]::Escape($domain))`"")
-Assert-That 'backup da pasta do site antigo' (@(Get-ChildItem C:\backups-teste -Filter 'site-antigo-*.zip').Count -eq 1)
+Assert-That 'cópia da pasta do site antigo' ((@(Get-ChildItem C:\backups-teste -Directory -Filter 'site-antigo-*').Count -eq 1) -and (@(Get-ChildItem C:\backups-teste -Recurse -Filter 'version.txt').Count -eq 1))
 
 # Segunda troca sem desfazer a primeira é recusada.
 $refused = $false

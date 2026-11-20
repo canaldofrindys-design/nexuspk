@@ -121,7 +121,7 @@ C:\NexusPortal\current\deploy\Switch-PortalDomain.ps1 -Domain seudominio.com -Wh
 C:\NexusPortal\current\deploy\Switch-PortalDomain.ps1 -Domain seudominio.com -AcceptLetsEncryptTerms
 ```
 
-O script acha o site antigo pelas associações, faz backup (configuração do IIS, zip da pasta do site antigo em `C:\Backups`, cópia do `portal.json`), passa o domínio e o `www` para o portal, pede o certificado dos dois nomes ao win-acme já instalado (só com `-AcceptLetsEncryptTerms` ele aceita os termos do Let's Encrypt por você; sem, usa o certificado que já existe), troca o `PublicBaseUrl`, liga o http -> https e confere página inicial, `www`, clã e launcher pelo domínio. **Se a conferência falhar, desfaz tudo sozinho.** O site antigo continua ligado pelo IP.
+O script acha o site antigo pelas associações, faz backup (configuração do IIS, cópia da pasta do site antigo em `C:\Backups`, cópia do `portal.json`), passa o domínio e o `www` para o portal, pede o certificado dos dois nomes ao win-acme já instalado (só com `-AcceptLetsEncryptTerms` ele aceita os termos do Let's Encrypt por você; sem, usa o certificado que já existe), troca o `PublicBaseUrl`, liga o http -> https e confere página inicial, `www`, clã e launcher pelo domínio. **Se a conferência falhar, desfaz tudo sozinho.** O site antigo continua ligado pelo IP.
 
 | Quero | Comando |
 |---|---|
