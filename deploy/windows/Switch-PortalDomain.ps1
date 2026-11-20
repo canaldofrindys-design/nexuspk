@@ -225,7 +225,12 @@ if ($PSCmdlet.ParameterSetName -eq 'Stop') {
     if (Test-Path $folder) {
         foreach ($file in @(Get-ChildItem $folder -Filter '*.log' | Where-Object { $_.LastWriteTimeUtc -ge $since })) {
             $fields = @()
-            foreach ($line in [IO.File]::ReadLines($file.FullName)) {
+            # O IIS mantém o registro do dia aberto para escrita: abre compartilhando a escrita.
+            $stream = New-Object IO.FileStream($file.FullName, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::ReadWrite)
+            $reader = New-Object IO.StreamReader($stream)
+            $lines = New-Object System.Collections.Generic.List[string]
+            try { while ($null -ne ($l = $reader.ReadLine())) { $lines.Add($l) } } finally { $reader.Dispose() }
+            foreach ($line in $lines) {
                 if ($line.StartsWith('#Fields:')) { $fields = $line.Substring(9).Trim() -split ' '; continue }
                 if ($line.StartsWith('#') -or $fields.Count -eq 0) { continue }
                 $v = $line -split ' '
