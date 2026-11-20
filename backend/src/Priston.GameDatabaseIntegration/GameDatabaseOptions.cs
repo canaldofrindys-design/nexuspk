@@ -18,6 +18,12 @@ public sealed class GameDatabaseOptions
     /// </summary>
     public string WriteConnectionString { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Login SQL do painel administrativo (portal_game_admin): leitura e escrita nos bancos do jogo liberados em
+    /// database/scripts/permissoes-admin-jogo.sql. Vazio desliga as funções do jogo no painel (contas, coins, VIP, editores).
+    /// </summary>
+    public string AdminConnectionString { get; set; } = string.Empty;
+
     public string AccountDatabase { get; set; } = "accountdb";
 
     public string ServerDatabase { get; set; } = "ServerDB";

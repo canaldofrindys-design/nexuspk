@@ -13,6 +13,30 @@ public enum Capability
 
     /// <summary>Textos institucionais, downloads e redes sociais do site.</summary>
     ManageSite,
+
+    /// <summary>Buscar contas do jogo, ver detalhes e rodar o diagnóstico.</summary>
+    ViewAccounts,
+
+    /// <summary>Banir e desbanir contas do jogo.</summary>
+    ManageAccounts,
+
+    /// <summary>Coins, VIP e envio de Box Donate.</summary>
+    ManageEconomy,
+
+    /// <summary>Preços, lojas, drops, lojas NPC e catálogo de itens.</summary>
+    ManageGameData,
+
+    /// <summary>Ler logs de itens e o catálogo.</summary>
+    ViewGameLogs,
+
+    /// <summary>Ligar, desligar e reiniciar os programas do servidor do jogo.</summary>
+    ControlServer,
+
+    /// <summary>Zerar rankings (com cópia de segurança) e desfazer.</summary>
+    ResetRankings,
+
+    /// <summary>Ligar cada função do painel à tabela do jogo correspondente.</summary>
+    ConfigureGameSources,
 }
 
 /// <summary>Funções da equipe e o que cada uma pode fazer.</summary>
@@ -33,10 +57,14 @@ public static class StaffRoles
 
     private static readonly Dictionary<string, Capability[]> Grants = new(StringComparer.Ordinal)
     {
-        [SuperAdmin] = [Capability.ViewDashboard, Capability.ManageContent, Capability.ViewAudit, Capability.ManageStaff, Capability.ManageSupport, Capability.ManageSite],
-        [Admin] = [Capability.ViewDashboard, Capability.ManageContent, Capability.ViewAudit, Capability.ManageSupport, Capability.ManageSite],
-        [Moderator] = [Capability.ViewDashboard, Capability.ManageContent, Capability.ManageSupport],
-        [Support] = [Capability.ViewDashboard, Capability.ManageSupport],
+        [SuperAdmin] = Enum.GetValues<Capability>(),
+        [Admin] =
+        [
+            Capability.ViewDashboard, Capability.ManageContent, Capability.ViewAudit, Capability.ManageSupport, Capability.ManageSite,
+            Capability.ViewAccounts, Capability.ManageAccounts, Capability.ManageEconomy, Capability.ManageGameData, Capability.ViewGameLogs,
+        ],
+        [Moderator] = [Capability.ViewDashboard, Capability.ManageContent, Capability.ManageSupport, Capability.ViewAccounts, Capability.ManageAccounts, Capability.ViewGameLogs],
+        [Support] = [Capability.ViewDashboard, Capability.ManageSupport, Capability.ViewAccounts],
     };
 
     public static bool IsValid(string? role) => role is not null && Grants.ContainsKey(role);

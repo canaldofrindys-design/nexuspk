@@ -54,6 +54,12 @@ builder.Services.AddRateLimiter(options =>
             : RateLimitPartition.GetSlidingWindowLimiter(
                 ctx.Connection.RemoteIpAddress!.ToString(),
                 _ => new SlidingWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1), SegmentsPerWindow = 6, QueueLimit = 0 }));
+    // Ações sensíveis do painel da equipe: mais folga que o login, mas ainda limitado por IP.
+    // A senha pedida nessas ações tem bloqueio próprio (5 erros = 15 minutos).
+    options.AddPolicy(GameAdminEndpoints.RateLimitPolicy, ctx =>
+        RateLimitPartition.GetSlidingWindowLimiter(
+            ctx.Connection.RemoteIpAddress!.ToString(),
+            _ => new SlidingWindowRateLimiterOptions { PermitLimit = 40, Window = TimeSpan.FromMinutes(1), SegmentsPerWindow = 6, QueueLimit = 0 }));
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(ctx => RateLimitByClient(ctx,
         _ => new FixedWindowRateLimiterOptions { PermitLimit = 120, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
 });
@@ -81,6 +87,7 @@ app.MapPlayerEndpoints();
 app.MapRankingEndpoints();
 app.MapContentEndpoints();
 app.MapAdminEndpoints();
+app.MapGameAdminEndpoints();
 app.MapSupportEndpoints();
 app.MapSiteEndpoints();
 

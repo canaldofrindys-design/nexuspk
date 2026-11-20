@@ -182,3 +182,17 @@ Conclusão:
 - **Líder do Bless Castle**: o servidor do jogo grava o clã dono no arquivo `BlessCastle.dat` (8 bytes; o número do ícone do clã, `ClanDB.CL.MIconCnt`, é o inteiro de 32 bits a partir do byte 4; `1000000000` = sem dono). É a mesma leitura do site antigo (`src/include/rankings.service.php`). O caminho fica em `GameServer:BlessCastleFile` (padrão `C:\ServidorPT\BlessCastle.dat`); a conta do serviço da API (`NT SERVICE\<serviço da API>`) precisa de leitura nesse arquivo. Sem acesso, o bloco aparece como indisponível.
 - **Líder do SoD**: o clã com mais pontos em `ClanDB.CL.Cpoint` (maior que zero), a regra do "Líder SoD" do site antigo.
 - O nome do líder do clã (`ClanZang`) continua fora do portal.
+
+## 12. Painel da equipe: escrita no jogo
+
+Login `portal_game_admin` (`database/scripts/permissoes-admin-jogo.sql`). Só muda dados, nunca a estrutura.
+
+| Função | Tabela e colunas | Como escreve |
+|---|---|---|
+| Banir / desbanir | `accountdb.<letra>GameUser.BlockChk` (`'1'` banida, `'0'` liberada) | `UPDATE` pela linha do `userid` |
+| Coins | `CoinShopDB.UserInfo.UserCoin`, `LastChange` | transação serializável com `UPDLOCK`; cria a linha se a conta não tiver |
+| VIP | `ServerDB.Vip` (`PlayerName`, `IdVip`, `DateStart`, `DateEnd`, `AccountID`) | a tabela não tem chave: a linha é achada por todos os valores e só muda se for exatamente uma |
+| Reset de rankings | `UserDB.BattlePoints` (`BPsSemanal`, `SodSemanal`, `BPs`, `DPs`, `KillsPvP`, `MortesPvP`, `PontosPvP`, `IsReiPvP`; chave `Account` + `Nick`), `ClanDB.CL.Cpoint` (chave `IDX`) | cópia dos valores em `PortalDB.dbo.RankingResetBackup` antes de zerar |
+| Box Donate, lojas, drops, NPC, catálogo, logs de itens | **não mapeadas aqui**: o superadministrador escolhe a tabela e as colunas no painel (`PortalDB.dbo.GameSourceBinding`), conferidas no `sys.columns` | uma linha por vez, pelas colunas-chave escolhidas |
+
+- [ ] Confirmar com o servidor do jogo se mudar `BlockChk` com o jogador online derruba a sessão ou vale só no próximo login.
