@@ -12,7 +12,24 @@ public class HomeHighlightsTests
 {
     private sealed class NoLevels : ILevelRankingReader
     {
-        public Task<IReadOnlyList<CharacterLevelRow>> ReadAllAsync(CancellationToken cancellationToken) => Task.FromResult<IReadOnlyList<CharacterLevelRow>>([]);
+        public Task<IReadOnlyList<CharacterLevelRow>> ReadAllAsync(CancellationToken cancellationToken) =>
+            Task.FromResult<IReadOnlyList<CharacterLevelRow>>([new("ReiDoNorte", 6, 180), new("Lupus", 9, 160)]);
+    }
+
+    private sealed class Sod(SodPlayerRow? top, bool fail = false) : ISodRankingReader
+    {
+        public DateOnly? Month { get; private set; }
+
+        public Task<SodPlayerRow?> ReadTopAsync(DateOnly month, CancellationToken ct)
+        {
+            Month = month;
+            return fail ? throw new InvalidOperationException("sem permissão") : Task.FromResult(top);
+        }
+    }
+
+    private sealed class FixedClock(DateTimeOffset now) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => now;
     }
 
     private sealed class Pvp(params PvpRow[] rows) : IPvpRankingReader
@@ -32,7 +49,8 @@ public class HomeHighlightsTests
 
     private sealed class NoMembers : ICharacterClanReader
     {
-        public Task<IReadOnlyDictionary<string, string>> ReadAllAsync(CancellationToken ct) => Task.FromResult<IReadOnlyDictionary<string, string>>(new Dictionary<string, string>());
+        public Task<IReadOnlyDictionary<string, string>> ReadAllAsync(CancellationToken ct) =>
+            Task.FromResult<IReadOnlyDictionary<string, string>>(new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["Fera"] = "Lobos" });
     }
 
     private sealed class NoSnapshots : ILevelSnapshotStore
@@ -59,11 +77,15 @@ public class HomeHighlightsTests
         public Task<ServerStatus> GetAsync(CancellationToken cancellationToken) => Task.FromResult(new ServerStatus(ServerAvailability.Unknown, null, null));
     }
 
-    private static HomeService Create(MemoryCache cache, ContentFixture content, IPvpRankingReader pvp, IBlessCastleOwnerReader castle, params ClanRow[] clans)
+    private static HomeService Create(MemoryCache cache, ContentFixture content, IPvpRankingReader pvp, IBlessCastleOwnerReader castle, params ClanRow[] clans) =>
+        Create(cache, content, pvp, castle, null, clans);
+
+    private static HomeService Create(MemoryCache cache, ContentFixture content, IPvpRankingReader pvp, IBlessCastleOwnerReader castle, ISodRankingReader? sod, params ClanRow[] clans)
     {
         var ranking = new RankingService(new NoLevels(), cache);
         var queries = new RankingQueryService(ranking, pvp, new Clans(clans), new NoMembers(), new NoSnapshots(), new RankingPeriods(), cache, TimeProvider.System);
-        return new HomeService(ranking, new UnknownStatus(), content.Service(), Options.Create(new ServerPresentationOptions()), null, queries, castle);
+        return new HomeService(ranking, new UnknownStatus(), content.Service(), Options.Create(new ServerPresentationOptions()), null, queries, castle, sod,
+            new FixedClock(new DateTimeOffset(2026, 12, 1, 1, 0, 0, TimeSpan.Zero)));
     }
 
     [Fact]
@@ -85,8 +107,48 @@ public class HomeHighlightsTests
 
         Assert.True(snapshot.BattlePointsAvailable);
         Assert.Equal(["Bravo", "Alfa", "C", "D", "E"], snapshot.TopBattlePoints!.Select(p => p.Name));
-        Assert.Equal(new HomeClanLeader(true, new HomeClan("Guarda", 12, 300)), snapshot.BlessCastle);
-        Assert.Equal(new HomeClanLeader(true, new HomeClan("Lobos", 20, 800)), snapshot.SodLeader);
+        Assert.Equal("Guarda", snapshot.BlessCastle!.Clan!.Name);
+        Assert.Equal(12, snapshot.BlessCastle.Clan.Members);
+        Assert.Equal(2, snapshot.BlessCastle.Clan.SodPosition);
+        Assert.Equal("Lobos", snapshot.SodLeader!.Clan!.Name);
+        Assert.Equal(800, snapshot.SodLeader.Clan.Points);
+        Assert.Equal(1, snapshot.SodLeader.Clan.SodPosition);
+    }
+
+    [Fact]
+    public async Task Clan_details_bring_leader_character_emblem_and_month_top_sod_player()
+    {
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        using var content = new ContentFixture();
+        var sod = new Sod(new SodPlayerRow("Fera", 9, 170, 5400));
+        var home = Create(cache, content, new Pvp(), new Castle(42), sod,
+            new ClanRow("Guarda", 12, 300, 5, 1, new DateTime(2025, 3, 10, 12, 0, 0), 42, " ReiDoNorte "),
+            new ClanRow("Lobos", 20, 800, 2, 2, null, 7, "Sumido"));
+
+        var snapshot = await home.GetAsync(CancellationToken.None);
+
+        var castle = snapshot.BlessCastle!.Clan!;
+        Assert.Equal(42, castle.IconId);
+        Assert.Equal(new HomeCharacter("ReiDoNorte", 6, "Cavaleiro", 180), castle.Leader);
+        Assert.Equal((5, 1), (castle.Wins, castle.Losses));
+        Assert.Equal(new DateTimeOffset(2025, 3, 10, 15, 0, 0, TimeSpan.Zero), castle.CreatedUtc);
+        Assert.Equal(new HomeCharacter("Sumido", 0, string.Empty, null), snapshot.SodLeader!.Clan!.Leader);
+        // 01/12 01:00 UTC ainda é 30/11 em Brasília: tabela de novembro.
+        Assert.Equal(new DateOnly(2026, 11, 1), sod.Month);
+        Assert.Equal(new HomeSodPlayer("Fera", 9, "Assassina", 170, 5400, "Lobos"), snapshot.SodLeader.TopPlayer);
+    }
+
+    [Fact]
+    public async Task Sod_top_player_failure_keeps_the_clan_leader()
+    {
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        using var content = new ContentFixture();
+        var home = Create(cache, content, new Pvp(), new Castle(null), new Sod(null, fail: true), new ClanRow("Lobos", 20, 800, 2, 2, null, 7));
+
+        var snapshot = await home.GetAsync(CancellationToken.None);
+
+        Assert.Equal("Lobos", snapshot.SodLeader!.Clan!.Name);
+        Assert.Null(snapshot.SodLeader.TopPlayer);
     }
 
     [Fact]

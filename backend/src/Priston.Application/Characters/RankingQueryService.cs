@@ -194,6 +194,9 @@ public sealed class RankingQueryService(
                 .ToList();
         }) ?? [];
 
+    /// <summary>Clã de cada personagem (ClanDB.UL), do cache. Sem o ClanDB, vazio.</summary>
+    public Task<IReadOnlyDictionary<string, string>> GetClanByCharacterAsync(CancellationToken ct) => ClansByCharacterAsync(ct);
+
     private async Task<IReadOnlyDictionary<string, string>> ClansByCharacterAsync(CancellationToken ct)
     {
         try

@@ -23,9 +23,21 @@ export type HomePvpEntry = {
   deaths: number;
   isPvpKing: boolean;
 };
-export type HomeClan = { name: string; members: number; points: number };
+export type HomeCharacter = { name: string; classCode: number; className: string; level: number | null };
+export type HomeClan = {
+  name: string;
+  members: number;
+  points: number;
+  wins?: number;
+  losses?: number;
+  createdUtc?: string | null;
+  iconId?: number;
+  leader?: HomeCharacter | null;
+  sodPosition?: number | null;
+};
+export type HomeSodPlayer = { name: string; classCode: number; className: string; level: number; points: number; clan: string | null };
 /** available false: a fonte falhou. clan null com a fonte no ar: ninguém lidera agora. */
-export type HomeClanLeader = { available: boolean; clan: HomeClan | null };
+export type HomeClanLeader = { available: boolean; clan: HomeClan | null; topPlayer?: HomeSodPlayer | null };
 export type CommunityLink = { label: string; url: string };
 
 export type HomeSnapshot = {

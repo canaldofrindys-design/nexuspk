@@ -4,10 +4,24 @@ namespace Priston.Application.Characters;
 public sealed record PvpRow(string Name, int ClassCode, int BattlePoints, int WeeklyBattlePoints, int Kills, int Deaths, bool IsPvpKing);
 
 /// <summary>
-/// Linha do ranking de clãs (ClanDB.dbo.CL). Sem o líder, que pode ser uma conta.
+/// Linha do ranking de clãs (ClanDB.dbo.CL).
 /// <paramref name="IconId"/> é <c>CL.MIconCnt</c>, o número do ícone do clã, que o jogo usa para identificar o dono do Bless Castle.
+/// <paramref name="Leader"/> é <c>CL.ClanZang</c>, o personagem líder (o jogo grava o nome do personagem; a conta fica em <c>CL.UserID</c>,
+/// que o portal não lê). Só aparece nos destaques da home.
 /// </summary>
-public sealed record ClanRow(string Name, int Members, int Points, int Wins, int Losses, DateTime? CreatedLocal, int IconId = 0);
+public sealed record ClanRow(string Name, int Members, int Points, int Wins, int Losses, DateTime? CreatedLocal, int IconId = 0, string? Leader = null);
+
+/// <summary>Melhor colocação de um personagem no SoD do mês (sodDB.dbo.SOD2Record&lt;aamm&gt;).</summary>
+public sealed record SodPlayerRow(string Name, int ClassCode, int Level, int Points);
+
+public interface ISodRankingReader
+{
+    /// <summary>
+    /// O personagem com mais pontos no SoD do mês (<paramref name="month"/> em horário de Brasília), sem GMs.
+    /// Null quando a tabela do mês ainda não existe ou ninguém pontuou.
+    /// </summary>
+    Task<SodPlayerRow?> ReadTopAsync(DateOnly month, CancellationToken ct);
+}
 
 public interface IPvpRankingReader
 {

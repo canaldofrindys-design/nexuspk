@@ -52,6 +52,14 @@ GRANT SELECT ON dbo.UL TO portal_game_read;           -- clã de cada personagem
 GRANT SELECT ON dbo.CL TO portal_game_read;           -- dados do clã
 GO
 
+-- SoD do mês (destaque da home). O servidor do jogo cria uma tabela SOD2Record<aamm> por mês,
+-- por isso a leitura vale para o schema dbo inteiro do sodDB (só SELECT).
+IF DB_ID('sodDB') IS NOT NULL
+BEGIN
+    EXEC sodDB.sys.sp_executesql N'IF USER_ID(''portal_game_read'') IS NULL CREATE USER portal_game_read FOR LOGIN portal_game_read; GRANT SELECT ON SCHEMA::dbo TO portal_game_read;';
+END
+GO
+
 USE CoinShopDB;
 GO
 IF USER_ID('portal_game_read') IS NULL CREATE USER portal_game_read FOR LOGIN portal_game_read;

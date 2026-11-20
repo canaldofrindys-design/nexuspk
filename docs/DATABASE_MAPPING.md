@@ -181,7 +181,8 @@ Conclusão:
 - **Ranking de BP**: os cinco primeiros de `UserDB.BattlePoints.BPs`, sem GMs (mesma regra da aba PvP do ranking).
 - **Líder do Bless Castle**: o servidor do jogo grava o clã dono no arquivo `BlessCastle.dat` (8 bytes; o número do ícone do clã, `ClanDB.CL.MIconCnt`, é o inteiro de 32 bits a partir do byte 4; `1000000000` = sem dono). É a mesma leitura do site antigo (`src/include/rankings.service.php`). O caminho fica em `GameServer:BlessCastleFile` (padrão `C:\ServidorPT\BlessCastle.dat`); a conta do serviço da API (`NT SERVICE\<serviço da API>`) precisa de leitura nesse arquivo. Sem acesso, o bloco aparece como indisponível.
 - **Líder do SoD**: o clã com mais pontos em `ClanDB.CL.Cpoint` (maior que zero), a regra do "Líder SoD" do site antigo.
-- O nome do líder do clã (`ClanZang`) continua fora do portal.
+- **Detalhes dos dois clãs** (pedido de 20/11): emblema (`CL.MIconCnt`, imagem `/ClanContent/<número>.bmp` do site antigo), líder (`CL.ClanZang`, o personagem; classe e nível pela `LevelTable`), membros, pontos no SoD e posição, `CWin`/`CFail` e fundação (`RegiDate`). A conta do líder (`CL.UserID`) continua fora do portal.
+- **Melhor do mês no SoD**: o personagem com mais pontos em `sodDB.dbo.SOD2Record<aamm>` do mês corrente (horário de Brasília), sem GMs, como o ranking Bellatra do site antigo. Precisa de leitura no `sodDB` (bloco novo em `database/scripts/permissoes-portal.sql`); sem ela, a linha não aparece e o resto do bloco continua.
 
 ## 12. Painel da equipe: escrita no jogo
 
