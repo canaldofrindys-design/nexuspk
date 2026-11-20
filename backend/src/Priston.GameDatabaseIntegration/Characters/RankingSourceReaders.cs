@@ -6,14 +6,17 @@ using static Priston.GameDatabaseIntegration.SqlIdentifier;
 
 namespace Priston.GameDatabaseIntegration.Characters;
 
-/// <summary>Ranking PvP de <c>UserDB.dbo.BattlePoints</c>, sem contas de GM. A conta nunca sai daqui.</summary>
-internal sealed class PvpRankingReader(IGameDbConnectionFactory connections, IOptions<GameDatabaseOptions> options) : IPvpRankingReader
+/// <summary>
+/// Ranking PvP de <c>UserDB.dbo.BattlePoints</c>, sem contas de GM, sem a lista de <see cref="IRankingExclusionSource"/> e sem
+/// classes desconhecidas. A conta nunca sai daqui.
+/// </summary>
+internal sealed class PvpRankingReader(IGameDbConnectionFactory connections, IOptions<GameDatabaseOptions> options, IRankingExclusionSource exclusions) : IPvpRankingReader
 {
     public async Task<IReadOnlyList<PvpRow>> ReadAllAsync(CancellationToken ct)
     {
         var o = options.Value;
         var sql = $"""
-            SELECT bp.Nick AS Name, ISNULL(bp.Class, 0) AS ClassCode, ISNULL(bp.BPs, 0) AS BattlePoints,
+            SELECT bp.Account AS Account, bp.Nick AS Name, ISNULL(bp.Class, 0) AS ClassCode, ISNULL(bp.BPs, 0) AS BattlePoints,
                    bp.BPsSemanal AS WeeklyBattlePoints, bp.KillsPvP AS Kills, bp.MortesPvP AS Deaths,
                    CAST(CASE WHEN bp.IsReiPvP = 1 THEN 1 ELSE 0 END AS bit) AS IsPvpKing
             FROM {Quote(o.UserDatabase)}.dbo.BattlePoints AS bp
@@ -22,10 +25,16 @@ internal sealed class PvpRankingReader(IGameDbConnectionFactory connections, IOp
                   SELECT 1 FROM {Quote(o.UserDatabase)}.dbo.GameMasters AS gm
                   WHERE gm.Account COLLATE DATABASE_DEFAULT = bp.Account COLLATE DATABASE_DEFAULT)
             """;
+        var hidden = await exclusions.GetAsync(ct).ConfigureAwait(false);
         await using var conn = await connections.OpenReadAsync(ct).ConfigureAwait(false);
-        var rows = await conn.QueryAsync<PvpRow>(new CommandDefinition(sql, commandTimeout: o.CommandTimeoutSeconds, cancellationToken: ct)).ConfigureAwait(false);
-        return rows.Select(r => r with { Name = r.Name.Trim() }).ToList();
+        var rows = await conn.QueryAsync<Row>(new CommandDefinition(sql, commandTimeout: o.CommandTimeoutSeconds, cancellationToken: ct)).ConfigureAwait(false);
+        return rows
+            .Where(r => !hidden.Hides(r.Account, r.Name, r.ClassCode))
+            .Select(r => new PvpRow(r.Name.Trim(), r.ClassCode, r.BattlePoints, r.WeeklyBattlePoints, r.Kills, r.Deaths, r.IsPvpKing))
+            .ToList();
     }
+
+    private sealed record Row(string? Account, string Name, int ClassCode, int BattlePoints, int WeeklyBattlePoints, int Kills, int Deaths, bool IsPvpKing);
 }
 
 /// <summary>Ranking de clãs de <c>ClanDB.dbo.CL</c>. Lê ClanZang (personagem líder); a conta do líder (UserID) não.</summary>
@@ -74,7 +83,7 @@ internal sealed class CharacterClanReader(IGameDbConnectionFactory connections, 
 /// SoD do mês em <c>sodDB.dbo.SOD2Record&lt;aamm&gt;</c> (uma tabela por mês, criada pelo servidor do jogo), como o
 /// ranking Bellatra do site antigo. O nome da tabela sai só da data; a existência é conferida antes da consulta.
 /// </summary>
-internal sealed class SodRankingReader(IGameDbConnectionFactory connections, IOptions<GameDatabaseOptions> options) : ISodRankingReader
+internal sealed class SodRankingReader(IGameDbConnectionFactory connections, IOptions<GameDatabaseOptions> options, IRankingExclusionSource exclusions) : ISodRankingReader
 {
     public async Task<SodPlayerRow?> ReadTopAsync(DateOnly month, CancellationToken ct)
     {
@@ -91,7 +100,7 @@ internal sealed class SodRankingReader(IGameDbConnectionFactory connections, IOp
         }
 
         var sql = $"""
-            SELECT TOP 1 CAST(LTRIM(RTRIM(s.CharName)) AS nvarchar(50)) AS Name, CAST(ISNULL(s.CharType, 0) AS int) AS ClassCode,
+            SELECT TOP 50 CAST(LTRIM(RTRIM(s.UserID)) AS nvarchar(50)) AS Account, CAST(LTRIM(RTRIM(s.CharName)) AS nvarchar(50)) AS Name, CAST(ISNULL(s.CharType, 0) AS int) AS ClassCode,
                    CAST(ISNULL(s.GLevel, 0) AS int) AS Level, CAST(ISNULL(s.Point, 0) AS int) AS Points
             FROM {db}.dbo.{Quote(table)} AS s
             WHERE s.Point > 0 AND s.CharName IS NOT NULL AND LTRIM(RTRIM(s.CharName)) <> ''
@@ -100,6 +109,12 @@ internal sealed class SodRankingReader(IGameDbConnectionFactory connections, IOp
                   WHERE gm.Account COLLATE DATABASE_DEFAULT = s.UserID COLLATE DATABASE_DEFAULT)
             ORDER BY s.Point DESC, s.GLevel DESC
             """;
-        return await conn.QuerySingleOrDefaultAsync<SodPlayerRow>(new CommandDefinition(sql, commandTimeout: o.CommandTimeoutSeconds, cancellationToken: ct)).ConfigureAwait(false);
+        // Os 50 primeiros bastam: o primeiro que não está escondido (equipe, teste, classe desconhecida) é o líder.
+        var hidden = await exclusions.GetAsync(ct).ConfigureAwait(false);
+        var rows = await conn.QueryAsync<SodRow>(new CommandDefinition(sql, commandTimeout: o.CommandTimeoutSeconds, cancellationToken: ct)).ConfigureAwait(false);
+        var top = rows.FirstOrDefault(r => !hidden.Hides(r.Account, r.Name, r.ClassCode));
+        return top is null ? null : new SodPlayerRow(top.Name, top.ClassCode, top.Level, top.Points);
     }
+
+    private sealed record SodRow(string? Account, string Name, int ClassCode, int Level, int Points);
 }
