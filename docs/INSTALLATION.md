@@ -123,6 +123,7 @@ Abra o Bloco de Notas **como administrador** e edite `C:\NexusPortal\config\port
 - **Smtp**: sem ele, cadastro e login funcionam, mas confirmação de e-mail e recuperação de senha ficam desligadas (o site avisa).
 - **Captcha**: a chave secreta do Cloudflare Turnstile. A chave pública vai no pacote (variável `TURNSTILE_SITE_KEY` do repositório no GitHub). Sem as duas, o captcha fica desligado.
 - **GameServer.Targets**: as portas do servidor de login e de cada canal (as mesmas do `.ini` do servidor do jogo). Na VPS atual, o servidor do jogo (`open_the_server`) escuta só na 35002. A 32009 que o `include/status.php` do site antigo testava é do SQL Server, não do jogo. Para conferir as portas: `Get-NetTCPConnection -State Listen` com o nome do processo. Sem elas, a página de status mostra "Sem verificação configurada" em vez de inventar um estado.
+- **GameServer.BlessCastleFile** (opcional): o arquivo do servidor do jogo com o clã dono do Bless Castle, mostrado na home. Padrão `C:\ServidorPT\BlessCastle.dat`. Se o servidor do jogo estiver em outra pasta, informe o caminho aqui. A API só lê o arquivo; se a conta do serviço não tiver leitura, libere com `icacls "C:\ServidorPT\BlessCastle.dat" /grant "NT SERVICE\NexusPortalApi:R"`.
 
 Depois:
 

@@ -21,6 +21,12 @@ public sealed class GameServerOptions
     public IList<GameServerTarget> Targets { get; } = [];
 
     public OnlinePlayersOptions OnlinePlayers { get; } = new();
+
+    /// <summary>
+    /// Arquivo do servidor do jogo com o clã dono do Bless Castle (o mesmo que o site antigo lia).
+    /// A conta do serviço da API precisa poder ler o arquivo. Vazio esconde o líder do Bless Castle.
+    /// </summary>
+    public string BlessCastleFile { get; set; } = @"C:\ServidorPT\BlessCastle.dat";
 }
 
 /// <summary>

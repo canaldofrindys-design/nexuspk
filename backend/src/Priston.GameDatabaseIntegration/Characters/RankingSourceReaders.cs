@@ -36,7 +36,8 @@ internal sealed class ClanRankingReader(IGameDbConnectionFactory connections, IO
         var o = options.Value;
         var sql = $"""
             SELECT ClanName AS Name, MemCnt AS Members, ISNULL(Cpoint, 0) AS Points, ISNULL(CWin, 0) AS Wins,
-                   ISNULL(CFail, 0) AS Losses, RegiDate AS CreatedLocal
+                   ISNULL(CFail, 0) AS Losses, RegiDate AS CreatedLocal,
+                   ISNULL(MIconCnt, 0) AS IconId
             FROM {Quote(o.ClanDatabase)}.dbo.CL
             WHERE ClanName IS NOT NULL AND LTRIM(RTRIM(ClanName)) <> ''
             """;

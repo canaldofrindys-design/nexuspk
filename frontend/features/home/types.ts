@@ -12,6 +12,20 @@ export type RankedCharacter = {
 
 export type HomeNewsItem = { slug: string; category: string; title: string; summary: string; publishedAtUtc: string };
 export type HomeEventItem = { slug: string; name: string; category: string; startsAtUtc: string; endsAtUtc: string | null };
+/** Linha do ranking de BP (UserDB.dbo.BattlePoints). */
+export type HomePvpEntry = {
+  position: number;
+  name: string;
+  classCode: number;
+  className: string;
+  battlePoints: number;
+  kills: number;
+  deaths: number;
+  isPvpKing: boolean;
+};
+export type HomeClan = { name: string; members: number; points: number };
+/** available false: a fonte falhou. clan null com a fonte no ar: ninguém lidera agora. */
+export type HomeClanLeader = { available: boolean; clan: HomeClan | null };
 export type CommunityLink = { label: string; url: string };
 
 export type HomeSnapshot = {
@@ -23,4 +37,8 @@ export type HomeSnapshot = {
   activeEvents: HomeEventItem[];
   upcomingEvents: HomeEventItem[];
   banners: PublicBanner[];
+  topBattlePoints?: HomePvpEntry[] | null;
+  battlePointsAvailable?: boolean;
+  blessCastle?: HomeClanLeader | null;
+  sodLeader?: HomeClanLeader | null;
 };

@@ -1371,6 +1371,14 @@ html.motion [data-reveal-state="hidden"][data-reveal="fade"] {
 .nx-panel--fill > .nx-panel__list > * + * {
   margin-top: 0;
 }
+/* Linha com dados (nome, número): sem caixa alta, mais compacta. */
+.nx-panel__row--data {
+  gap: 0.5rem;
+  min-height: 34px;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+}
 a.nx-panel__row:hover,
 a.nx-panel__row:focus-visible {
   color: var(--color-gold-bright);

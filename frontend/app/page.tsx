@@ -6,15 +6,17 @@ import { HeroBanner } from "@/features/home/HeroBanner";
 import { HomeChapters } from "@/features/home/HomeChapters";
 import { NoticeBoard } from "@/features/home/NoticeBoard";
 import {
+  BattlePointsPanel,
+  LeadersColumn,
+  ServerEventsWindow,
+} from "@/features/home/Highlights";
+import {
   ClassesStrip,
   ItemSlots,
   PortalTiles,
   RankEmblems,
-  RankingLinks,
-  RankingPeriods,
   ServerStatusPanel,
 } from "@/features/home/PortalSections";
-import { RankingWindow } from "@/features/home/RankingWindow";
 import { loadHome } from "@/features/home/loadHome";
 import { KitIcon } from "@/components/ui/KitIcon";
 import { connection } from "next/server";
@@ -23,10 +25,10 @@ import { connection } from "next/server";
  * Home em quatro partes, cada uma com o seu cenário no fundo (o fundo troca com esmaecer ao rolar):
  * 1) banner animado com três cenas (vale ao entardecer, luar e estrada);
  * 2) a prancha "portal" do kit visual: banners do painel (quando houver), faixa de cinco banners,
- *    faixa de botões e o quadro em três colunas (ranking geral e status | classes, itens, patentes
- *    e atividades | rankings, bandeiras e orbes);
+ *    faixa de botões e o quadro em três colunas (ranking de BP e status | classes, itens, patentes
+ *    e atividades | líder do Bless Castle, líder do SoD e bandeiras);
  * 3) quatro capítulos ilustrados (primeiros passos, eventos e PvP, comunidade, status e conta);
- * 4) o que está acontecendo agora: avisos, agenda e top 10, com dados ao vivo.
+ * 4) o que está acontecendo agora: avisos, agenda e os eventos fixos do servidor.
  * No celular tudo vira uma coluna, na mesma ordem.
  */
 async function Portal() {
@@ -50,7 +52,7 @@ async function Portal() {
       {/* As três colunas terminam na mesma linha, como na prancha: o centro e a direita distribuem o espaço. */}
       <div className="nx-board grid gap-4 lg:grid-cols-[250px_minmax(0,1fr)_250px] lg:items-stretch">
         <div className="flex flex-col gap-4">
-          <RankingLinks />
+          <BattlePointsPanel home={home} />
           <ServerStatusPanel home={home} />
         </div>
         <div className="flex min-w-0 flex-col justify-between gap-4">
@@ -59,7 +61,7 @@ async function Portal() {
           <RankEmblems />
           <PortalTiles />
         </div>
-        <RankingPeriods />
+        <LeadersColumn home={home} />
       </div>
     </div>
   );
@@ -69,7 +71,8 @@ async function LiveBoard() {
   await connection();
   const home = await loadHome();
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_340px] lg:items-start">
+    <div className="grid gap-4 lg:grid-cols-3 lg:items-start">
+      <ServerEventsWindow />
       <NoticeBoard
         news={home?.news ?? []}
         events={[
@@ -80,10 +83,6 @@ async function LiveBoard() {
       <AgendaWindow
         active={home?.activeEvents ?? []}
         upcoming={home?.upcomingEvents ?? []}
-      />
-      <RankingWindow
-        players={home?.topPlayers ?? []}
-        available={home?.rankingAvailable ?? false}
       />
     </div>
   );
@@ -130,15 +129,15 @@ export default function HomePage() {
               Acontecendo no NexusPK
             </h2>
             <p className="mx-auto mt-2 max-w-2xl text-silver/80">
-              Os avisos da equipe, a agenda dos próximos eventos e os dez
-              personagens de nível mais alto, direto do servidor.
+              Os eventos do servidor, os avisos da equipe e a agenda dos
+              próximos eventos.
             </p>
           </div>
           <Suspense
             fallback={
               <div
                 className="game-window h-64 animate-pulse"
-                aria-label="Carregando avisos, agenda e ranking"
+                aria-label="Carregando avisos e agenda"
               />
             }
           >

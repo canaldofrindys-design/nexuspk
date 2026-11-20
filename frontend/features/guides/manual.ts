@@ -1,4 +1,5 @@
 import type { Section } from "./types";
+import { serverEvents } from "@/features/home/serverEvents";
 
 /**
  * Manual do jogo: referência em capítulos, do teclado ao castelo. Fonte: wiki do site antigo
@@ -107,12 +108,7 @@ export const manual: Section[] = [
       {
         kind: "table",
         head: ["Onde", "Quando", "Como funciona"],
-        rows: [
-          ["Arena PvP", "Sempre aberta", "Atrás do baú de Ricarten. Combate livre entre jogadores"],
-          ["Arena Hellsgate", "Conforme a agenda", "Arena de desafio do servidor"],
-          ["Bless Castle", "Domingo, 16:00", "Guerra de clãs pela posse do castelo"],
-          ["Survival of the Death (SoD)", "Conforme a agenda", "Os três melhores clãs ganham as coroas de ouro, prata e bronze, com bônus de HP"],
-        ],
+        rows: serverEvents.filter((e) => e.pvp).map((e) => [e.name, e.when, e.what]),
       },
       { kind: "p", text: "Os pontos de batalha contam para o ranking PvP. As zonas de segurança protegem quem não está na área de combate." },
       { kind: "links", items: [{ href: "/ranking?tipo=pvp", label: "Ranking PvP" }, { href: "/ranking?tipo=clas", label: "Ranking de clãs" }, { href: "/eventos", label: "Agenda" }] },
