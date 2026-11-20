@@ -3,8 +3,11 @@ namespace Priston.Application.Characters;
 /// <summary>Linha do ranking PvP (UserDB.dbo.BattlePoints). Sem a conta.</summary>
 public sealed record PvpRow(string Name, int ClassCode, int BattlePoints, int WeeklyBattlePoints, int Kills, int Deaths, bool IsPvpKing);
 
-/// <summary>Linha do ranking de clãs (ClanDB.dbo.CL). Sem o líder, que pode ser uma conta.</summary>
-public sealed record ClanRow(string Name, int Members, int Points, int Wins, int Losses, DateTime? CreatedLocal);
+/// <summary>
+/// Linha do ranking de clãs (ClanDB.dbo.CL). Sem o líder, que pode ser uma conta.
+/// <paramref name="IconId"/> é <c>CL.MIconCnt</c>, o número do ícone do clã, que o jogo usa para identificar o dono do Bless Castle.
+/// </summary>
+public sealed record ClanRow(string Name, int Members, int Points, int Wins, int Losses, DateTime? CreatedLocal, int IconId = 0);
 
 public interface IPvpRankingReader
 {
@@ -36,4 +39,14 @@ public interface ILevelSnapshotStore
     Task<DateOnly?> FirstDateAsync(CancellationToken ct);
 
     Task<int> DeleteBeforeAsync(DateOnly day, CancellationToken ct);
+}
+
+/// <summary>
+/// Dono do Bless Castle, gravado pelo servidor do jogo no arquivo <c>BlessCastle.dat</c>.
+/// Retorna o número do ícone do clã (<c>CL.MIconCnt</c>) ou null quando o castelo está sem dono.
+/// Lança exceção quando o arquivo não pode ser lido.
+/// </summary>
+public interface IBlessCastleOwnerReader
+{
+    Task<int?> ReadOwnerIconIdAsync(CancellationToken ct);
 }

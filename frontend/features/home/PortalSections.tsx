@@ -8,8 +8,8 @@ import type { HomeSnapshot } from "./types";
 
 /*
  * Corpo da home na ordem da prancha "portal" do kit visual (05_pranchas_e_mockups/portal.png):
- * coluna esquerda com Ranking geral e Status do servidor; centro com classes, itens, patentes e os
- * cinco tiles; coluna direita com Rankings, bandeiras de clã e orbes.
+ * coluna esquerda com Ranking de BP e Status do servidor; centro com classes, itens, patentes e os
+ * cinco tiles; coluna direita com os líderes do Bless Castle e do SoD (Highlights.tsx).
  * Nenhum número vem da arte: status, jogadores e taxas saem da API (/api/v1/home).
  */
 
@@ -33,116 +33,6 @@ export function PanelTitle({
       >
         {title}
       </h2>
-    </div>
-  );
-}
-
-const topLinks = [
-  { href: "/ranking", label: "Top Level", icon: "rankingGeral" },
-  { href: "/ranking?tipo=pvp", label: "Top Kill (PvP)", icon: "pvp" },
-  { href: "/ranking?tipo=clas", label: "Top Clã", icon: "guildasBandeira" },
-  { href: "/personagens", label: "Buscar personagem", icon: "personagem" },
-] as const satisfies readonly {
-  href: string;
-  label: string;
-  icon: KitIconName;
-}[];
-
-/** Painel "Ranking geral" (coluna esquerda da prancha). */
-export function RankingLinks() {
-  return (
-    <section aria-labelledby="ranking-geral-t" className="nx-panel">
-      <PanelTitle
-        icon="rankingGeral"
-        title="Ranking geral"
-        id="ranking-geral-t"
-      />
-      <ul className="nx-panel__list">
-        {topLinks.map((r) => (
-          <li key={r.href}>
-            <Link href={r.href} className="nx-panel__row">
-              <KitIcon name={r.icon} size={26} />
-              {r.label}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-const periodLinks = [
-  {
-    href: "/ranking?periodo=diario",
-    label: "Ranking diário",
-    icon: "rankingDiario",
-  },
-  {
-    href: "/ranking?periodo=semanal",
-    label: "Ranking semanal",
-    icon: "rankingSemanal",
-  },
-  { href: "/ranking?periodo=mensal", label: "Ranking mensal", icon: "eventos" },
-  { href: "/ranking?tipo=clas", label: "Ranking de clãs", icon: "guilda" },
-  { href: "/ranking", label: "Hall da fama", icon: "trofeu" },
-] as const satisfies readonly {
-  href: string;
-  label: string;
-  icon: KitIconName;
-}[];
-
-/** Painel "Rankings" (coluna direita), com as bandeiras de clã e os orbes da prancha. */
-export function RankingPeriods() {
-  return (
-    <div className="flex flex-col justify-between gap-4">
-      <section aria-labelledby="rankings-t" className="nx-panel nx-panel--fill">
-        <PanelTitle icon="rankingGeral" title="Rankings" id="rankings-t" />
-        <ul className="nx-panel__list">
-          {periodLinks.map((r) => (
-            <li key={r.label}>
-              <Link href={r.href} className="nx-panel__row">
-                <KitIcon name={r.icon} size={26} />
-                {r.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </section>
-      <div className="flex flex-col gap-3">
-        <Link
-          href="/ranking?tipo=clas"
-          aria-label="Clãs: ver o ranking de clãs"
-          className="art-link grid grid-cols-5 justify-items-center gap-1 px-1"
-        >
-          {[0, 1, 2, 3, 4].map((i) => (
-            <Image
-              key={i}
-              src={`/kit/prancha/bandeira-${i}.webp`}
-              alt=""
-              width={56}
-              height={80}
-              unoptimized
-              className="h-auto w-full max-w-[52px]"
-            />
-          ))}
-        </Link>
-        <div
-          aria-hidden
-          className="grid grid-cols-5 justify-items-center gap-1 px-1"
-        >
-          {[0, 1, 2, 3, 4].map((i) => (
-            <Image
-              key={i}
-              src={`/kit/prancha/orbe-${i}.webp`}
-              alt=""
-              width={62}
-              height={62}
-              unoptimized
-              className="nx-orb h-auto w-full max-w-[50px]"
-            />
-          ))}
-        </div>
-      </div>
     </div>
   );
 }

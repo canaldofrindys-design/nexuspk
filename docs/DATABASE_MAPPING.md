@@ -175,3 +175,10 @@ Conclusão:
 - **Clãs**: `ClanDB.CL` (`MemCnt`, `Cpoint`, `CWin`, `CFail`, `RegiDate`). O nome do líder (`ClanZang`) não é exibido.
 - **Perfil público**: nome, classe, nível, clã (`ClanDB.UL`) e pontos PvP. Não mostra a conta do jogo.
 - Respostas da API ficam 5 minutos em cache no servidor e 60 s no navegador.
+
+## 11. Destaques da home
+
+- **Ranking de BP**: os cinco primeiros de `UserDB.BattlePoints.BPs`, sem GMs (mesma regra da aba PvP do ranking).
+- **Líder do Bless Castle**: o servidor do jogo grava o clã dono no arquivo `BlessCastle.dat` (8 bytes; o número do ícone do clã, `ClanDB.CL.MIconCnt`, é o inteiro de 32 bits a partir do byte 4; `1000000000` = sem dono). É a mesma leitura do site antigo (`src/include/rankings.service.php`). O caminho fica em `GameServer:BlessCastleFile` (padrão `C:\ServidorPT\BlessCastle.dat`); a conta do serviço da API (`NT SERVICE\<serviço da API>`) precisa de leitura nesse arquivo. Sem acesso, o bloco aparece como indisponível.
+- **Líder do SoD**: o clã com mais pontos em `ClanDB.CL.Cpoint` (maior que zero), a regra do "Líder SoD" do site antigo.
+- O nome do líder do clã (`ClanZang`) continua fora do portal.

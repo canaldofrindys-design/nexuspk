@@ -127,13 +127,17 @@ public sealed class RankingQueryService(
         return Paged(entries, page, pageSize, true, null, null, clock.GetUtcNow());
     }
 
-    public async Task<RankingPage<ClanEntry>> GetClansAsync(int page, int pageSize, CancellationToken ct)
-    {
-        var rows = await cache.GetOrCreateAsync("ranking:clans", async e =>
+    /// <summary>Todos os clãs de <c>ClanDB.dbo.CL</c>, do cache (5 minutos).</summary>
+    public async Task<IReadOnlyList<ClanRow>> GetAllClansAsync(CancellationToken ct) =>
+        await cache.GetOrCreateAsync("ranking:clans", async e =>
         {
             e.AbsoluteExpirationRelativeToNow = CacheDuration;
             return await clanReader.ReadAllAsync(ct);
         }) ?? [];
+
+    public async Task<RankingPage<ClanEntry>> GetClansAsync(int page, int pageSize, CancellationToken ct)
+    {
+        var rows = await GetAllClansAsync(ct);
         var entries = rows
             .OrderByDescending(r => r.Points)
             .ThenByDescending(r => r.Members)
