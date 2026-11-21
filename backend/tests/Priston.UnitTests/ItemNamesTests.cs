@@ -447,3 +447,21 @@ public class ItemNamesTests
         public Task<IReadOnlyList<ItemTypeInfo>> ReadTypesAsync(CancellationToken ct) => Task.FromResult(Types);
     }
 }
+
+public sealed class ItemTypeKeyTests
+{
+    [Theory]
+    [InlineData(new byte[] { 0x01, 0x01, 0x00, 0x00 }, 0x0101)]
+    [InlineData(new byte[] { 0x02, 0x01, 0x00, 0x00 }, 0x0201)]
+    [InlineData(new byte[] { 0x00, 0x00, 0x00, 0x00 }, null)]
+    public void Reads_the_type_from_varbinary(byte[] hex, int? expected) =>
+        Assert.Equal(expected, Priston.GameDatabaseIntegration.Characters.ItemTypeNameReader.Key(hex));
+
+    [Theory]
+    [InlineData(16842752, 0x0101)]
+    [InlineData(33619968, 0x0201)]
+    [InlineData(-1, null)]
+    [InlineData(0, null)]
+    public void Reads_the_type_from_the_id(int id, int? expected) =>
+        Assert.Equal(expected, Priston.GameDatabaseIntegration.Characters.ItemTypeNameReader.Key(id));
+}
