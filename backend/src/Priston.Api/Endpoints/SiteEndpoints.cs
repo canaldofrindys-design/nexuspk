@@ -90,7 +90,8 @@ public static class SiteEndpoints
                     {
                         available = true,
                         exactNames = names.ExactCount,
-                        items = items.Select(i => new { i.ItemCode, name = names.Name(i.ItemCode), i.Times, lastUtc = RareDropFeed.ToUtc(i.LastLocal), i.LastCharacter }),
+                        dropSources = names.SourceCount,
+                        items = items.Select(i => new { i.ItemCode, name = names.Name(i.ItemCode), boss = names.Boss(i.ItemCode), i.Times, lastUtc = RareDropFeed.ToUtc(i.LastLocal), i.LastCharacter }),
                     });
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException)

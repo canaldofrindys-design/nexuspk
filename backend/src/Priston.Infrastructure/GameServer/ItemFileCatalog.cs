@@ -12,7 +12,7 @@ namespace Priston.Infrastructure.GameServer;
 /// </summary>
 internal sealed class ItemFileCatalog(IOptions<GameServerOptions> options) : IItemFileCatalog
 {
-    private static readonly Encoding FileEncoding = CreateEncoding();
+    internal static readonly Encoding FileEncoding = CreateEncoding();
 
     public async Task<IReadOnlyDictionary<string, string>> ReadNamesAsync(CancellationToken ct)
     {
@@ -89,7 +89,7 @@ internal sealed class ItemFileCatalog(IOptions<GameServerOptions> options) : IIt
         return string.IsNullOrWhiteSpace(name) || id is null ? null : (id.Trim().ToUpperInvariant(), name.Trim());
     }
 
-    private static string? Quoted(string line)
+    internal static string? Quoted(string line)
     {
         var start = line.IndexOf('"');
         var end = start < 0 ? -1 : line.IndexOf('"', start + 1);

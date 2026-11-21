@@ -33,6 +33,12 @@ public sealed class GameServerOptions
     /// A conta do serviço da API precisa poder ler a pasta. Vazio: os drops usam o nome do tipo.
     /// </summary>
     public string ItemsFolder { get; set; } = @"C:\ServidorPT\GameServer\OpenItem";
+
+    /// <summary>
+    /// Pasta com um .inf por monstro do servidor do jogo (nome e lista de drops), de onde sai "de qual boss caiu".
+    /// A conta do serviço da API precisa poder ler a pasta. Vazio: os drops ficam sem boss.
+    /// </summary>
+    public string MonstersFolder { get; set; } = @"C:\ServidorPT\GameServer\Monster";
 }
 
 /// <summary>

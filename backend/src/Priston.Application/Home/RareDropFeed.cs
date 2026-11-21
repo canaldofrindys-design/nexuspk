@@ -163,7 +163,7 @@ public sealed class RareDropFeed(IMemoryCache cache, TimeProvider clock, IItemLo
             .Take(MaxShown)
             .Select(r => byCode.TryGetValue(r.ItemCode, out var item)
                 ? new RareDrop(item.Name, item.Icon, null, r.Character, ToUtc(r.PickedLocal))
-                : new RareDrop(names.Name(r.ItemCode), GameItemCode.Icon(r.ItemCode), null, r.Character, ToUtc(r.PickedLocal)))
+                : new RareDrop(names.Name(r.ItemCode), GameItemCode.Icon(r.ItemCode), names.Boss(r.ItemCode), r.Character, ToUtc(r.PickedLocal)))
             .ToList();
     }
 

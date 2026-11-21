@@ -124,6 +124,70 @@ public class ItemNamesTests
         Assert.Equal("Axe nº 61", names.Name(0x01013D00));
     }
 
+    // Trecho real de um .inf (cabeçalhos coreanos lidos como Windows-1252), com uma linha de itens acrescentada.
+    private const string MonsterFile =
+        "*Name \"Valento\"\r\n" +
+        "//\u00B8\u00F3\u00BD\u00BA\u00C5\u00CD\u00C0\u00C7 HP\r\n" +
+        "*\u00BB\u00FD\u00B8\u00ED\u00B7\u00C2\t\t\t10000\r\n" +
+        "*\u00BE\u00C6\u00C0\u00CC\u00C5\u00DB\u00C4\u00AB\u00BF\u00EE\u00C5\u00CD\t\t1\r\n" +
+        "*\u00BE\u00C6\u00C0\u00CC\u00C5\u00DB\t\t50\t\u00B5\u00B7\t2000\t5000\r\n" +
+        "*\u00BE\u00C6\u00C0\u00CC\u00C5\u00DB\t\t2\twa161\tCA182 // raros\r\n" +
+        "//*\u00BE\u00C6\u00C0\u00CC\u00C5\u00DB\t\t2\tOS110\r\n";
+
+    [Fact]
+    public void Monster_file_gives_name_and_item_drops_but_not_gold()
+    {
+        var m = MonsterFileCatalog.Parse("Boss_100_Valento", MonsterFile);
+        Assert.NotNull(m);
+        Assert.Equal("Valento", m.Value.Name);
+        Assert.Equal(["WA161", "CA182"], m.Value.Drops);
+
+        var noName = MonsterFileCatalog.Parse("Slab_119_Elite Zumbi", MonsterFile.Replace("*Name \"Valento\"", string.Empty));
+        Assert.Equal("Elite Zumbi", noName!.Value.Name);
+
+        var onlyGold = "*Name \"Lobo\"\r\n*\u00BE\u00C6\u00C0\u00CC\u00C5\u00DB\t\t50\t\u00B5\u00B7\t2000\t5000\r\n";
+        Assert.Null(MonsterFileCatalog.Parse("Lobo", onlyGold));
+    }
+
+    [Fact]
+    public void Boss_is_shown_only_when_few_monsters_drop_the_item()
+    {
+        var names = ItemNames.Build(Types, new Dictionary<string, string>(), new Dictionary<string, IReadOnlyList<string>>
+        {
+            ["WA161"] = ["Valento"],
+            ["CA182"] = ["Fúria", "Babel"],
+            ["OS110"] = ["Lobo", "Urso", "Zumbi"],
+        });
+
+        Assert.Equal("Valento", names.Boss(0x01013D00));
+        Assert.Equal("Babel ou Fúria", names.Boss(0x02105200));
+        Assert.Null(names.Boss(0x02350A00));
+        Assert.Null(names.Boss(0x01013E00));
+    }
+
+    [Fact]
+    public async Task Monster_folder_maps_items_to_monsters()
+    {
+        var dir = Directory.CreateTempSubdirectory("monster");
+        try
+        {
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+            var latin = Encoding.GetEncoding(1252);
+            await File.WriteAllBytesAsync(Path.Combine(dir.FullName, "Boss_100_Valento.inf"), latin.GetBytes(MonsterFile));
+            await File.WriteAllBytesAsync(Path.Combine(dir.FullName, "Boss_101_Fenix.inf"), latin.GetBytes(MonsterFile.Replace("Valento", "Fênix")));
+            var catalog = new MonsterFileCatalog(Options.Create(new GameServerOptions { MonstersFolder = dir.FullName }));
+
+            var sources = await catalog.ReadDropSourcesAsync(CancellationToken.None);
+
+            Assert.Equal(["Fênix", "Valento"], sources["WA161"].Order());
+            Assert.False(sources.ContainsKey("OS110"));
+        }
+        finally
+        {
+            dir.Delete(recursive: true);
+        }
+    }
+
     private sealed class StaticTypes : IItemNameReader
     {
         public Task<IReadOnlyList<ItemTypeInfo>> ReadTypesAsync(CancellationToken ct) => Task.FromResult(Types);

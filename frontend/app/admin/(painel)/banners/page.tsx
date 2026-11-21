@@ -111,7 +111,9 @@ async function Body({ searchParams }: { searchParams: Promise<Q> }) {
               </p>
               {pickups.data.exactNames ? (
                 <p className="mb-2 text-xs text-silver/60">
-                  Nomes lidos dos arquivos do servidor do jogo ({formatNumber(pickups.data.exactNames)} itens).
+                  Nomes lidos dos arquivos do servidor do jogo ({formatNumber(pickups.data.exactNames)} itens
+                  {pickups.data.dropSources ? `, ${formatNumber(pickups.data.dropSources)} com a lista de monstros que derrubam` : ""}). O boss
+                  só aparece quando até 2 monstros derrubam o item, porque o log do jogo não diz quem foi morto.
                 </p>
               ) : (
                 <p className="mb-2 text-xs text-data-bad">
@@ -138,6 +140,7 @@ async function Body({ searchParams }: { searchParams: Promise<Q> }) {
                       <td className="py-1 text-silver">
                         {p.name ?? p.itemCode}
                         <span className="tabular ml-2 text-xs text-silver/40">{p.itemCode}</span>
+                        {p.boss ? <span className="block text-xs text-silver/60">cai de {p.boss}</span> : null}
                       </td>
                       <td className={`py-1 ${isRare(p) ? "text-data-ok" : "text-silver/40"}`}>{isRare(p) ? "raro, aparece" : "comum"}</td>
                       <td className="tabular py-1 text-right text-data-info">{formatNumber(p.times)}</td>
