@@ -6,7 +6,9 @@ export type DownloadSettings = { intro: string; requirements: string; items: Dow
 export type PublicBanner = { id: number; title: string; subtitle: string | null; imageUrl: string | null; linkUrl: string | null; linkLabel: string | null };
 
 /** Drop raro anunciado pela equipe ("Drops raros da semana" da home). */
-export type RareDrop = { item: string; icon: string; boss: string | null; player: string; droppedUtc: string };
+export type RareDrop = { item: string; icon: string; boss: string | null; player: string; droppedUtc: string; code?: string | null };
+/** Item real do jogo que cai de boss, para os espaços vazios da faixa de drops. */
+export type ItemShowcase = { code: string; name: string; boss: string | null };
 export type RareDropSettings = { items: RareDrop[] };
 export type ItemPickupStat = { itemCode: number; name?: string; boss?: string | null; times: number; lastUtc: string; lastCharacter: string };
 export type ItemPickups = { available: boolean; exactNames?: number; dropSources?: number; items: ItemPickupStat[] };

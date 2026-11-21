@@ -2,6 +2,7 @@ using System.Text;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Priston.Application.Home;
+using Priston.Application.Site;
 using Priston.Infrastructure.GameServer;
 
 namespace Priston.UnitTests;
@@ -229,6 +230,55 @@ public class ItemNamesTests
         var names = ItemNames.Build(Types, new Dictionary<string, string> { ["ca182"] = "Traje Caos F", ["lixo"] = "x" });
         Assert.Equal("Traje Caos F", names.FileNames["CA182"]);
         Assert.Single(names.FileNames);
+    }
+
+    [Fact]
+    public void Item_code_gives_back_the_file_code()
+    {
+        var names = ItemNames.Build(Types, new Dictionary<string, string>());
+        Assert.Equal("CA182", names.FileId(0x02105200));
+        Assert.Equal("WA161", names.FileId(0x01013D00));
+        Assert.Equal("OR205", names.FileId(0x03050500));
+        Assert.Equal("WA1100", names.FileId(0x01016400));
+        Assert.Null(names.FileId(0x080C4B00));
+    }
+
+    [Fact]
+    public async Task Showcase_shows_real_boss_drops_with_image()
+    {
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var source = new ItemNameSource(cache, new StaticTypes(), new Files(), new Drops());
+        var feed = new RareDropFeed(cache, TimeProvider.System, null, source, new Images());
+
+        var showcase = await feed.GetShowcaseAsync(11, CancellationToken.None);
+
+        var item = Assert.Single(showcase);
+        Assert.Equal(new ItemShowcase("CA182", "Traje Caos F", "Valento"), item);
+    }
+
+    private sealed class Files : IItemFileCatalog
+    {
+        public Task<IReadOnlyDictionary<string, string>> ReadNamesAsync(CancellationToken ct) =>
+            Task.FromResult<IReadOnlyDictionary<string, string>>(new Dictionary<string, string> { ["CA182"] = "Traje Caos F", ["WA161"] = "Machado", ["OS110"] = "Sheltom" });
+    }
+
+    private sealed class Drops : IMonsterDropCatalog
+    {
+        public Task<IReadOnlyDictionary<string, IReadOnlyList<string>>> ReadDropSourcesAsync(CancellationToken ct) =>
+            Task.FromResult<IReadOnlyDictionary<string, IReadOnlyList<string>>>(new Dictionary<string, IReadOnlyList<string>>
+            {
+                ["CA182"] = ["Valento"],                  // boss, com imagem: entra
+                ["WA161"] = ["Valento"],                  // boss, sem imagem: fica fora
+                ["OS110"] = ["Lobo", "Urso", "Zumbi"],    // cai de qualquer lugar: fica fora
+            });
+    }
+
+    private sealed class Images : IItemImageStore
+    {
+        public Task<IReadOnlySet<string>> ListIdsAsync(CancellationToken ct) =>
+            Task.FromResult<IReadOnlySet<string>>(new HashSet<string>(["CA182", "OS110"], StringComparer.OrdinalIgnoreCase));
+
+        public Task<ItemImage?> GetAsync(string fileId, CancellationToken ct) => Task.FromResult<ItemImage?>(null);
     }
 
     private sealed class StaticTypes : IItemNameReader

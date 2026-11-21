@@ -32,17 +32,43 @@ const dropSlots = pranchaArt.itens.length;
 export function RareDropsRow({ home }: { home: HomeSnapshot | null }) {
   const drops: DropView[] = (home?.rareDrops ?? []).slice(0, dropSlots).flatMap((d) => {
     const art = pranchaArt.itens.find((it) => it.key === d.icon);
-    return art
-      ? [{ item: d.item, icon: art.key, width: art.width, height: art.height, player: d.player, boss: d.boss, when: formatDateTime(d.droppedUtc) }]
-      : [];
+    if (!d.code && !art) return [];
+    return [
+      {
+        kind: "drop" as const,
+        item: d.item,
+        code: d.code ?? null,
+        icon: art?.key ?? null,
+        width: art?.width ?? 0,
+        height: art?.height ?? 0,
+        player: d.player,
+        boss: d.boss,
+        when: formatDateTime(d.droppedUtc),
+      },
+    ];
   });
+  const showcase: DropView[] = (home?.showcase ?? []).slice(0, dropSlots - drops.length).map((s) => ({
+    kind: "showcase" as const,
+    item: s.name,
+    code: s.code,
+    icon: null,
+    width: 0,
+    height: 0,
+    player: null,
+    boss: s.boss,
+    when: null,
+  }));
+  const slots = [...drops, ...showcase];
   return (
     <section aria-labelledby="drops-t">
       <RowTitle id="drops-t" aside={drops.length ? `${drops.length} esta semana` : undefined}>
         Drops raros da semana
       </RowTitle>
-      {drops.length ? (
-        <RareDropsStrip drops={drops} slots={dropSlots} />
+      {slots.length ? (
+        <>
+          <RareDropsStrip drops={slots} slots={dropSlots} />
+          {drops.length === 0 ? <p className="nx-row-note">Nenhum drop raro nesta semana ainda. Estes itens caem dos bosses do servidor.</p> : null}
+        </>
       ) : (
         <>
           <ItemSlots />

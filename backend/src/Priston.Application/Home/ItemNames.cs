@@ -54,7 +54,8 @@ public sealed partial class ItemNames(
     IReadOnlyDictionary<int, string> typeNames,
     IReadOnlyDictionary<int, string> exact,
     IReadOnlyDictionary<int, IReadOnlyList<string>>? sources = null,
-    IReadOnlyDictionary<string, string>? fileNames = null)
+    IReadOnlyDictionary<string, string>? fileNames = null,
+    IReadOnlyDictionary<int, string>? filePrefixes = null)
 {
     /// <summary>Acima de tantos monstros o item é "de qualquer lugar" e o drop fica sem boss.</summary>
     public const int MaxSources = 2;
@@ -64,6 +65,20 @@ public sealed partial class ItemNames(
     public int ExactCount => exact.Count;
 
     public int SourceCount => sources?.Count ?? 0;
+
+    /// <summary>
+    /// Código do arquivo do item ("CA182") a partir do ItemCode, pelo prefixo do tipo; null quando o tipo não tem prefixo certo.
+    /// </summary>
+    public string? FileId(int code) =>
+        filePrefixes is not null && filePrefixes.TryGetValue(GameItemCode.TypeKey(code), out var prefix) && GameItemCode.Number(code) > 0
+            ? prefix + GameItemCode.Number(code).ToString(GameItemCode.Number(code) < 100 ? "D2" : "D3", System.Globalization.CultureInfo.InvariantCulture)
+            : null;
+
+    /// <summary>Itens que só 1 ou 2 monstros derrubam (drops de boss), com o nome do boss.</summary>
+    public IEnumerable<(int Code, string Boss)> BossDrops() =>
+        (sources ?? new Dictionary<int, IReadOnlyList<string>>())
+            .Where(kv => kv.Value.Count is > 0 and <= MaxSources)
+            .Select(kv => (kv.Key, string.Join(" ou ", kv.Value)));
 
     /// <summary>Nomes pelo código do arquivo do item, em maiúsculas ("CA182" → "Traje Caos F").</summary>
     public IReadOnlyDictionary<string, string> FileNames { get; } = fileNames ?? new Dictionary<string, string>();
@@ -140,7 +155,8 @@ public sealed partial class ItemNames(
             }
         }
 
-        return new ItemNames(typeNames, exact, sources, byId);
+        var reverse = prefixes.GroupBy(kv => kv.Value).ToDictionary(g => g.Key, g => g.Select(kv => kv.Key.ToUpperInvariant()).Order(StringComparer.Ordinal).First());
+        return new ItemNames(typeNames, exact, sources, byId, reverse);
     }
 
     private static int? Code(string id, IReadOnlyDictionary<string, int> prefixes) =>
