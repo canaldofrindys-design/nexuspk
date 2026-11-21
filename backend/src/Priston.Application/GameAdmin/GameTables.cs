@@ -73,7 +73,7 @@ public sealed partial class GameTableService(
         var all = await bindings.ListAsync(ct).ConfigureAwait(false);
         return GameFunctions.All
             .Where(f => me.Can(f.ReadCapability) || me.Can(f.WriteCapability))
-            .Select(f => Summary(me, f, all.FirstOrDefault(b => b.FunctionKey == f.Key)))
+            .Select(f => Summary(me, f, all.FirstOrDefault(b => b.FunctionKey == f.Key) ?? GameFunctions.BuiltIn.GetValueOrDefault(f.Key)))
             .ToList();
     }
 
@@ -138,7 +138,11 @@ public sealed partial class GameTableService(
             : GameAdminResult.Ok(cols.Select(c => View(c, null)).ToList());
     }
 
-    public Task<GameSourceBinding?> GetBindingAsync(string functionKey, CancellationToken ct) => bindings.GetAsync(functionKey, ct);
+    public Task<GameSourceBinding?> GetBindingAsync(string functionKey, CancellationToken ct) => EffectiveBindingAsync(functionKey, ct);
+
+    /// <summary>A configuração salva pelo superadministrador; sem ela, a tabela que o servidor já usa (se houver).</summary>
+    private async Task<GameSourceBinding?> EffectiveBindingAsync(string functionKey, CancellationToken ct) =>
+        await bindings.GetAsync(functionKey, ct).ConfigureAwait(false) ?? GameFunctions.BuiltIn.GetValueOrDefault(functionKey);
 
     public async Task<GameAdminResult> SaveConfigAsync(StaffPrincipal me, string functionKey, SourceConfigRequest r, ClientInfo client, CancellationToken ct)
     {
@@ -511,7 +515,7 @@ public sealed partial class GameTableService(
             return (f, null, null, GameAdminResult.Disabled(GameAccountAdminService.DisabledMessage));
         }
 
-        var b = await bindings.GetAsync(f.Key, ct).ConfigureAwait(false);
+        var b = await EffectiveBindingAsync(f.Key, ct).ConfigureAwait(false);
         if (b is null)
         {
             return (f, null, null, GameAdminResult.Disabled(NotConfigured));

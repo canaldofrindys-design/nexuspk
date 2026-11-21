@@ -565,6 +565,30 @@ public sealed class GameAdminTests
         new("ServerDB", table, keys, editable, ["ItemCode"], account, true, true, false, Password);
 
     [Fact]
+    public async Task Shops_work_without_configuration_using_the_tables_the_server_already_uses()
+    {
+        var (svc, schema, tables, bindings) = Tables();
+        schema.Tables["ItemList"] =
+        [
+            new GameColumn("szItemCode", "varchar", 32, 0, 0, true, false, false, false),
+            new GameColumn("ItemSection", "int", 4, 10, 0, true, false, false, false),
+            new GameColumn("Price", "int", 4, 10, 0, true, false, false, false),
+        ];
+        tables.Rows.Add(new() { ["szItemCode"] = "sc102", ["ItemSection"] = 5, ["Price"] = 400 });
+        var admin = Member(StaffRoles.Admin);
+
+        var list = await svc.ListAsync(admin, default);
+        Assert.Contains(list, f => f.Key == "time-shop" && f.Configured && f.Source == "TimeShopDB.dbo.ItemList");
+        Assert.Contains(list, f => f.Key == "box-prices" && f.Source == "NexusPKAdmin.dbo.NexusPixProducts");
+
+        var ok = await svc.UpdateRowAsync(admin, "time-shop", new RowUpdateRequest(new() { ["szItemCode"] = "sc102", ["ItemSection"] = "5" }, new() { ["Price"] = "350" }, "promoção"), Client, default);
+
+        Assert.Equal(GameAdminStatus.Ok, ok.Status);
+        Assert.Equal(350, tables.Rows[0]["Price"]);
+        Assert.Empty(bindings.Rows);
+    }
+
+    [Fact]
     public async Task Config_checks_columns_against_the_real_schema()
     {
         var (svc, _, _, bindings) = Tables();

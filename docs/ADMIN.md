@@ -37,8 +37,9 @@ Menus **Jogadores** e **Jogo** do `/admin`. Tudo usa o login SQL próprio `porta
 | **Ligar / reiniciar** (`/admin/servidor`) | Liga, desliga ou reinicia um programa do servidor do jogo ou todos (desliga na ordem inversa e liga na ordem cadastrada). Pede a palavra de confirmação (LIGAR, DESLIGAR, REINICIAR), motivo e senha. Uma ação por vez e 30 segundos de intervalo entre ações. | processos na VPS |
 | **Rankings** (`/admin/rankings`) | Zera PvP semanal, SoD semanal, PvP geral ou pontos de clã do SoD. Pede a palavra ZERAR, motivo e senha. Antes de zerar, guarda uma cópia; cada cópia pode ser restaurada uma vez. | `UserDB.dbo.BattlePoints`, `ClanDB.dbo.CL.Cpoint`; cópias em `PortalDB.dbo.RankingResetBackup` |
 | **Box Donate: enviar** | Monta a caixa para um personagem (até 64 itens, com aging e mix) e cria o pacote no sistema de donate do servidor (NexusPKAdmin.dbo.NexusDonatePackages e NexusDonateItems), igual à Coin Shop. O servidor do jogo monta os itens, avisa o jogador e entrega. A tela mostra se o distribuidor do jogo está respondendo e as últimas caixas com a situação. | `NexusPKAdmin` (nada a configurar) |
-| Box Donate: preços, Loja de Skin, Loja de minutos, Drops de monstros, Lojas NPC, Catálogo de itens | Lista com busca, edição das colunas liberadas, incluir e apagar (apagar pede senha). | tabela configurada |
-| Logs de itens | Consulta com filtros, só leitura. | tabela configurada |
+| Box Donate: preços, Loja de Skin (Coin Shop), Loja de minutos | Lista com busca e edição. Já vêm ligadas às tabelas que o servidor usa: preços e disponibilidade do NPC Box Donate em `NexusPKAdmin.dbo.NexusPixProducts` (centavos de real); Coin Shop com a galeria de skins em `CoinShopDB.dbo.ItemList` e loja de minutos em `TimeShopDB.dbo.ItemList` (preço; incluir e apagar itens, apagar pede senha). | já ligadas (dá para trocar em "Configurar") |
+| Drops de monstros, Lojas NPC, Catálogo de itens | Consulta lida dos arquivos do servidor; edição só se uma tabela for configurada. | arquivos do servidor |
+| Logs de itens | Consulta do log de itens do jogo (`ItemLogDB.dbo.IL`), mais novos primeiro, com busca por conta ou personagem. Só leitura. | já ligada |
 
 ### Tabelas configuradas (Box Donate, lojas, drops, itens, logs)
 
