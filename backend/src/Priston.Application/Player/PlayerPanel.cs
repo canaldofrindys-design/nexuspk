@@ -296,7 +296,19 @@ public sealed partial class PlayerPanelService(
             Equipment = sheet.Equipment.Select(e =>
             {
                 var ids = names.FileIds(e.Code, e.Name);
-                var id = withImage is { Count: > 0 } ? ids.FirstOrDefault(withImage.Contains) ?? ids.FirstOrDefault() : ids.FirstOrDefault();
+                string? id = ids.Count > 0 ? ids[0] : null;
+                if (withImage is { Count: > 0 })
+                {
+                    foreach (var candidate in ids)
+                    {
+                        if (withImage.Contains(candidate))
+                        {
+                            id = candidate;
+                            break;
+                        }
+                    }
+                }
+
                 return e with { FileId = id };
             }).ToList(),
         };

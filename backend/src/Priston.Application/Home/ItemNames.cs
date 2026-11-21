@@ -110,7 +110,11 @@ public sealed partial class ItemNames(
     /// <summary>
     /// Código do arquivo pelo ItemCode e pelo nome do item: o primeiro de <see cref="FileIds"/>.
     /// </summary>
-    public string? FileId(int code, string? name) => FileIds(code, name).FirstOrDefault();
+    public string? FileId(int code, string? name)
+    {
+        var ids = FileIds(code, name);
+        return ids.Count > 0 ? ids[0] : null;
+    }
 
     /// <summary>
     /// Códigos de arquivo possíveis para um item, do mais confiável para o menos. O nome gravado no personagem é o do
@@ -145,7 +149,7 @@ public sealed partial class ItemNames(
         return list;
     }
 
-    private IReadOnlyList<string> IdsByName(string? name)
+    private List<string> IdsByName(string? name)
     {
         var key = name?.Trim();
         if (string.IsNullOrEmpty(key) || FileNames.Count == 0)
