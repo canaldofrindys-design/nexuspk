@@ -1,4 +1,4 @@
-import type { PublicBanner } from "@/features/site/types";
+import type { PublicBanner, RareDrop } from "@/features/site/types";
 
 export type Availability = "unknown" | "online" | "offline" | "partial";
 
@@ -38,6 +38,16 @@ export type HomeClan = {
 export type HomeSodPlayer = { name: string; classCode: number; className: string; level: number; points: number; clan: string | null };
 /** available false: a fonte falhou. clan null com a fonte no ar: ninguém lidera agora. */
 export type HomeClanLeader = { available: boolean; clan: HomeClan | null; topPlayer?: HomeSodPlayer | null };
+/** Elo PvP (Bronze a Grão-Mestre) pela posição no ranking de BP. topShare: fatia acumulada do topo (0.01 = 1%). */
+export type HomePvpTier = {
+  key: string;
+  name: string;
+  topShare: number;
+  players: number;
+  minBattlePoints: number | null;
+  top: HomePvpEntry | null;
+};
+export type HomePvpTierLadder = { total: number; tiers: HomePvpTier[] };
 export type CommunityLink = { label: string; url: string };
 
 export type HomeSnapshot = {
@@ -53,4 +63,7 @@ export type HomeSnapshot = {
   battlePointsAvailable?: boolean;
   blessCastle?: HomeClanLeader | null;
   sodLeader?: HomeClanLeader | null;
+  pvpTiers?: HomePvpTierLadder | null;
+  biggestClan?: HomeClanLeader | null;
+  rareDrops?: RareDrop[] | null;
 };

@@ -11,10 +11,12 @@ import {
   ServerEventsWindow,
 } from "@/features/home/Highlights";
 import {
+  LiveTilesRow,
+  PvpLadderRow,
+  RareDropsRow,
+} from "@/features/home/HeroJourney";
+import {
   ClassesStrip,
-  ItemSlots,
-  PortalTiles,
-  RankEmblems,
   ServerStatusPanel,
 } from "@/features/home/PortalSections";
 import { loadHome } from "@/features/home/loadHome";
@@ -25,8 +27,8 @@ import { connection } from "next/server";
  * Home em quatro partes, cada uma com o seu cenário no fundo (o fundo troca com esmaecer ao rolar):
  * 1) banner animado com três cenas (vale ao entardecer, luar e estrada);
  * 2) a prancha "portal" do kit visual: banners do painel (quando houver), faixa de cinco banners,
- *    faixa de botões e o quadro em três colunas (ranking de BP e status | classes, itens, patentes
- *    e atividades | líder do Bless Castle, líder do SoD e bandeiras);
+ *    faixa de botões e o quadro em três colunas (ranking de BP e status | classes e a "Jornada do Herói":
+ *    drops raros da semana, elos PvP e cards ao vivo | líder do Bless Castle, líder do SoD e bandeiras);
  * 3) quatro capítulos ilustrados (primeiros passos, eventos e PvP, comunidade, status e conta);
  * 4) o que está acontecendo agora: avisos, agenda e os eventos fixos do servidor.
  * No celular tudo vira uma coluna, na mesma ordem.
@@ -57,9 +59,9 @@ async function Portal() {
         </div>
         <div className="flex min-w-0 flex-col justify-between gap-4">
           <ClassesStrip />
-          <ItemSlots />
-          <RankEmblems />
-          <PortalTiles />
+          <RareDropsRow home={home} />
+          <PvpLadderRow home={home} />
+          <LiveTilesRow home={home} />
         </div>
         <LeadersColumn home={home} />
       </div>

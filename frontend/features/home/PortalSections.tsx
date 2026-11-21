@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { pranchaArt, rankEmblems } from "@/components/ui/ArtLink";
+import { pranchaArt } from "@/components/ui/ArtLink";
 import { KitIcon, type KitIconName } from "@/components/ui/KitIcon";
 import { classes } from "./classes";
 import { formatNumber } from "./format";
@@ -8,8 +8,8 @@ import type { HomeSnapshot } from "./types";
 
 /*
  * Corpo da home na ordem da prancha "portal" do kit visual (05_pranchas_e_mockups/portal.png):
- * coluna esquerda com Ranking de BP e Status do servidor; centro com classes, itens, patentes e os
- * cinco tiles; coluna direita com os líderes do Bless Castle e do SoD (Highlights.tsx).
+ * coluna esquerda com Ranking de BP e Status do servidor; centro com classes e a "Jornada do Herói"
+ * (HeroJourney.tsx: drops, elos e cards ao vivo); coluna direita com os líderes do Bless Castle e do SoD (Highlights.tsx).
  * Nenhum número vem da arte: status, jogadores e taxas saem da API (/api/v1/home).
  */
 
@@ -174,76 +174,6 @@ export function ItemSlots() {
                 unoptimized
                 className="h-auto w-full object-contain"
               />
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </nav>
-  );
-}
-
-/** Patentes (medalhas do kit Web Ready com canal alfa). Levam ao ranking. */
-export function RankEmblems() {
-  return (
-    <Link
-      href="/ranking"
-      className="art-link block"
-      aria-label="Patentes do NexusPK: ver o ranking"
-    >
-      <ul className="grid grid-cols-4 items-end justify-items-center gap-x-1 gap-y-2 sm:grid-cols-7">
-        {rankEmblems.map((e) => (
-          <li key={e.name}>
-            <Image
-              src={e.src}
-              alt=""
-              width={e.width}
-              height={e.height}
-              unoptimized
-              className="h-[72px] w-auto object-contain sm:h-[88px] xl:h-[105px]"
-            />
-          </li>
-        ))}
-      </ul>
-    </Link>
-  );
-}
-
-/** Os cinco tiles do pé da prancha. O rótulo é HTML sobre a plaquinha limpa da arte. */
-const tiles = [
-  {
-    href: "/eventos?categoria=boss",
-    art: pranchaArt.tiles.bosses,
-    label: "Bosses",
-  },
-  { href: "/eventos", art: pranchaArt.tiles.eventos, label: "Eventos" },
-  { href: "/manual#pvp", art: pranchaArt.tiles.pvp, label: "Arena PvP" },
-  { href: "/manual#pvp", art: pranchaArt.tiles.castelo, label: "Bless Castle" },
-  { href: "/ranking?tipo=clas", art: pranchaArt.tiles.guerra, label: "Clãs" },
-] as const;
-
-export function PortalTiles() {
-  return (
-    <nav aria-label="Atividades">
-      <ul className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-        {tiles.map((t, i) => (
-          <li
-            key={t.label}
-            className={
-              i === 4
-                ? "col-span-2 mx-auto w-1/2 sm:col-span-1 sm:w-auto"
-                : undefined
-            }
-          >
-            <Link href={t.href} className="nx-tile art-link">
-              <Image
-                src={t.art.src}
-                alt=""
-                width={t.art.width}
-                height={t.art.height}
-                unoptimized
-                className="h-auto w-full"
-              />
-              <span className="nx-tile__label">{t.label}</span>
             </Link>
           </li>
         ))}

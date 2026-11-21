@@ -5,12 +5,17 @@ export type DownloadItem = { name: string; description: string | null; url: stri
 export type DownloadSettings = { intro: string; requirements: string; items: DownloadItem[] };
 export type PublicBanner = { id: number; title: string; subtitle: string | null; imageUrl: string | null; linkUrl: string | null; linkLabel: string | null };
 
+/** Drop raro anunciado pela equipe ("Drops raros da semana" da home). */
+export type RareDrop = { item: string; icon: string; boss: string | null; player: string; droppedUtc: string };
+export type RareDropSettings = { items: RareDrop[] };
+
 export type SiteSnapshot = {
   server: ServerSettings;
   downloads: DownloadSettings;
   banners: PublicBanner[];
   serverUpdatedUtc: string | null;
   downloadsUpdatedUtc: string | null;
+  rareDrops?: RareDrop[] | null;
 };
 
 export type SettingView<T> = { value: T; updatedUtc: string | null; updatedBy: string | null };

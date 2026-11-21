@@ -282,6 +282,17 @@ function formValues(form: FormData): Record<string, string> {
   return v;
 }
 
+export async function saveRareDropsAction(_: FormState, form: FormData): Promise<FormState> {
+  const body = {
+    items: rows(form, { item: "dropItem", icon: "dropIcon", boss: "dropBoss", player: "dropPlayer", droppedLocal: "dropWhen" }, 30),
+  };
+  const r = await apiSend("PUT", "/api/v1/admin/site/drops", { token: await token(), body, ...(await clientContext()) });
+  if (!r.ok) return failure(r, formValues(form));
+  revalidatePath("/admin/banners");
+  revalidatePath("/");
+  return { status: "success", message: "Drops salvos. A home mostra a mudança em até 1 minuto." };
+}
+
 export async function saveServerSettingsAction(_: FormState, form: FormData): Promise<FormState> {
   const body = {
     name: text(form, "name"),

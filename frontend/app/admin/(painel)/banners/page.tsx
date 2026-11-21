@@ -3,10 +3,11 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { GameWindow } from "@/components/ui/GameWindow";
+import { RareDropsForm } from "@/features/admin/forms";
 import { requireStaff } from "@/features/admin/session";
 import { safeImage } from "@/features/content/labels";
 import { formatDateTime } from "@/features/home/format";
-import type { BannerRecord } from "@/features/site/types";
+import type { BannerRecord, RareDropSettings, SettingView } from "@/features/site/types";
 import { apiSend } from "@/services/api";
 
 export const metadata: Metadata = { title: "Banners" };
@@ -24,7 +25,10 @@ async function Body({ searchParams }: { searchParams: Promise<Q> }) {
   await connection();
   const { token } = await requireStaff("ManageContent");
   const q = await searchParams;
-  const r = await apiSend<BannerRecord[]>("GET", "/api/v1/admin/banners", { token });
+  const [r, drops] = await Promise.all([
+    apiSend<BannerRecord[]>("GET", "/api/v1/admin/banners", { token }),
+    apiSend<SettingView<RareDropSettings>>("GET", "/api/v1/admin/site/drops", { token }),
+  ]);
   const now = new Date().getTime();
   return (
     <>
@@ -84,6 +88,25 @@ async function Body({ searchParams }: { searchParams: Promise<Q> }) {
           </div>
         )}
       </GameWindow>
+      <div className="mt-4">
+        <GameWindow title="Drops raros da semana">
+          <p className="mb-3 text-sm text-silver/70">
+            Aparecem na home, na faixa de itens: ao passar o mouse (ou tocar) o jogador vê o item, o boss e quem pegou.
+          </p>
+          {drops.ok ? (
+            <>
+              <p className="mb-3 text-xs text-silver/60">
+                {drops.data.updatedUtc
+                  ? `Última alteração em ${formatDateTime(drops.data.updatedUtc)}${drops.data.updatedBy ? ` por ${drops.data.updatedBy}` : ""}.`
+                  : "Nenhum drop cadastrado ainda."}
+              </p>
+              <RareDropsForm settings={drops.data.value} />
+            </>
+          ) : (
+            <p className="text-sm text-data-bad">{drops.error.message}</p>
+          )}
+        </GameWindow>
+      </div>
     </>
   );
 }

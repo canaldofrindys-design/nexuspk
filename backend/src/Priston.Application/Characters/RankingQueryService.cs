@@ -23,6 +23,15 @@ public sealed record LevelEntry(int Position, string Name, int ClassCode, string
 
 public sealed record PvpEntry(int Position, string Name, int ClassCode, string ClassName, int BattlePoints, int WeeklyBattlePoints, int Kills, int Deaths, bool IsPvpKing);
 
+/// <summary>
+/// Um elo PvP (Bronze a Grão-Mestre). <paramref name="Players"/>: quantos personagens estão nele;
+/// <paramref name="MinBattlePoints"/>: o menor BP do elo (null se vazio); <paramref name="Top"/>: o melhor do elo.
+/// </summary>
+public sealed record PvpTier(string Key, string Name, double TopShare, int Players, int? MinBattlePoints, PvpEntry? Top);
+
+/// <summary>Escada de elos pelo BP. <paramref name="Total"/>: personagens com BP acima de zero.</summary>
+public sealed record PvpTierLadder(int Total, IReadOnlyList<PvpTier> Tiers);
+
 public sealed record ClanEntry(int Position, string Name, int Members, int Points, int Wins, int Losses, DateTimeOffset? CreatedUtc);
 
 /// <summary>
@@ -125,6 +134,61 @@ public sealed class RankingQueryService(
             .Select((r, i) => ToPvpEntry(r, i + 1))
             .ToList();
         return Paged(entries, page, pageSize, true, null, null, clock.GetUtcNow());
+    }
+
+    /// <summary>
+    /// Elos do Grão-Mestre ao Bronze, com a fatia (acumulada) dos melhores em BP que cada um pega.
+    /// Ex.: Grão-Mestre são o 1% melhor, Mestre vai até os 4% melhores, e assim por diante.
+    /// </summary>
+    public static readonly IReadOnlyList<(string Key, string Name, double TopShare)> TierRules =
+    [
+        ("grao-mestre", "Grão-Mestre", 0.01),
+        ("mestre", "Mestre", 0.04),
+        ("diamante", "Diamante", 0.10),
+        ("platina", "Platina", 0.20),
+        ("ouro", "Ouro", 0.40),
+        ("prata", "Prata", 0.70),
+        ("bronze", "Bronze", 1.00),
+    ];
+
+    /// <summary>
+    /// Divide quem tem BP em elos pela posição no ranking (fatia acumulada, arredondada para cima: o 1º é
+    /// sempre Grão-Mestre). Empate em BP fica no mesmo elo do de cima. Volta do Bronze ao Grão-Mestre.
+    /// </summary>
+    public async Task<PvpTierLadder> GetPvpTiersAsync(CancellationToken ct)
+    {
+        var entries = (await AllPvpAsync(ct).ConfigureAwait(false))
+            .Where(r => r.BattlePoints > 0)
+            .OrderByDescending(r => r.BattlePoints).ThenByDescending(r => r.Kills).ThenBy(r => r.Name, StringComparer.OrdinalIgnoreCase)
+            .Select((r, i) => ToPvpEntry(r, i + 1))
+            .ToList();
+        return BuildTiers(entries);
+    }
+
+    /// <summary>Monta a escada a partir do ranking de BP já ordenado (posição 1 primeiro).</summary>
+    public static PvpTierLadder BuildTiers(IReadOnlyList<PvpEntry> ranked)
+    {
+        var n = ranked.Count;
+        var cuts = TierRules.Select(t => (int)Math.Ceiling(Math.Round(n * t.TopShare, 6))).ToArray();
+        var members = TierRules.Select(_ => new List<PvpEntry>()).ToArray();
+        var previousTier = 0;
+        for (var i = 0; i < n; i++)
+        {
+            var tier = Array.FindIndex(cuts, c => i + 1 <= c);
+            if (i > 0 && ranked[i].BattlePoints == ranked[i - 1].BattlePoints)
+            {
+                tier = previousTier;
+            }
+
+            members[tier].Add(ranked[i]);
+            previousTier = tier;
+        }
+
+        var tiers = TierRules
+            .Select((t, i) => new PvpTier(t.Key, t.Name, t.TopShare, members[i].Count, members[i].Count == 0 ? null : members[i][^1].BattlePoints, members[i].FirstOrDefault()))
+            .Reverse()
+            .ToList();
+        return new PvpTierLadder(n, tiers);
     }
 
     /// <summary>Todos os clãs de <c>ClanDB.dbo.CL</c>, do cache (5 minutos).</summary>

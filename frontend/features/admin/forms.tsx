@@ -8,7 +8,8 @@ import { initialFormState } from "@/features/auth/types";
 import { eventCategories, newsCategories } from "@/features/content/labels";
 import type { FormState } from "@/features/auth/types";
 import { safeImage } from "@/features/content/labels";
-import type { BannerRecord, DownloadSettings, ServerSettings } from "@/features/site/types";
+import { pranchaArt } from "@/components/ui/ArtLink";
+import type { BannerRecord, DownloadSettings, RareDropSettings, ServerSettings } from "@/features/site/types";
 import {
   createStaffAction,
   resetStaffPasswordAction,
@@ -16,6 +17,7 @@ import {
   saveDownloadsAction,
   saveEventAction,
   saveNewsAction,
+  saveRareDropsAction,
   saveServerSettingsAction,
   staffLoginAction,
   staffPasswordAction,
@@ -310,6 +312,49 @@ export function DownloadsForm({ settings }: { settings: DownloadSettings }) {
       </fieldset>
       <div className="max-w-xs">
         <SubmitButton>Salvar página de download</SubmitButton>
+      </div>
+    </form>
+  );
+}
+
+/** "Drops raros da semana" da home: item, arte, boss, personagem e quando caiu. */
+export function RareDropsForm({ settings }: { settings: RareDropSettings }) {
+  const [state, action] = useActionState(saveRareDropsAction, initialFormState);
+  const e = state.fieldErrors ?? {};
+  const val = (k: string, fallback: string | null | undefined) => state.values?.[k] ?? fallback ?? "";
+  const input = "rounded-sm border border-bronze/70 bg-night/80 px-3 py-1.5 text-sm text-silver";
+  return (
+    <form action={action} className="flex flex-col gap-4" noValidate>
+      <FormMessage state={state} />
+      <fieldset className="flex flex-col gap-3 border border-steel/60 p-3">
+        <legend className="px-1 text-sm text-silver">Drops</legend>
+        {slots(settings.items.length, 3, 30).map((i) => {
+          const d = settings.items[i];
+          return (
+            <div key={i} className="grid gap-2 border-b border-steel/40 pb-3 last:border-0 md:grid-cols-[1.4fr_1fr_1fr_1fr_1.1fr]">
+              <input aria-label={`Drop ${i + 1}: item`} name={`dropItem_${i}`} maxLength={60} placeholder="Item (ex.: Cristal Azul)" defaultValue={val(`dropItem_${i}`, d?.item)} className={input} />
+              <select aria-label={`Drop ${i + 1}: arte`} name={`dropIcon_${i}`} defaultValue={val(`dropIcon_${i}`, d?.icon)} className={input}>
+                <option value="">Arte do item</option>
+                {pranchaArt.itens.map((it) => (
+                  <option key={it.key} value={it.key}>
+                    {it.name}
+                  </option>
+                ))}
+              </select>
+              <input aria-label={`Drop ${i + 1}: boss`} name={`dropBoss_${i}`} maxLength={60} placeholder="Boss (opcional)" defaultValue={val(`dropBoss_${i}`, d?.boss)} className={input} />
+              <input aria-label={`Drop ${i + 1}: personagem`} name={`dropPlayer_${i}`} maxLength={32} placeholder="Personagem" defaultValue={val(`dropPlayer_${i}`, d?.player)} className={input} />
+              <input aria-label={`Drop ${i + 1}: quando (horário de Brasília)`} name={`dropWhen_${i}`} type="datetime-local" defaultValue={val(`dropWhen_${i}`, toLocalInput(d?.droppedUtc))} className={input} />
+            </div>
+          );
+        })}
+        {e.items ? (
+          <p className="text-xs text-data-bad">{e.items}</p>
+        ) : (
+          <p className="text-xs text-silver/60">Sem data, vale a hora de salvar. A home mostra os drops dos últimos 7 dias. Linha vazia é ignorada; salve para ganhar mais linhas.</p>
+        )}
+      </fieldset>
+      <div className="max-w-xs">
+        <SubmitButton>Salvar drops</SubmitButton>
       </div>
     </form>
   );
