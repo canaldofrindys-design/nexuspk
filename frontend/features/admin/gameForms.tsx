@@ -4,6 +4,7 @@ import { useActionState, useRef, type ReactNode } from "react";
 import { Field } from "@/components/forms/Field";
 import { FormMessage } from "@/components/forms/FormMessage";
 import { SubmitButton } from "@/components/forms/SubmitButton";
+import { ItemPicker } from "@/features/admin/ItemPicker";
 import { initialFormState, type FormState } from "@/features/auth/types";
 import {
   banAction,
@@ -22,7 +23,7 @@ import {
   vipRemoveAction,
 } from "./gameActions";
 import { Select } from "./inputs";
-import type { AccountVip, GameColumnView, GameSourceBinding } from "./types";
+import type { AccountVip, CatalogItem, GameColumnView, GameSourceBinding } from "./types";
 
 type Action = (state: FormState, form: FormData) => Promise<FormState>;
 
@@ -310,7 +311,20 @@ export function RowDeleteForm({ fn, columns, row }: { fn: string; columns: GameC
   );
 }
 
-export function RowInsertForm({ fn, columns, submitLabel, accountHint }: { fn: string; columns: GameColumnView[]; submitLabel: string; accountHint?: string }) {
+export function RowInsertForm({
+  fn,
+  columns,
+  submitLabel,
+  accountHint,
+  items,
+}: {
+  fn: string;
+  columns: GameColumnView[];
+  submitLabel: string;
+  accountHint?: string;
+  /** Colunas de código de item, que ganham "Escolher pela foto". */
+  items?: { columns: string[]; catalog: CatalogItem[]; lowercase: boolean };
+}) {
   const { state, run, e, v } = useForm(rowInsertAction);
   const fields = columns.filter((c) => c.insertable);
   const account = fields.find((c) => c.isAccount);
@@ -327,9 +341,22 @@ export function RowInsertForm({ fn, columns, submitLabel, accountHint }: { fn: s
       <div className="grid gap-3 sm:grid-cols-2">
         {fields
           .filter((c) => !c.isAccount)
-          .map((c) => (
-            <ColumnInput key={c.name} col={c} value={v(`v:${c.name}`)} error={e[c.name]} />
-          ))}
+          .map((c) =>
+            items?.columns.includes(c.name) ? (
+              <ItemPicker
+                key={c.name}
+                name={`v:${c.name}`}
+                label={`${c.name}${c.nullable ? "" : " *"}`}
+                defaultValue={v(`v:${c.name}`)}
+                error={e[c.name]}
+                catalog={items.catalog}
+                lowercase={items.lowercase}
+                maxLength={c.maxChars > 0 && c.maxChars < 100000 ? c.maxChars : undefined}
+              />
+            ) : (
+              <ColumnInput key={c.name} col={c} value={v(`v:${c.name}`)} error={e[c.name]} />
+            ),
+          )}
       </div>
       {e.values ? <p className="text-xs text-data-bad">{e.values}</p> : null}
       <ReasonField error={e.reason} value={v("reason")} />

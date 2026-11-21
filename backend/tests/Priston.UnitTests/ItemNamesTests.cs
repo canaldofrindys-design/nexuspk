@@ -188,6 +188,49 @@ public class ItemNamesTests
         }
     }
 
+    [Theory]
+    [InlineData("itWA161.bmp", "WA161")]
+    [InlineData("ITca182.BMP", "CA182")]
+    [InlineData("itBI354.png", "BI354")]
+    [InlineData("WA161.bmp", null)]
+    [InlineData("itWA161.txt", null)]
+    [InlineData("item.bmp", null)]
+    public void Item_image_names_give_the_item_code(string file, string? id) =>
+        Assert.Equal(id, ItemImageFolder.IdFromFileName(file));
+
+    [Fact]
+    public async Task Item_images_are_found_in_any_subfolder_and_checked_by_content()
+    {
+        var dir = Directory.CreateTempSubdirectory("itemimages");
+        try
+        {
+            var weapons = Directory.CreateDirectory(Path.Combine(dir.FullName, "Items", "Weapon"));
+            await File.WriteAllBytesAsync(Path.Combine(weapons.FullName, "itWA161.bmp"), [(byte)'B', (byte)'M', 0, 0, 0, 0]);
+            await File.WriteAllBytesAsync(Path.Combine(weapons.FullName, "itWA162.bmp"), "MZ não é imagem"u8.ToArray());
+            using var cache = new MemoryCache(new MemoryCacheOptions());
+            var store = new ItemImageFolder(Options.Create(new GameServerOptions { ItemImagesFolder = dir.FullName }), cache);
+
+            Assert.Equal(["WA161", "WA162"], (await store.ListIdsAsync(CancellationToken.None)).Order());
+            var image = await store.GetAsync("wa161", CancellationToken.None);
+            Assert.Equal("image/bmp", image!.ContentType);
+            Assert.Null(await store.GetAsync("WA162", CancellationToken.None));
+            Assert.Null(await store.GetAsync("../WA161", CancellationToken.None));
+            Assert.Null(await store.GetAsync("CA182", CancellationToken.None));
+        }
+        finally
+        {
+            dir.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public void File_names_are_kept_by_code_for_the_picker()
+    {
+        var names = ItemNames.Build(Types, new Dictionary<string, string> { ["ca182"] = "Traje Caos F", ["lixo"] = "x" });
+        Assert.Equal("Traje Caos F", names.FileNames["CA182"]);
+        Assert.Single(names.FileNames);
+    }
+
     private sealed class StaticTypes : IItemNameReader
     {
         public Task<IReadOnlyList<ItemTypeInfo>> ReadTypesAsync(CancellationToken ct) => Task.FromResult(Types);

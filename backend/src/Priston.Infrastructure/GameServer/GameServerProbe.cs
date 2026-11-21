@@ -39,6 +39,12 @@ public sealed class GameServerOptions
     /// A conta do serviço da API precisa poder ler a pasta. Vazio: os drops ficam sem boss.
     /// </summary>
     public string MonstersFolder { get; set; } = @"C:\ServidorPT\GameServer\Monster";
+
+    /// <summary>
+    /// Pasta com as imagens dos itens copiadas do cliente do jogo (<c>image\Sinimage\Items</c>, arquivos <c>it&lt;código&gt;.bmp</c>),
+    /// em qualquer organização de subpastas. A conta do serviço da API precisa poder ler a pasta. Vazio: sem fotos.
+    /// </summary>
+    public string ItemImagesFolder { get; set; } = @"C:\ServidorPT\ItemImages";
 }
 
 /// <summary>

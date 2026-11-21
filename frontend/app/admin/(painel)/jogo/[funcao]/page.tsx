@@ -5,7 +5,8 @@ import { Suspense } from "react";
 import { GameWindow } from "@/components/ui/GameWindow";
 import { ConfirmDialog, RowDeleteForm, RowEditForm, RowInsertForm } from "@/features/admin/gameForms";
 import { requireStaff } from "@/features/admin/session";
-import type { BrowseView, GameFunctionSummary, GameOk } from "@/features/admin/types";
+import { ItemThumb } from "@/features/admin/ItemPicker";
+import type { BrowseView, CatalogItem, GameColumnView, GameFunctionSummary, GameOk, ItemCatalog } from "@/features/admin/types";
 import { Notice, PageTitle } from "@/features/admin/ui";
 import { apiSend } from "@/services/api";
 
@@ -21,7 +22,12 @@ async function Body({ params, searchParams }: { params: Promise<{ funcao: string
   const page = Math.max(1, Number.parseInt(String(q.pagina ?? "1"), 10) || 1);
   const filters: Record<string, string> = {};
   for (const [k, v] of Object.entries(q)) if (k.startsWith("f.") && typeof v === "string" && v.trim()) filters[k] = v.slice(0, 200);
-  const r = await apiSend<GameOk<BrowseView>>("GET", `/api/v1/admin/game-tables/${encodeURIComponent(fn)}?${new URLSearchParams({ ...filters, pagina: String(page) })}`, { token });
+  const [r, cat] = await Promise.all([
+    apiSend<GameOk<BrowseView>>("GET", `/api/v1/admin/game-tables/${encodeURIComponent(fn)}?${new URLSearchParams({ ...filters, pagina: String(page) })}`, { token }),
+    apiSend<ItemCatalog>("GET", "/api/v1/admin/items", { token }),
+  ]);
+  const catalog: CatalogItem[] = cat.ok ? cat.data.items : [];
+  const byId = new Map(catalog.map((i) => [i.id, i]));
 
   if (!r.ok) {
     const list = await apiSend<{ functions: GameFunctionSummary[] }>("GET", "/api/v1/admin/game-tables", { token });
@@ -50,6 +56,10 @@ async function Body({ params, searchParams }: { params: Promise<{ funcao: string
   const isSend = d.function.mode === "insert";
   const href = (p: number) => `/admin/jogo/${fn}?${new URLSearchParams({ ...filters, pagina: String(p) })}`;
   const canConfigure = me.capabilities.includes("ConfigureGameSources");
+  const itemCols = itemColumns(d.columns, d.rows);
+  const values = d.rows.flatMap((row) => itemCols.map((c) => row[c] ?? "")).filter(Boolean);
+  const lowercase = values.length === 0 || values.filter((x) => x === x.toLowerCase()).length * 2 >= values.length;
+  const items = itemCols.length > 0 ? { columns: itemCols, catalog, lowercase } : undefined;
 
   return (
     <>
@@ -70,10 +80,10 @@ async function Body({ params, searchParams }: { params: Promise<{ funcao: string
         {d.canInsert ? (
           <GameWindow title={isSend ? "Enviar" : "Incluir linha"}>
             {isSend ? (
-              <RowInsertForm fn={fn} columns={d.columns} submitLabel="Enviar para a conta" accountHint="O painel confere se a conta existe antes de enviar." />
+              <RowInsertForm fn={fn} columns={d.columns} items={items} submitLabel="Enviar para a conta" accountHint="O painel confere se a conta existe antes de enviar." />
             ) : (
               <ConfirmDialog label="Incluir linha" title={`Incluir em ${d.function.label}`} small>
-                <RowInsertForm fn={fn} columns={d.columns} submitLabel="Incluir" />
+                <RowInsertForm fn={fn} columns={d.columns} items={items} submitLabel="Incluir" />
               </ConfirmDialog>
             )}
           </GameWindow>
@@ -125,7 +135,13 @@ async function Body({ params, searchParams }: { params: Promise<{ funcao: string
                     <tr key={i} className="border-t border-steel/60 align-top hover:bg-steel/20">
                       {shown.map((c) => (
                         <td key={c.name} className={`max-w-xs truncate py-1.5 pr-3 ${c.isKey ? "text-data-name" : "text-silver/80"}`} title={row[c.name] ?? "NULL"}>
-                          {row[c.name] ?? <span className="text-silver/35">NULL</span>}
+                          {row[c.name] == null ? (
+                            <span className="text-silver/35">NULL</span>
+                          ) : itemCols.includes(c.name) && byId.get(row[c.name]!.trim().toUpperCase()) ? (
+                            <ItemCell value={row[c.name]!} item={byId.get(row[c.name]!.trim().toUpperCase())!} />
+                          ) : (
+                            row[c.name]
+                          )}
                         </td>
                       ))}
                       {d.canEdit || d.canDelete ? (
@@ -170,6 +186,32 @@ async function Body({ params, searchParams }: { params: Promise<{ funcao: string
         </GameWindow>
       </div>
     </>
+  );
+}
+
+const itemCodePattern = /^[A-Za-z]{2}[0-9]{3,4}$/;
+
+/** Colunas com código de item: pelo nome (ItemCode, szItemCode, CodeIT) ou porque os valores têm cara de código ("ca105"). */
+function itemColumns(columns: GameColumnView[], rows: Record<string, string | null>[]) {
+  return columns
+    .filter((c) => ["char", "varchar", "nchar", "nvarchar"].includes(c.type))
+    .filter((c) => {
+      if (/item.?code|code.?it/i.test(c.name)) return true;
+      const vals = rows.map((r) => r[c.name]).filter((x): x is string => !!x);
+      return vals.length > 0 && vals.filter((x) => itemCodePattern.test(x.trim())).length * 2 > vals.length;
+    })
+    .map((c) => c.name);
+}
+
+function ItemCell({ value, item }: { value: string; item: CatalogItem }) {
+  return (
+    <span className="flex items-center gap-2">
+      <ItemThumb id={item.id} image={item.image} />
+      <span className="min-w-0">
+        <span className="block truncate text-data-name">{item.name ?? value}</span>
+        <span className="block font-mono text-[11px] text-silver/50">{value}</span>
+      </span>
+    </span>
   );
 }
 

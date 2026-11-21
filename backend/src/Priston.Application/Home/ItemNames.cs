@@ -30,6 +30,22 @@ public interface IMonsterDropCatalog
     Task<IReadOnlyDictionary<string, IReadOnlyList<string>>> ReadDropSourcesAsync(CancellationToken ct);
 }
 
+/// <summary>Imagem de um item do cliente do jogo (<c>it&lt;código&gt;.bmp</c>).</summary>
+public sealed record ItemImage(byte[] Data, string ContentType);
+
+/// <summary>
+/// Imagens dos itens copiadas do cliente do jogo (<c>image\Sinimage\Items</c>), pelo código do arquivo ("WA161").
+/// Pasta fora do alcance: lança.
+/// </summary>
+public interface IItemImageStore
+{
+    /// <summary>Códigos (em maiúsculas) que têm imagem.</summary>
+    Task<IReadOnlySet<string>> ListIdsAsync(CancellationToken ct);
+
+    /// <summary>null quando o item não tem imagem.</summary>
+    Task<ItemImage?> GetAsync(string fileId, CancellationToken ct);
+}
+
 /// <summary>
 /// Nome de cada ItemCode: o nome exato do arquivo do servidor quando existe; senão o tipo com o número ("Machado nº 61");
 /// senão o grupo e o código.
@@ -37,7 +53,8 @@ public interface IMonsterDropCatalog
 public sealed partial class ItemNames(
     IReadOnlyDictionary<int, string> typeNames,
     IReadOnlyDictionary<int, string> exact,
-    IReadOnlyDictionary<int, IReadOnlyList<string>>? sources = null)
+    IReadOnlyDictionary<int, IReadOnlyList<string>>? sources = null,
+    IReadOnlyDictionary<string, string>? fileNames = null)
 {
     /// <summary>Acima de tantos monstros o item é "de qualquer lugar" e o drop fica sem boss.</summary>
     public const int MaxSources = 2;
@@ -47,6 +64,9 @@ public sealed partial class ItemNames(
     public int ExactCount => exact.Count;
 
     public int SourceCount => sources?.Count ?? 0;
+
+    /// <summary>Nomes pelo código do arquivo do item, em maiúsculas ("CA182" → "Traje Caos F").</summary>
+    public IReadOnlyDictionary<string, string> FileNames { get; } = fileNames ?? new Dictionary<string, string>();
 
     /// <summary>
     /// De quem o item pode ter caído: o monstro, quando só um derruba o item, ou "A ou B" com dois. O log do jogo não diz
@@ -111,7 +131,16 @@ public sealed partial class ItemNames(
             }
         }
 
-        return new ItemNames(typeNames, exact, sources);
+        var byId = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (id, name) in fileNames)
+        {
+            if (!string.IsNullOrWhiteSpace(name) && ParseFileId(id) is not null)
+            {
+                byId.TryAdd(id.Trim().ToUpperInvariant(), name.Trim());
+            }
+        }
+
+        return new ItemNames(typeNames, exact, sources, byId);
     }
 
     private static int? Code(string id, IReadOnlyDictionary<string, int> prefixes) =>
