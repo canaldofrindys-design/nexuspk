@@ -173,4 +173,43 @@ public sealed class CharacterFileTests
         Assert.Equal("Lutador", c.ClassName);
         Assert.Equal(160, c.Level);
     }
+
+    [Fact]
+    public void Level_header_gives_name_class_and_level()
+    {
+        var data = File("Frindys", 200, 0, 3);
+        BinaryPrimitives.WriteInt32LittleEndian(data.AsSpan(0xC4), 11);
+
+        var level = CharacterFile.ParseLevel(data.AsSpan(0, CharacterFile.LevelHeaderSize), "frindys");
+
+        Assert.Equal(new CharacterFileLevel("Frindys", 11, 200), level);
+        Assert.Null(CharacterFile.ParseLevel(data.AsSpan(0, CharacterFile.LevelHeaderSize), "Outro"));
+    }
+
+    [Fact]
+    public async Task Reads_the_level_of_every_character_file_in_the_numbered_folders()
+    {
+        var root = Directory.CreateTempSubdirectory("userdata-");
+        try
+        {
+            var a = File("Frindys", 200, 0, 3);
+            BinaryPrimitives.WriteInt32LittleEndian(a.AsSpan(0xC4), 11);
+            Directory.CreateDirectory(Path.Combine(root.FullName, "12"));
+            await System.IO.File.WriteAllBytesAsync(Path.Combine(root.FullName, "12", "Frindys.dat"), a);
+            await System.IO.File.WriteAllBytesAsync(Path.Combine(root.FullName, "Velho.dat"), File("Velho", 140, 0, 3));
+            await System.IO.File.WriteAllBytesAsync(Path.Combine(root.FullName, "Errado.dat"), File("OutroNome", 150, 0, 3));
+            var reader = new CharacterFileReader(Microsoft.Extensions.Options.Options.Create(new GameServerOptions { UserDataFolder = root.FullName }));
+
+            var levels = await reader.ReadAllLevelsAsync(CancellationToken.None);
+
+            Assert.Equal(2, levels.Count);
+            Assert.Equal(200, levels["frindys"].Level);
+            Assert.Equal(11, levels["Frindys"].ClassCode);
+            Assert.Equal(140, levels["Velho"].Level);
+        }
+        finally
+        {
+            root.Delete(recursive: true);
+        }
+    }
 }

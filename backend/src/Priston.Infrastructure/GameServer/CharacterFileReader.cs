@@ -39,6 +39,56 @@ internal sealed class CharacterFileReader(IOptions<GameServerOptions> options) :
         return CharacterFile.Parse(data, name, saved);
     }
 
+    public async Task<IReadOnlyDictionary<string, CharacterFileLevel>> ReadAllLevelsAsync(CancellationToken ct)
+    {
+        var result = new Dictionary<string, CharacterFileLevel>(StringComparer.OrdinalIgnoreCase);
+        var folder = options.Value.UserDataFolder;
+        if (string.IsNullOrWhiteSpace(folder))
+        {
+            return result;
+        }
+
+        if (!Directory.Exists(folder))
+        {
+            throw new DirectoryNotFoundException($"GameServer:UserDataFolder não encontrada: {folder}");
+        }
+
+        var files = Directory.EnumerateFiles(folder, "*.dat")
+            .Concat(Directory.EnumerateDirectories(folder).SelectMany(d => Directory.EnumerateFiles(d, "*.dat")));
+        var header = new byte[CharacterFile.LevelHeaderSize];
+        foreach (var path in files)
+        {
+            ct.ThrowIfCancellationRequested();
+            try
+            {
+                // O servidor pode estar gravando o arquivo agora: abre sem travar a escrita dele.
+                await using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 4096, useAsync: true);
+                if (stream.Length < header.Length)
+                {
+                    continue;
+                }
+
+                await stream.ReadExactlyAsync(header, ct).ConfigureAwait(false);
+            }
+            catch (IOException)
+            {
+                continue;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                continue;
+            }
+
+            if (CharacterFile.ParseLevel(header, Path.GetFileNameWithoutExtension(path)) is { } level
+                && (!result.TryGetValue(level.Name, out var seen) || level.Level > seen.Level))
+            {
+                result[level.Name] = level;
+            }
+        }
+
+        return result;
+    }
+
     private static string? Find(string folder, string fileName)
     {
         var direct = Path.Combine(folder, fileName);
@@ -75,6 +125,26 @@ internal static class CharacterFile
     private const int NameOffset = 0x10;
     private const int ItemsOffset = 0x6E4;
     private static readonly Encoding Text = CreateText();
+
+    /// <summary>Bytes do começo do arquivo que bastam para nome, classe e nível.</summary>
+    public const int LevelHeaderSize = 0xCC;
+
+    /// <summary>Só nome, classe e nível. null quando o nome gravado não é o do arquivo.</summary>
+    public static CharacterFileLevel? ParseLevel(ReadOnlySpan<byte> b, string expectedName)
+    {
+        if (b.Length < LevelHeaderSize)
+        {
+            return null;
+        }
+
+        var name = CString(b.Slice(NameOffset, 32));
+        if (name.Length == 0 || !string.Equals(name, expectedName, StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        return new CharacterFileLevel(name, I(b, 0xC4), I(b, 0xC8));
+    }
 
     public static CharacterSheet? Parse(ReadOnlySpan<byte> b, string expectedName, DateTimeOffset savedUtc)
     {
