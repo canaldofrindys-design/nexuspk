@@ -28,6 +28,7 @@ public static class DependencyInjection
         services.AddSingleton<ISodRankingReader, SodRankingReader>();
         services.AddSingleton<ICharacterClanReader, CharacterClanReader>();
         services.AddSingleton<Priston.Application.Home.IItemLogReader, ItemLogReader>();
+        services.AddSingleton<Priston.Application.Home.IItemNameReader, ItemTypeNameReader>();
         services.AddSingleton<IGameAccountStore, GameAccountStore>();
         services.AddSingleton<Priston.Application.Player.IPlayerGameDataReader, Player.PlayerGameDataReader>();
         services.AddSingleton<Priston.Application.GameAdmin.IGameAdminAccountStore, Admin.GameAdminAccountStore>();

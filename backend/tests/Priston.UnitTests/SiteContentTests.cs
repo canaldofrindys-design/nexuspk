@@ -207,9 +207,19 @@ public sealed class SiteContentTests : IDisposable
 
     private sealed class Names : IItemNameReader
     {
-        public Task<IReadOnlyDictionary<int, string>> ReadNamesAsync(CancellationToken ct) =>
-            Task.FromResult<IReadOnlyDictionary<int, string>>(new Dictionary<int, string> { [0x01013D00] = "Machado do Caos" });
+        public Task<IReadOnlyDictionary<int, string>> ReadTypeNamesAsync(CancellationToken ct) =>
+            Task.FromResult<IReadOnlyDictionary<int, string>>(new Dictionary<int, string> { [0x0101] = "Machado" });
     }
+
+    [Theory]
+    [InlineData("0x01010000", 0x0101)]
+    [InlineData("01350000", 0x0135)]
+    [InlineData("0x0235", 0x0235)]
+    [InlineData("080C", 0x080C)]
+    [InlineData("WA1", null)]
+    [InlineData("", null)]
+    public void Item_type_hex_is_read_in_the_common_formats(string hex, int? key) =>
+        Assert.Equal(key, GameItemCode.ParseTypeHex(hex));
 
     [Fact]
     public async Task Rare_drops_come_from_the_item_log_on_their_own()
@@ -233,7 +243,7 @@ public sealed class SiteContentTests : IDisposable
 
         var drops = await feed.GetAsync(site, CancellationToken.None);
 
-        Assert.Equal(["Machado do Caos", "Item especial #0C-4B", "Asas de Fênix"], drops.Select(d => d.Item));
+        Assert.Equal(["Machado nº 61", "Item especial #0C-4B", "Asas de Fênix"], drops.Select(d => d.Item));
         Assert.Equal("Fulano", drops[0].Player);
         Assert.Equal("martelo", drops[0].Icon);
         Assert.Equal("cristal", drops[1].Icon);
