@@ -225,6 +225,48 @@ public class ItemNamesTests
         return Encoding.GetEncoding(1252).GetString(Encoding.GetEncoding(949).GetBytes(text));
     }
 
+    // Trecho real de OpenItem\CA182.txt (cabeçalhos coreanos), com requisito e bônus de classe acrescentados.
+    private const string ItemFileText =
+        "//\t\t아이템 정보\t\t//\r\n*이름\t\"Traje Caos F\"\r\n*Name\t\"Traje Caos F\"\r\n*코드\t\"CA182\"\r\n" +
+        "*내구력\t\t\r\n*무게\t1\r\n*가격\t\r\n*생체\t10 10\r\n*불\t10 10\r\n*공격력\t\t\r\n*명중력\t\t100\r\n" +
+        "*크리티컬\t1\r\n*흡수력\t\t2\r\n*방어력\t\t200\r\n*블럭율\t\t0\r\n*레벨\t150\r\n**흡수력\t1.5 // classe\r\n";
+
+    [Fact]
+    public void Item_file_gives_stats_requirements_and_class_bonus()
+    {
+        var d = ItemFileCatalog.ParseDetail("CA182", AsGameFile(ItemFileText));
+
+        Assert.NotNull(d);
+        Assert.Equal("CA182", d.Id);
+        Assert.Equal("Traje Caos F", d.Name);
+        Assert.Equal(
+            ["Peso: 1", "Orgânico: 10", "Fogo: 10", "Taxa de ataque: 100", "Crítico: 1", "Absorção: 2", "Defesa: 200"],
+            d.Stats.Select(s => $"{s.Label}: {s.Value}"));
+        Assert.Equal(["Nível: 150"], d.Requirements.Select(s => $"{s.Label}: {s.Value}"));
+        Assert.Equal(["Absorção: 1.5"], d.Spec.Select(s => $"{s.Label}: {s.Value}"));
+    }
+
+    [Fact]
+    public void Item_guide_lists_monsters_and_shops_of_the_item()
+    {
+        var monsters = new List<MonsterInfo>
+        {
+            new("Valento", "Boss_100_Valento.inf", null, [new("2", ["WA161", "CA182"], null), new("50", [], "2000–5000")]),
+            new("Babel", "Babel.inf", null, [new("5", ["CA182"], null)]),
+            new("Lobo", "Lobo.inf", null, [new("10", ["OS110"], null)]),
+        };
+        var shops = new List<NpcShop>
+        {
+            new("Loja da Sabrine", "LojadePotes.NPC", [], [], ["EC101"]),
+            new("Ferreiro", "Ferreiro.npc", ["WA161"], ["CA182"], []),
+            new("Ferreiro", "Ferreiro.npc.npc", ["WA161"], ["CA182"], []),
+        };
+
+        Assert.Equal([new ItemDropSource("Babel", "5", 1), new ItemDropSource("Valento", "2", 2)], ItemGuide.DropsOf("CA182", monsters));
+        Assert.Equal([new ItemShopSource("Ferreiro", "Armaduras")], ItemGuide.ShopsOf("ca182", shops));
+        Assert.Empty(ItemGuide.DropsOf("BI108", monsters));
+    }
+
     [Fact]
     public void Npc_file_gives_the_shop_items_by_kind()
     {

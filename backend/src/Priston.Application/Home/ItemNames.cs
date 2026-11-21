@@ -19,7 +19,16 @@ public interface IItemNameReader
 public interface IItemFileCatalog
 {
     Task<IReadOnlyDictionary<string, string>> ReadNamesAsync(CancellationToken ct);
+
+    /// <summary>Atributos do item no arquivo dele (<c>OpenItem\CA182.txt</c>). null quando não existe.</summary>
+    Task<ItemDetail?> ReadDetailAsync(string fileId, CancellationToken ct) => Task.FromResult<ItemDetail?>(null);
 }
+
+/// <summary>Um atributo do arquivo do item, já com o nome em português ("Defesa", "200").</summary>
+public sealed record ItemStat(string Label, string Value);
+
+/// <summary>Item do arquivo do servidor: nome, atributos, requisitos e o bônus da classe (linhas <c>**</c>).</summary>
+public sealed record ItemDetail(string Id, string Name, IReadOnlyList<ItemStat> Stats, IReadOnlyList<ItemStat> Requirements, IReadOnlyList<ItemStat> Spec);
 
 /// <summary>
 /// Quais monstros podem derrubar cada item, pelos arquivos de monstro do servidor (<c>GameServer\Monster\*.inf</c>,
