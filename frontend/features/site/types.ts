@@ -8,6 +8,11 @@ export type PublicBanner = { id: number; title: string; subtitle: string | null;
 /** Drop raro anunciado pela equipe ("Drops raros da semana" da home). */
 export type RareDrop = { item: string; icon: string; boss: string | null; player: string; droppedUtc: string };
 export type RareDropSettings = { items: RareDrop[] };
+/** Item raro: todo "pegou" desse código no log de itens do jogo vira drop na home. */
+export type RareItem = { code: number; name: string; icon: string };
+export type RareItemSettings = { items: RareItem[] };
+export type ItemPickupStat = { itemCode: number; times: number; lastUtc: string; lastCharacter: string };
+export type ItemPickups = { available: boolean; items: ItemPickupStat[] };
 
 export type SiteSnapshot = {
   server: ServerSettings;

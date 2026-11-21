@@ -46,7 +46,7 @@ export function RareDropsRow({ home }: { home: HomeSnapshot | null }) {
       ) : (
         <>
           <ItemSlots />
-          <p className="nx-row-note">Nenhum drop raro anunciado nesta semana. Toque num item para ver o guia dele.</p>
+          <p className="nx-row-note">Nenhum drop raro nesta semana. Toque num item para ver o guia dele.</p>
         </>
       )}
     </section>

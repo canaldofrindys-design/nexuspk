@@ -66,6 +66,13 @@ IF USER_ID('portal_game_read') IS NULL CREATE USER portal_game_read FOR LOGIN po
 GRANT SELECT ON dbo.UserInfo TO portal_game_read;     -- saldo de coins no painel
 GO
 
+-- Log de itens (drops raros automáticos da home). Só SELECT na tabela IL.
+IF DB_ID('ItemLogDB') IS NOT NULL
+BEGIN
+    EXEC ItemLogDB.sys.sp_executesql N'IF USER_ID(''portal_game_read'') IS NULL CREATE USER portal_game_read FOR LOGIN portal_game_read; GRANT SELECT ON dbo.IL TO portal_game_read;';
+END
+GO
+
 -- 2) Banco do portal: leitura e escrita nas próprias tabelas, sem alterar estrutura.
 --    As migrações rodam com um login administrativo só na hora da publicação.
 USE PortalDB;

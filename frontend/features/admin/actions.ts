@@ -282,6 +282,15 @@ function formValues(form: FormData): Record<string, string> {
   return v;
 }
 
+export async function saveRareItemsAction(_: FormState, form: FormData): Promise<FormState> {
+  const body = { items: rows(form, { code: "rareCode", name: "rareName", icon: "rareIcon" }, 100) };
+  const r = await apiSend("PUT", "/api/v1/admin/site/rare-items", { token: await token(), body, ...(await clientContext()) });
+  if (!r.ok) return failure(r, formValues(form));
+  revalidatePath("/admin/banners");
+  revalidatePath("/");
+  return { status: "success", message: "Itens raros salvos. Daqui a até 2 minutos os drops deles aparecem sozinhos na home." };
+}
+
 export async function saveRareDropsAction(_: FormState, form: FormData): Promise<FormState> {
   const body = {
     items: rows(form, { item: "dropItem", icon: "dropIcon", boss: "dropBoss", player: "dropPlayer", droppedLocal: "dropWhen" }, 30),

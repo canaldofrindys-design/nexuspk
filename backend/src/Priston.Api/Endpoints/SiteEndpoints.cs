@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Priston.Application.Admin;
+using Priston.Application.Home;
 using Priston.Application.Site;
 using Priston.Application.Support;
 
@@ -62,6 +63,39 @@ public static class SiteEndpoints
 
         admin.MapPut("/site/drops", async ([FromBody] RareDropSettingsInput body, StaffAuthService auth, SiteContentService site, HttpContext http, CancellationToken ct) =>
             await AdminEndpoints.Guard(auth, http, Capability.ManageContent, async me => AdminEndpoints.Saved(await site.SaveRareDropSettingsAsync(me, body, AuthEndpoints.Client(http), ct)), ct));
+
+        // Itens raros: todo "pegou" desses códigos no log de itens vira drop na home.
+        admin.MapGet("/site/rare-items", async (StaffAuthService auth, SiteContentService site, HttpContext http, CancellationToken ct) =>
+            await AdminEndpoints.Guard(auth, http, Capability.ManageContent, async _ => Results.Ok(await site.GetRareItemSettingsAsync(ct)), ct));
+
+        admin.MapPut("/site/rare-items", async ([FromBody] RareItemSettingsInput body, StaffAuthService auth, SiteContentService site, HttpContext http, CancellationToken ct) =>
+            await AdminEndpoints.Guard(auth, http, Capability.ManageContent, async me => AdminEndpoints.Saved(await site.SaveRareItemSettingsAsync(me, body, AuthEndpoints.Client(http), ct)), ct));
+
+        // Itens mais pegos nos últimos 30 dias (log de itens), para a equipe achar os códigos dos raros.
+        admin.MapGet("/site/item-pickups", async (StaffAuthService auth, IServiceProvider services, TimeProvider clock, HttpContext http, CancellationToken ct) =>
+            await AdminEndpoints.Guard(auth, http, Capability.ManageContent, async _ =>
+            {
+                if (services.GetService<IItemLogReader>() is not { } itemLog)
+                {
+                    return Results.Ok(new { available = false, items = Array.Empty<ItemPickupStat>() });
+                }
+
+                try
+                {
+                    var zone = TimeZoneInfo.FindSystemTimeZoneById(Priston.Domain.Time.RankingPeriods.TimeZoneId);
+                    var since = TimeZoneInfo.ConvertTime(clock.GetUtcNow().AddDays(-30), zone).DateTime;
+                    var items = await itemLog.ReadTopPickupsAsync(since, 60, ct);
+                    return Results.Ok(new
+                    {
+                        available = true,
+                        items = items.Select(i => new { i.ItemCode, i.Times, lastUtc = RareDropFeed.ToUtc(i.LastLocal), i.LastCharacter }),
+                    });
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    return Results.Ok(new { available = false, items = Array.Empty<ItemPickupStat>() });
+                }
+            }, ct));
 
         // Banners (mesma permissão de notícias e eventos)
         admin.MapGet("/banners", async (StaffAuthService auth, SiteContentService site, HttpContext http, CancellationToken ct) =>

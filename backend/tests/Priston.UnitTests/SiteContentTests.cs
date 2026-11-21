@@ -186,6 +186,65 @@ public sealed class SiteContentTests : IDisposable
         Assert.Contains(_audit.Rows, r => r.Action == "site.drops.updated");
     }
 
+    private sealed class FakeItemLog(params ItemPickupRow[] rows) : IItemLogReader
+    {
+        public DateTime? Since { get; private set; }
+
+        public IReadOnlyCollection<int>? Codes { get; private set; }
+
+        public bool Fail { get; set; }
+
+        public Task<IReadOnlyList<ItemPickupRow>> ReadPickupsAsync(IReadOnlyCollection<int> itemCodes, DateTime sinceLocal, int max, CancellationToken ct)
+        {
+            Since = sinceLocal;
+            Codes = itemCodes;
+            return Fail ? throw new InvalidOperationException("sem permissão no ItemLogDB") : Task.FromResult<IReadOnlyList<ItemPickupRow>>(rows.Where(r => itemCodes.Contains(r.ItemCode)).ToList());
+        }
+
+        public Task<IReadOnlyList<ItemPickupStat>> ReadTopPickupsAsync(DateTime sinceLocal, int max, CancellationToken ct) =>
+            Task.FromResult<IReadOnlyList<ItemPickupStat>>([]);
+    }
+
+    [Fact]
+    public async Task Rare_items_from_the_item_log_become_drops_merged_with_the_announced_ones()
+    {
+        using var svc = Service();
+        var bad = await svc.SaveRareItemSettingsAsync(Admin, new RareItemSettingsInput(
+            [new RareItemInput("abc", "Cristal", "cristal")]), Client, CancellationToken.None);
+        Assert.Equal("items", Assert.Single(bad.Errors!).Key);
+        var dup = await svc.SaveRareItemSettingsAsync(Admin, new RareItemSettingsInput(
+            [new RareItemInput("10", "A", "cristal"), new RareItemInput("10", "B", "bau")]), Client, CancellationToken.None);
+        Assert.Equal(StaffAuthStatus.ValidationFailed, dup.Status);
+
+        Assert.Equal(StaffAuthStatus.Ok, (await svc.SaveRareItemSettingsAsync(Admin, new RareItemSettingsInput(
+            [new RareItemInput(" 83951872 ", "Cristal Azul", "sheltom-safira"), new RareItemInput("", "", "")]), Client, CancellationToken.None)).Status);
+        Assert.Equal(StaffAuthStatus.Ok, (await svc.SaveRareDropSettingsAsync(Admin, new RareDropSettingsInput(
+            [new RareDropInput("Asas de Fênix", "asas", "Fúria", "Beltrano", "2026-11-10T09:00")]), Client, CancellationToken.None)).Status);
+
+        var site = await svc.GetAsync(CancellationToken.None);
+        Assert.Equal(83951872, Assert.Single(site.RareItems!).Code);
+
+        var log = new FakeItemLog(
+            new ItemPickupRow(83951872, "Fulano", new DateTime(2026, 11, 10, 11, 30, 0)), // 14:30 UTC
+            new ItemPickupRow(999, "Outro", new DateTime(2026, 11, 10, 11, 0, 0)));
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var feed = new RareDropFeed(cache, new FixedClock(Now), log);
+
+        var drops = await feed.GetAsync(site, CancellationToken.None);
+
+        Assert.Equal(["Cristal Azul", "Asas de Fênix"], drops.Select(d => d.Item));
+        Assert.Equal("Fulano", drops[0].Player);
+        Assert.Null(drops[0].Boss);
+        Assert.Equal(new DateTimeOffset(2026, 11, 10, 14, 30, 0, TimeSpan.Zero), drops[0].DroppedUtc);
+        Assert.Equal(new DateTime(2026, 11, 3, 12, 0, 0), log.Since);
+        Assert.Equal([83951872], log.Codes!);
+
+        // Log fora do ar (ou sem permissão): ficam só os anunciados.
+        using var cache2 = new MemoryCache(new MemoryCacheOptions());
+        var failing = new RareDropFeed(cache2, new FixedClock(Now), new FakeItemLog { Fail = true });
+        Assert.Equal(["Asas de Fênix"], (await failing.GetAsync(site, CancellationToken.None)).Select(d => d.Item));
+    }
+
     [Fact]
     public async Task Uploaded_media_must_be_a_real_png_or_jpg()
     {

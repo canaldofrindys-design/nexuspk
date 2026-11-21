@@ -37,5 +37,11 @@ public sealed class GameDatabaseOptions
     /// <summary>Banco do SoD (Bellatra), com uma tabela SOD2Record&lt;aamm&gt; por mês.</summary>
     public string SodDatabase { get; set; } = "sodDB";
 
+    /// <summary>Banco do log de itens (tabela IL), fonte dos drops raros da home.</summary>
+    public string ItemLogDatabase { get; set; } = "ItemLogDB";
+
+    /// <summary>Valor de IL.Flag que o servidor grava quando o personagem pega um item do chão.</summary>
+    public int ItemPickupFlag { get; set; }
+
     public int CommandTimeoutSeconds { get; set; } = 15;
 }
