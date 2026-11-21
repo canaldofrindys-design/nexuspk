@@ -151,6 +151,23 @@ public class ItemNamesTests
     }
 
     [Fact]
+    public void Monster_details_keep_chance_items_gold_and_hp()
+    {
+        var m = MonsterFileCatalog.ParseDetails("Boss_100_Valento.inf", MonsterFile);
+
+        Assert.NotNull(m);
+        Assert.Equal("Valento", m.Name);
+        Assert.Equal(10000, m.Hp);
+        Assert.Equal(2, m.Drops.Count);
+        Assert.Equal("50", m.Drops[0].Chance);
+        Assert.Equal("2000–5000", m.Drops[0].Gold);
+        Assert.Empty(m.Drops[0].Items);
+        Assert.Equal("2", m.Drops[1].Chance);
+        Assert.Equal(["WA161", "CA182"], m.Drops[1].Items);
+        Assert.Null(m.Drops[1].Gold);
+    }
+
+    [Fact]
     public void Boss_is_shown_only_when_few_monsters_drop_the_item()
     {
         var names = ItemNames.Build(Types, new Dictionary<string, string>(), new Dictionary<string, IReadOnlyList<string>>
@@ -271,6 +288,8 @@ public class ItemNamesTests
                 ["WA161"] = ["Valento"],                  // boss, sem imagem: fica fora
                 ["OS110"] = ["Lobo", "Urso", "Zumbi"],    // cai de qualquer lugar: fica fora
             });
+
+        public Task<IReadOnlyList<MonsterInfo>> ReadMonstersAsync(CancellationToken ct) => Task.FromResult<IReadOnlyList<MonsterInfo>>([]);
     }
 
     private sealed class Images : IItemImageStore

@@ -28,7 +28,16 @@ public interface IItemFileCatalog
 public interface IMonsterDropCatalog
 {
     Task<IReadOnlyDictionary<string, IReadOnlyList<string>>> ReadDropSourcesAsync(CancellationToken ct);
+
+    /// <summary>Todos os monstros com drop, com a vida e cada linha de drop (para a consulta no painel).</summary>
+    Task<IReadOnlyList<MonsterInfo>> ReadMonstersAsync(CancellationToken ct);
 }
+
+/// <summary>Uma linha de drop do monstro: chance como está no arquivo, códigos dos itens e o ouro ("2000–5000"), se houver.</summary>
+public sealed record MonsterDropGroup(string Chance, IReadOnlyList<string> Items, string? Gold);
+
+/// <summary>Monstro do arquivo do servidor: nome, arquivo, vida e linhas de drop.</summary>
+public sealed record MonsterInfo(string Name, string File, long? Hp, IReadOnlyList<MonsterDropGroup> Drops);
 
 /// <summary>Imagem de um item do cliente do jogo (<c>it&lt;código&gt;.bmp</c>).</summary>
 public sealed record ItemImage(byte[] Data, string ContentType);
