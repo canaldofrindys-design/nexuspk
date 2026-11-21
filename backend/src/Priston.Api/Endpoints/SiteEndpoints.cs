@@ -85,10 +85,12 @@ public static class SiteEndpoints
                     var zone = TimeZoneInfo.FindSystemTimeZoneById(Priston.Domain.Time.RankingPeriods.TimeZoneId);
                     var since = TimeZoneInfo.ConvertTime(clock.GetUtcNow().AddDays(-30), zone).DateTime;
                     var items = await itemLog.ReadTopPickupsAsync(since, 500, ct);
+                    var names = services.GetService<ItemNameSource>() is { } source ? await source.GetAsync(ct) : ItemNames.Empty;
                     return Results.Ok(new
                     {
                         available = true,
-                        items = items.Select(i => new { i.ItemCode, i.Times, lastUtc = RareDropFeed.ToUtc(i.LastLocal), i.LastCharacter }),
+                        exactNames = names.ExactCount,
+                        items = items.Select(i => new { i.ItemCode, name = names.Name(i.ItemCode), i.Times, lastUtc = RareDropFeed.ToUtc(i.LastLocal), i.LastCharacter }),
                     });
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException)

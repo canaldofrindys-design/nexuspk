@@ -13,6 +13,7 @@ public static class DependencyInjection
         services.AddMemoryCache();
         services.AddOptions<ServerPresentationOptions>().Bind(configuration.GetSection(ServerPresentationOptions.SectionName));
         services.AddSingleton<RankingService>();
+        services.AddSingleton<ItemNameSource>();
         services.AddSingleton<RareDropFeed>();
         services.AddSingleton<HomeService>();
         services.AddSingleton<RankingQueryService>();
