@@ -109,10 +109,22 @@ async function Body({ searchParams }: { searchParams: Promise<Q> }) {
               <p className="mb-2 text-xs text-silver/60">
                 Os 60 pegos mais recentemente, com quem pegou por último. Só conferência: nada aqui precisa ser preenchido.
               </p>
+              {pickups.data.exactNames ? (
+                <p className="mb-2 text-xs text-silver/60">
+                  Nomes lidos dos arquivos do servidor do jogo ({formatNumber(pickups.data.exactNames)} itens
+                  {pickups.data.dropSources ? `, ${formatNumber(pickups.data.dropSources)} com a lista de monstros que derrubam` : ""}). O boss
+                  só aparece quando até 2 monstros derrubam o item, porque o log do jogo não diz quem foi morto.
+                </p>
+              ) : (
+                <p className="mb-2 text-xs text-data-bad">
+                  Não consegui ler os nomes dos itens nos arquivos do servidor (GameServer\OpenItem). Os nomes aparecem pelo tipo. Veja
+                  docs/INSTALLATION.md, GameServer.ItemsFolder.
+                </p>
+              )}
               <table className="w-full min-w-[560px] text-sm">
                 <thead>
                   <tr className="text-left text-xs text-silver/60">
-                    <th scope="col" className="py-1 font-normal">Código</th>
+                    <th scope="col" className="py-1 font-normal">Item</th>
                     <th scope="col" className="py-1 font-normal">Na home</th>
                     <th scope="col" className="py-1 text-right font-normal">Vezes</th>
                     <th scope="col" className="py-1 pl-4 font-normal">Último a pegar</th>
@@ -125,7 +137,11 @@ async function Body({ searchParams }: { searchParams: Promise<Q> }) {
                     .slice(0, 60)
                     .map((p) => (
                     <tr key={p.itemCode} className="border-t border-steel/60">
-                      <td className="tabular py-1 text-silver">{p.itemCode}</td>
+                      <td className="py-1 text-silver">
+                        {p.name ?? p.itemCode}
+                        <span className="tabular ml-2 text-xs text-silver/40">{p.itemCode}</span>
+                        {p.boss ? <span className="block text-xs text-silver/60">cai de {p.boss}</span> : null}
+                      </td>
                       <td className={`py-1 ${isRare(p) ? "text-data-ok" : "text-silver/40"}`}>{isRare(p) ? "raro, aparece" : "comum"}</td>
                       <td className="tabular py-1 text-right text-data-info">{formatNumber(p.times)}</td>
                       <td className="py-1 pl-4 text-data-name">{p.lastCharacter}</td>

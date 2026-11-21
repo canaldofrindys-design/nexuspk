@@ -22,15 +22,6 @@ public interface IItemLogReader
 }
 
 /// <summary>
-/// Nomes dos tipos de item do jogo (<c>ItemDB.dbo.ItemType</c>), pela chave <see cref="GameItemCode.TypeKey"/>
-/// (grupo e tipo, os dois bytes altos do ItemCode). Fonte fora do ar: lança; o feed usa o código decodificado.
-/// </summary>
-public interface IItemNameReader
-{
-    Task<IReadOnlyDictionary<int, string>> ReadTypeNamesAsync(CancellationToken ct);
-}
-
-/// <summary>
 /// ItemCode do Priston Tale: byte alto = grupo (1 arma, 2 defesa, 3 acessório, 4 poção, 5 ouro, 8 diversos),
 /// segundo byte = tipo, terceiro = número do item.
 /// </summary>
@@ -87,8 +78,9 @@ public static class GameItemCode
 
     /// <summary>
     /// Nome do tipo vindo do banco do jogo com o número do item ("Machado nº 61"); sem ele, o grupo e o código ("Arma #01-3D").
+    /// O nome exato (dos arquivos do servidor) fica em <see cref="ItemNames"/>.
     /// </summary>
-    public static string Name(int code, IReadOnlyDictionary<int, string> typeNames) =>
+    public static string FallbackName(int code, IReadOnlyDictionary<int, string> typeNames) =>
         typeNames.TryGetValue(TypeKey(code), out var n) && !string.IsNullOrWhiteSpace(n)
             ? $"{n.Trim()} nº {Number(code)}"
             : $"{GroupName(code)} #{((code >> 16) & 0xFF):X2}-{Number(code):X2}";
@@ -98,7 +90,7 @@ public static class GameItemCode
 /// "Drops raros da semana" automáticos: tudo que foi pego no log de itens e é raro (pouco pego no mês, fora ouro e poções),
 /// junto com os drops anunciados à mão (opcionais). Cache de 2 minutos; log fora do ar: só os anunciados.
 /// </summary>
-public sealed class RareDropFeed(IMemoryCache cache, TimeProvider clock, IItemLogReader? itemLog = null, IItemNameReader? itemNames = null)
+public sealed class RareDropFeed(IMemoryCache cache, TimeProvider clock, IItemLogReader? itemLog = null, ItemNameSource? itemNames = null)
 {
     private static readonly TimeZoneInfo GameTimeZone = TimeZoneInfo.FindSystemTimeZoneById(Priston.Domain.Time.RankingPeriods.TimeZoneId);
     private static readonly TimeSpan CacheFor = TimeSpan.FromMinutes(2);
@@ -165,36 +157,14 @@ public sealed class RareDropFeed(IMemoryCache cache, TimeProvider clock, IItemLo
 
         var stats = await itemLog.ReadTopPickupsAsync(Local(now.AddDays(-RarityWindowDays)), MaxScanned, ct).ConfigureAwait(false);
         var times = stats.ToDictionary(s => s.ItemCode, s => s.Times);
-        var names = await TypeNamesAsync(ct).ConfigureAwait(false);
+        var names = itemNames is null ? ItemNames.Empty : await itemNames.GetAsync(ct).ConfigureAwait(false);
         return recent
             .Where(r => byCode.ContainsKey(r.ItemCode) || IsRare(r.ItemCode, times.GetValueOrDefault(r.ItemCode, 1)))
             .Take(MaxShown)
             .Select(r => byCode.TryGetValue(r.ItemCode, out var item)
                 ? new RareDrop(item.Name, item.Icon, null, r.Character, ToUtc(r.PickedLocal))
-                : new RareDrop(GameItemCode.Name(r.ItemCode, names), GameItemCode.Icon(r.ItemCode), null, r.Character, ToUtc(r.PickedLocal)))
+                : new RareDrop(names.Name(r.ItemCode), GameItemCode.Icon(r.ItemCode), names.Boss(r.ItemCode), r.Character, ToUtc(r.PickedLocal)))
             .ToList();
-    }
-
-    /// <summary>Nomes dos tipos (cache de 1 hora). Sem a tabela ou sem permissão: nenhum, e o nome sai do código.</summary>
-    private async Task<IReadOnlyDictionary<int, string>> TypeNamesAsync(CancellationToken ct)
-    {
-        if (itemNames is null)
-        {
-            return new Dictionary<int, string>();
-        }
-
-        try
-        {
-            return await cache.GetOrCreateAsync("home:item-type-names", async e =>
-            {
-                e.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1);
-                return await itemNames.ReadTypeNamesAsync(ct).ConfigureAwait(false);
-            }).ConfigureAwait(false) ?? new Dictionary<int, string>();
-        }
-        catch (Exception ex) when (ex is not OperationCanceledException)
-        {
-            return new Dictionary<int, string>();
-        }
     }
 
     /// <summary>Raro: fora de ouro e poções e pego no máximo <see cref="RareMaxPickups"/> vezes na janela.</summary>

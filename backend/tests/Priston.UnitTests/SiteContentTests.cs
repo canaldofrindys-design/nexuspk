@@ -207,8 +207,8 @@ public sealed class SiteContentTests : IDisposable
 
     private sealed class Names : IItemNameReader
     {
-        public Task<IReadOnlyDictionary<int, string>> ReadTypeNamesAsync(CancellationToken ct) =>
-            Task.FromResult<IReadOnlyDictionary<int, string>>(new Dictionary<int, string> { [0x0101] = "Machado" });
+        public Task<IReadOnlyList<ItemTypeInfo>> ReadTypesAsync(CancellationToken ct) =>
+            Task.FromResult<IReadOnlyList<ItemTypeInfo>>([new ItemTypeInfo(0x0101, "Machado", "WA"), new ItemTypeInfo(0x0210, "Costume", "CA")]);
     }
 
     [Theory]
@@ -239,7 +239,7 @@ public sealed class SiteContentTests : IDisposable
             .. common,
         ]);
         using var cache = new MemoryCache(new MemoryCacheOptions());
-        var feed = new RareDropFeed(cache, new FixedClock(Now), log, new Names());
+        var feed = new RareDropFeed(cache, new FixedClock(Now), log, new ItemNameSource(cache, new Names()));
 
         var drops = await feed.GetAsync(site, CancellationToken.None);
 

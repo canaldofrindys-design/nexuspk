@@ -8,18 +8,18 @@ using static Priston.GameDatabaseIntegration.SqlIdentifier;
 namespace Priston.GameDatabaseIntegration.Characters;
 
 /// <summary>
-/// Nomes dos tipos de item de <c>ItemDB.dbo.ItemType</c> (ItemTypeName, ItemTypeHex), pela chave grupo+tipo do ItemCode.
+/// Nomes dos tipos de item de <c>ItemDB.dbo.ItemType</c> (ItemTypeName, ItemTypeHex, ItemTypeAbbr), pela chave grupo+tipo do ItemCode.
 /// ItemTypeHex pode vir como texto ("0x01010000") ou número; os dois são aceitos. Só leitura.
 /// </summary>
 internal sealed class ItemTypeNameReader(IGameDbConnectionFactory connections, IOptions<GameDatabaseOptions> options) : IItemNameReader
 {
-    public async Task<IReadOnlyDictionary<int, string>> ReadTypeNamesAsync(CancellationToken ct)
+    public async Task<IReadOnlyList<ItemTypeInfo>> ReadTypesAsync(CancellationToken ct)
     {
         var o = options.Value;
-        var sql = $"SELECT ItemTypeName AS Name, ItemTypeHex AS Hex FROM {Quote(o.ItemDatabase)}.dbo.ItemType";
+        var sql = $"SELECT ItemTypeName AS Name, ItemTypeHex AS Hex, ItemTypeAbbr AS Abbr FROM {Quote(o.ItemDatabase)}.dbo.ItemType";
         await using var conn = await connections.OpenReadAsync(ct).ConfigureAwait(false);
         var rows = await conn.QueryAsync<Row>(new CommandDefinition(sql, commandTimeout: o.CommandTimeoutSeconds, cancellationToken: ct)).ConfigureAwait(false);
-        var map = new Dictionary<int, string>();
+        var list = new List<ItemTypeInfo>();
         foreach (var r in rows)
         {
             if (string.IsNullOrWhiteSpace(r.Name) || Key(r.Hex) is not { } key)
@@ -27,10 +27,10 @@ internal sealed class ItemTypeNameReader(IGameDbConnectionFactory connections, I
                 continue;
             }
 
-            map.TryAdd(key, r.Name.Trim());
+            list.Add(new ItemTypeInfo(key, r.Name.Trim(), string.IsNullOrWhiteSpace(r.Abbr) ? null : r.Abbr.Trim()));
         }
 
-        return map;
+        return list;
     }
 
     private static int? Key(object? hex) => hex switch
@@ -54,5 +54,7 @@ internal sealed class ItemTypeNameReader(IGameDbConnectionFactory connections, I
         public string? Name { get; set; }
 
         public object? Hex { get; set; }
+
+        public string? Abbr { get; set; }
     }
 }
