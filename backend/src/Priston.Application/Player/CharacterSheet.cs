@@ -40,7 +40,8 @@ public sealed record CharacterSheet(
     int? MapId,
     string? MapName,
     DateTimeOffset SavedUtc,
-    IReadOnlyList<CharacterEquipment> Equipment);
+    IReadOnlyList<CharacterEquipment> Equipment,
+    int ClassCode = 0);
 
 /// <summary>Arquivo do personagem no servidor do jogo. null quando não existe; pasta fora do alcance: lança.</summary>
 public interface ICharacterFileReader

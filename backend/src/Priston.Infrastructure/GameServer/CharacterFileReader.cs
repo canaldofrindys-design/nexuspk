@@ -107,7 +107,8 @@ internal static class CharacterFile
             map >= 0 && map < CharacterGameTables.MapNames.Count ? map : null,
             CharacterGameTables.MapName(map),
             savedUtc,
-            Equipment(b));
+            Equipment(b),
+            I(b, 0xC4));
     }
 
     private static int I(ReadOnlySpan<byte> b, int o) => BinaryPrimitives.ReadInt32LittleEndian(b[o..]);

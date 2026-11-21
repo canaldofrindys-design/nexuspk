@@ -249,10 +249,26 @@ public sealed partial class PlayerPanelService(
                 failed = true;
             }
 
-            characters.Add(sheet is null ? c : c with { Sheet = WithFileIds(sheet, names) });
+            characters.Add(sheet is null ? c : WithSheet(c, WithFileIds(sheet, names)));
         }
 
         return game with { Characters = characters };
+    }
+
+    /// <summary>
+    /// Junta a ficha ao personagem. Personagem novo pode estar com classe 0 e nível 0 em LevelTable até o servidor
+    /// atualizar a tabela; nesse caso valem a classe e o nível do arquivo do personagem.
+    /// </summary>
+    public static PanelCharacter WithSheet(PanelCharacter c, CharacterSheet sheet)
+    {
+        var classCode = CharacterClassNames.IsKnown(c.ClassCode) || !CharacterClassNames.IsKnown(sheet.ClassCode) ? c.ClassCode : sheet.ClassCode;
+        return c with
+        {
+            Sheet = sheet,
+            ClassCode = classCode,
+            ClassName = classCode == c.ClassCode ? c.ClassName : CharacterClassNames.ToPortuguese(CharacterClassNames.FromCode(classCode)),
+            Level = Math.Max(c.Level, sheet.Level),
+        };
     }
 
     public static CharacterSheet WithFileIds(CharacterSheet sheet, Home.ItemNames names) =>

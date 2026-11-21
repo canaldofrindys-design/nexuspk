@@ -142,4 +142,35 @@ public sealed class CharacterFileTests
         Assert.Equal("DS161", ids[2]);
         Assert.Null(ids[9]);
     }
+
+    [Fact]
+    public void New_character_takes_class_and_level_from_the_file_when_the_ranking_table_does_not_have_them_yet()
+    {
+        var data = File("Frindys", 200, 0, 3);
+        BinaryPrimitives.WriteInt32LittleEndian(data.AsSpan(0xC4), 11);
+        var sheet = CharacterFile.Parse(data, "Frindys", Saved)!;
+        Assert.Equal(11, sheet.ClassCode);
+
+        var c = PlayerPanelService.WithSheet(new PanelCharacter("Frindys", 0, "Desconhecida", 0, null, null, null, null), sheet);
+
+        Assert.Equal(11, c.ClassCode);
+        Assert.Equal(Priston.Domain.Characters.CharacterClassNames.ToPortuguese(Priston.Domain.Characters.CharacterClassNames.FromCode(11)), c.ClassName);
+        Assert.NotEqual("Desconhecida", c.ClassName);
+        Assert.Equal(200, c.Level);
+        Assert.Same(sheet, c.Sheet);
+    }
+
+    [Fact]
+    public void Class_from_the_ranking_table_wins_when_it_is_known()
+    {
+        var data = File("A", 150, 0, 3);
+        BinaryPrimitives.WriteInt32LittleEndian(data.AsSpan(0xC4), 11);
+        var sheet = CharacterFile.Parse(data, "A", Saved)!;
+
+        var c = PlayerPanelService.WithSheet(new PanelCharacter("A", 1, "Lutador", 160, null, null, null, null), sheet);
+
+        Assert.Equal(1, c.ClassCode);
+        Assert.Equal("Lutador", c.ClassName);
+        Assert.Equal(160, c.Level);
+    }
 }
