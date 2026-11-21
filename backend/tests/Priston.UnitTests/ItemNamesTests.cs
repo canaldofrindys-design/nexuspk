@@ -464,4 +464,33 @@ public sealed class ItemTypeKeyTests
     [InlineData(0, null)]
     public void Reads_the_type_from_the_id(int id, int? expected) =>
         Assert.Equal(expected, Priston.GameDatabaseIntegration.Characters.ItemTypeNameReader.Key(id));
+
+    [Fact]
+    public void Reads_the_rows_of_this_server_with_ItemTypeAbbrv_and_varbinary_hex()
+    {
+        var rows = new List<IDictionary<string, object?>>
+        {
+            new Dictionary<string, object?> { ["ItemTypeId"] = 50593792, ["ItemTypeName"] = "Sheltom", ["ItemTypeHex"] = new byte[] { 0x03, 0x04, 0x00, 0x00 }, ["ItemTypeAbbrv"] = "OS1" },
+            new Dictionary<string, object?> { ["itemtypeid"] = 16842752, ["ItemTypeName"] = "Machado", ["ItemTypeHex"] = DBNull.Value, ["ItemTypeAbbrv"] = DBNull.Value },
+            new Dictionary<string, object?> { ["ItemTypeId"] = 1, ["ItemTypeName"] = " ", ["ItemTypeHex"] = null },
+        };
+
+        var types = Priston.GameDatabaseIntegration.Characters.ItemTypeNameReader.Parse(rows);
+
+        Assert.Equal(2, types.Count);
+        Assert.Equal(new ItemTypeInfo(0x0304, "Sheltom", "OS1"), types[0]);
+        Assert.Equal(new ItemTypeInfo(0x0101, "Machado", null), types[1]);
+    }
+
+    [Fact]
+    public void Reads_the_abbreviation_from_ItemTypeAbbr_on_other_servers()
+    {
+        var rows = new List<IDictionary<string, object?>>
+        {
+            new Dictionary<string, object?> { ["ItemTypeId"] = 16842752, ["ItemTypeName"] = "Machado", ["ItemTypeHex"] = "0x01010000", ["ItemTypeAbbr"] = "WA1" },
+        };
+
+        Assert.Equal(new ItemTypeInfo(0x0101, "Machado", "WA1"), Assert.Single(Priston.GameDatabaseIntegration.Characters.ItemTypeNameReader.Parse(rows)));
+    }
 }
+
