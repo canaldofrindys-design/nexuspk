@@ -39,6 +39,18 @@ public static class SiteEndpoints
         });
 
         // Imagem de um item do jogo (copiada do cliente). Público: é a mesma imagem que todo jogador tem no cliente.
+        // Página pública do item: atributos (OpenItem), de quais monstros cai (Monster) e quais NPCs vendem (NPC).
+        app.MapGet("/api/v1/items/{id}", async (ItemGuide guide, HttpContext http, string id, CancellationToken ct) =>
+        {
+            if (await guide.GetAsync(id, ct) is not { } page)
+            {
+                return Results.NotFound();
+            }
+
+            http.Response.Headers.CacheControl = "public, max-age=300";
+            return Results.Ok(page);
+        });
+
         app.MapGet("/api/v1/items/{id}/image", async (IServiceProvider services, HttpContext http, string id, CancellationToken ct) =>
         {
             if (ItemNames.ParseFileId(id) is null || services.GetService<IItemImageStore>() is not { } images)

@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 
 /**
@@ -98,6 +99,11 @@ export function RareDropsStrip({ drops, slots }: { drops: DropView[]; slots: num
               <span className="text-silver/50"> · {current.when}</span>
             </>
           )}
+          {current.code ? (
+            <Link href={`/itens/${current.code}`} className="ml-2 whitespace-nowrap text-arcane hover:underline">
+              Ver item completo
+            </Link>
+          ) : null}
         </p>
       ) : null}
     </div>
