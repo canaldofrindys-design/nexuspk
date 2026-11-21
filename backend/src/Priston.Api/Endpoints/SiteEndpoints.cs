@@ -37,6 +37,35 @@ public static class SiteEndpoints
             return Results.File(file.Data, file.ContentType);
         });
 
+        // Imagem de um item do jogo (copiada do cliente). Público: é a mesma imagem que todo jogador tem no cliente.
+        app.MapGet("/api/v1/items/{id}/image", async (IServiceProvider services, HttpContext http, string id, CancellationToken ct) =>
+        {
+            if (ItemNames.ParseFileId(id) is null || services.GetService<IItemImageStore>() is not { } images)
+            {
+                return Results.NotFound();
+            }
+
+            ItemImage? image;
+            try
+            {
+                image = await images.GetAsync(id, ct);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                image = null;
+            }
+
+            if (image is null)
+            {
+                return Results.NotFound();
+            }
+
+            http.Response.Headers.CacheControl = "public, max-age=86400";
+            http.Response.Headers.ContentSecurityPolicy = "default-src 'none'; sandbox";
+            http.Response.Headers.XContentTypeOptions = "nosniff";
+            return Results.File(image.Data, image.ContentType);
+        });
+
         var admin = app.MapGroup("/api/v1/admin");
         admin.AddEndpointFilter(async (ctx, next) =>
         {
@@ -98,6 +127,32 @@ public static class SiteEndpoints
                 {
                     return Results.Ok(new { available = false, items = Array.Empty<ItemPickupStat>() });
                 }
+            }, ct));
+
+        // Catálogo de itens do servidor (nomes dos arquivos OpenItem e quais têm imagem), para escolher item pela foto.
+        admin.MapGet("/items", async (StaffAuthService auth, IServiceProvider services, HttpContext http, CancellationToken ct) =>
+            await AdminEndpoints.Guard(auth, http, Capability.ViewDashboard, async _ =>
+            {
+                var names = services.GetService<ItemNameSource>() is { } source ? await source.GetAsync(ct) : ItemNames.Empty;
+                IReadOnlySet<string> withImage = new HashSet<string>();
+                if (services.GetService<IItemImageStore>() is { } images)
+                {
+                    try
+                    {
+                        withImage = await images.ListIdsAsync(ct);
+                    }
+                    catch (Exception ex) when (ex is not OperationCanceledException)
+                    {
+                        withImage = new HashSet<string>();
+                    }
+                }
+
+                var ids = names.FileNames.Keys.Concat(withImage).Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase);
+                return Results.Ok(new
+                {
+                    images = withImage.Count,
+                    items = ids.Select(id => new { id, name = names.FileNames.GetValueOrDefault(id), image = withImage.Contains(id) }),
+                });
             }, ct));
 
         // Banners (mesma permissão de notícias e eventos)
