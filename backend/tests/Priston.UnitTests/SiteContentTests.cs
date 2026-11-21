@@ -190,54 +190,56 @@ public sealed class SiteContentTests : IDisposable
     {
         public DateTime? Since { get; private set; }
 
-        public IReadOnlyCollection<int>? Codes { get; private set; }
-
         public bool Fail { get; set; }
 
-        public Task<IReadOnlyList<ItemPickupRow>> ReadPickupsAsync(IReadOnlyCollection<int> itemCodes, DateTime sinceLocal, int max, CancellationToken ct)
+        public Task<IReadOnlyList<ItemPickupRow>> ReadRecentPickupsAsync(DateTime sinceLocal, int max, CancellationToken ct)
         {
             Since = sinceLocal;
-            Codes = itemCodes;
-            return Fail ? throw new InvalidOperationException("sem permissão no ItemLogDB") : Task.FromResult<IReadOnlyList<ItemPickupRow>>(rows.Where(r => itemCodes.Contains(r.ItemCode)).ToList());
+            return Fail
+                ? throw new InvalidOperationException("sem permissão no ItemLogDB")
+                : Task.FromResult<IReadOnlyList<ItemPickupRow>>(rows.Where(r => r.PickedLocal >= sinceLocal).OrderByDescending(r => r.PickedLocal).ToList());
         }
 
         public Task<IReadOnlyList<ItemPickupStat>> ReadTopPickupsAsync(DateTime sinceLocal, int max, CancellationToken ct) =>
-            Task.FromResult<IReadOnlyList<ItemPickupStat>>([]);
+            Task.FromResult<IReadOnlyList<ItemPickupStat>>(rows.Where(r => r.PickedLocal >= sinceLocal).GroupBy(r => r.ItemCode)
+                .Select(g => new ItemPickupStat(g.Key, g.Count(), g.Max(r => r.PickedLocal), g.First().Character)).ToList());
+    }
+
+    private sealed class Names : IItemNameReader
+    {
+        public Task<IReadOnlyDictionary<int, string>> ReadNamesAsync(CancellationToken ct) =>
+            Task.FromResult<IReadOnlyDictionary<int, string>>(new Dictionary<int, string> { [0x01013D00] = "Machado do Caos" });
     }
 
     [Fact]
-    public async Task Rare_items_from_the_item_log_become_drops_merged_with_the_announced_ones()
+    public async Task Rare_drops_come_from_the_item_log_on_their_own()
     {
         using var svc = Service();
-        var bad = await svc.SaveRareItemSettingsAsync(Admin, new RareItemSettingsInput(
-            [new RareItemInput("abc", "Cristal", "cristal")]), Client, CancellationToken.None);
-        Assert.Equal("items", Assert.Single(bad.Errors!).Key);
-        var dup = await svc.SaveRareItemSettingsAsync(Admin, new RareItemSettingsInput(
-            [new RareItemInput("10", "A", "cristal"), new RareItemInput("10", "B", "bau")]), Client, CancellationToken.None);
-        Assert.Equal(StaffAuthStatus.ValidationFailed, dup.Status);
-
-        Assert.Equal(StaffAuthStatus.Ok, (await svc.SaveRareItemSettingsAsync(Admin, new RareItemSettingsInput(
-            [new RareItemInput(" 83951872 ", "Cristal Azul", "sheltom-safira"), new RareItemInput("", "", "")]), Client, CancellationToken.None)).Status);
         Assert.Equal(StaffAuthStatus.Ok, (await svc.SaveRareDropSettingsAsync(Admin, new RareDropSettingsInput(
             [new RareDropInput("Asas de Fênix", "asas", "Fúria", "Beltrano", "2026-11-10T09:00")]), Client, CancellationToken.None)).Status);
-
         var site = await svc.GetAsync(CancellationToken.None);
-        Assert.Equal(83951872, Assert.Single(site.RareItems!).Code);
 
-        var log = new FakeItemLog(
-            new ItemPickupRow(83951872, "Fulano", new DateTime(2026, 11, 10, 11, 30, 0)), // 14:30 UTC
-            new ItemPickupRow(999, "Outro", new DateTime(2026, 11, 10, 11, 0, 0)));
+        var day = new DateTime(2026, 11, 10, 11, 30, 0); // 14:30 UTC
+        var common = Enumerable.Range(0, 5).Select(i => new ItemPickupRow(0x02350E00, $"P{i}", day.AddDays(-10 - i))).ToList();
+        var log = new FakeItemLog([
+            new ItemPickupRow(0x01013D00, "Fulano", day),                 // arma pega 1 vez no mês: rara, com nome do banco
+            new ItemPickupRow(0x080C4B00, "Ciclano", day.AddMinutes(-5)), // item especial sem nome: código
+            new ItemPickupRow(0x05010100, "Rico", day.AddMinutes(-1)),    // ouro: nunca
+            new ItemPickupRow(0x02350E00, "Comum", day.AddMinutes(-2)),   // pego 6 vezes no mês: comum
+            .. common,
+        ]);
         using var cache = new MemoryCache(new MemoryCacheOptions());
-        var feed = new RareDropFeed(cache, new FixedClock(Now), log);
+        var feed = new RareDropFeed(cache, new FixedClock(Now), log, new Names());
 
         var drops = await feed.GetAsync(site, CancellationToken.None);
 
-        Assert.Equal(["Cristal Azul", "Asas de Fênix"], drops.Select(d => d.Item));
+        Assert.Equal(["Machado do Caos", "Item especial #0C-4B", "Asas de Fênix"], drops.Select(d => d.Item));
         Assert.Equal("Fulano", drops[0].Player);
+        Assert.Equal("martelo", drops[0].Icon);
+        Assert.Equal("cristal", drops[1].Icon);
         Assert.Null(drops[0].Boss);
         Assert.Equal(new DateTimeOffset(2026, 11, 10, 14, 30, 0, TimeSpan.Zero), drops[0].DroppedUtc);
         Assert.Equal(new DateTime(2026, 11, 3, 12, 0, 0), log.Since);
-        Assert.Equal([83951872], log.Codes!);
 
         // Log fora do ar (ou sem permissão): ficam só os anunciados.
         using var cache2 = new MemoryCache(new MemoryCacheOptions());

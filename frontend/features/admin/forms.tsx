@@ -9,7 +9,7 @@ import { eventCategories, newsCategories } from "@/features/content/labels";
 import type { FormState } from "@/features/auth/types";
 import { safeImage } from "@/features/content/labels";
 import { pranchaArt } from "@/components/ui/ArtLink";
-import type { BannerRecord, DownloadSettings, RareDropSettings, RareItemSettings, ServerSettings } from "@/features/site/types";
+import type { BannerRecord, DownloadSettings, RareDropSettings, ServerSettings } from "@/features/site/types";
 import {
   createStaffAction,
   resetStaffPasswordAction,
@@ -18,7 +18,6 @@ import {
   saveEventAction,
   saveNewsAction,
   saveRareDropsAction,
-  saveRareItemsAction,
   saveServerSettingsAction,
   staffLoginAction,
   staffPasswordAction,
@@ -313,47 +312,6 @@ export function DownloadsForm({ settings }: { settings: DownloadSettings }) {
       </fieldset>
       <div className="max-w-xs">
         <SubmitButton>Salvar página de download</SubmitButton>
-      </div>
-    </form>
-  );
-}
-
-/** Itens raros: código do log de itens (ItemCode), nome e arte. Os drops deles entram sozinhos na home. */
-export function RareItemsForm({ settings }: { settings: RareItemSettings }) {
-  const [state, action] = useActionState(saveRareItemsAction, initialFormState);
-  const e = state.fieldErrors ?? {};
-  const val = (k: string, fallback: string | number | null | undefined) => state.values?.[k] ?? (fallback == null ? "" : String(fallback));
-  const input = "rounded-sm border border-bronze/70 bg-night/80 px-3 py-1.5 text-sm text-silver";
-  return (
-    <form action={action} className="flex flex-col gap-4" noValidate>
-      <FormMessage state={state} />
-      <fieldset className="flex flex-col gap-2 border border-steel/60 p-3">
-        <legend className="px-1 text-sm text-silver">Itens raros</legend>
-        {slots(settings.items.length, 4, 100).map((i) => {
-          const d = settings.items[i];
-          return (
-            <div key={i} className="grid gap-2 md:grid-cols-[1fr_1.6fr_1.2fr]">
-              <input aria-label={`Item ${i + 1}: código`} name={`rareCode_${i}`} inputMode="numeric" maxLength={11} placeholder="Código (ItemCode)" defaultValue={val(`rareCode_${i}`, d?.code)} className={`${input} tabular`} />
-              <input aria-label={`Item ${i + 1}: nome`} name={`rareName_${i}`} maxLength={60} placeholder="Nome (ex.: Cristal Azul)" defaultValue={val(`rareName_${i}`, d?.name)} className={input} />
-              <select aria-label={`Item ${i + 1}: arte`} name={`rareIcon_${i}`} defaultValue={val(`rareIcon_${i}`, d?.icon)} className={input}>
-                <option value="">Arte do item</option>
-                {pranchaArt.itens.map((it) => (
-                  <option key={it.key} value={it.key}>
-                    {it.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          );
-        })}
-        {e.items ? (
-          <p className="text-xs text-data-bad">{e.items}</p>
-        ) : (
-          <p className="text-xs text-silver/60">Linha vazia é ignorada. Salve para ganhar mais linhas (até 100).</p>
-        )}
-      </fieldset>
-      <div className="max-w-xs">
-        <SubmitButton>Salvar itens raros</SubmitButton>
       </div>
     </form>
   );
