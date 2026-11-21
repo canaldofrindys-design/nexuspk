@@ -56,7 +56,7 @@ Bancos que existem no servidor e **não** foram extraídos: BattleEvents, Billin
 | Classe | `LevelTable.Class` | 1 Lutador, 2 Mecânico, 3 Arqueira, 4 Pikeman, 5 Atalanta, 6 Cavaleiro, 7 Mago, 8 Sacerdotisa, 9 Assassina, 10 Shaman, 11 Guerreira | Confirmado pelo site antigo |
 | Clã do personagem | `[ClanDB].dbo.UL` | `userid, ChName, ChType, ChLv, ClanName, Permi, DelActive` | Confirmado (tabela usada pelo ASP do clã) |
 | Clãs | `[ClanDB].dbo.CL` | `ClanName, ClanZang` (líder), `MemCnt, Cpoint, CWin, CFail, RegiDate, DelActive` | Confirmado |
-| Ranking geral (nível) | `LevelTable` | `Level`, `Class` | Confirmado |
+| Ranking geral (nível) | `LevelTable` + arquivo `.dat` do personagem | `Level`, `Class`; no `.dat`, classe 0xC4 e nível 0xC8 | Vale o maior nível. A `LevelTable` pode ficar atrás do `.dat` (personagem novo com nível 0, nível 200 dado pela equipe); quando a tabela não tem classe, vale a do arquivo |
 | Ranking geral (EXP) | `CharGameRecordLg` ou `TopLevel` | `Exp` / `XP` | Depende da confirmação acima |
 | Ranking PvP | `[UserDB].dbo.BattlePoints` | `Nick, BPs, DPs, BPsSemanal, KillsPvP, MortesPvP, PontosPvP, IsReiPvP, SodSemanal` | Confirmado (usado hoje) |
 | Excluir GMs do ranking | `[UserDB].dbo.GameMasters` | `Account, GameMasterLevel` | Confirmado |

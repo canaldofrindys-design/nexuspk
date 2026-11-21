@@ -47,7 +47,17 @@ public sealed record CharacterSheet(
 public interface ICharacterFileReader
 {
     Task<CharacterSheet?> ReadAsync(string characterName, CancellationToken ct);
+
+    /// <summary>
+    /// Nome, classe e nível de todos os arquivos de personagem, pelo nome (sem diferenciar maiúsculas). Usado pelo ranking:
+    /// a LevelTable pode estar atrás do arquivo (personagem novo, nível dado pela equipe). Pasta fora do alcance: lança.
+    /// </summary>
+    Task<IReadOnlyDictionary<string, CharacterFileLevel>> ReadAllLevelsAsync(CancellationToken ct) =>
+        Task.FromResult<IReadOnlyDictionary<string, CharacterFileLevel>>(new Dictionary<string, CharacterFileLevel>());
 }
+
+/// <summary>Classe (0xC4) e nível (0xC8) gravados no arquivo do personagem.</summary>
+public sealed record CharacterFileLevel(string Name, int ClassCode, int Level);
 
 /// <summary>Tabelas do jogo usadas na ficha: experiência por nível, nomes dos mapas e dos lugares do equipamento.</summary>
 public static class CharacterGameTables
