@@ -182,3 +182,24 @@ export async function sourceConfigAction(_: FormState, form: FormData): Promise<
 export async function sourceRemoveAction(_: FormState, form: FormData): Promise<FormState> {
   return send("POST", `/api/v1/admin/game-tables/${fn(form)}/config/remove`, { password: text(form, "password") }, ["/admin/jogo", `/admin/jogo/${fn(form)}/configurar`]);
 }
+
+export type DonateBoxItemValue = { code: string; quantity: number | null; aging: number | null; mix: boolean };
+
+/** Cria a Box Donate no sistema de donate do servidor. Os itens chegam como JSON montado pelo formulário. */
+export async function donateBoxAction(_: FormState, form: FormData): Promise<FormState> {
+  let items: DonateBoxItemValue[] = [];
+  try {
+    const parsed = JSON.parse(text(form, "items")) as unknown;
+    if (Array.isArray(parsed)) items = parsed.slice(0, 64) as DonateBoxItemValue[];
+  } catch {
+    items = [];
+  }
+  const values = { login: text(form, "login"), character: text(form, "character"), reason: text(form, "reason") };
+  return send(
+    "POST",
+    "/api/v1/admin/donate-box",
+    { login: values.login, character: values.character, items, reason: values.reason },
+    ["/admin/jogo/box-send"],
+    values,
+  );
+}

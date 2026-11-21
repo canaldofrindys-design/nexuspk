@@ -35,6 +35,7 @@ public static class DependencyInjection
         services.AddSingleton<Priston.Application.GameAdmin.IRankingResetStore, Admin.RankingResetStore>();
         services.AddSingleton<Priston.Application.GameAdmin.IGameSchemaReader, Admin.GameSchemaReader>();
         services.AddSingleton<Priston.Application.GameAdmin.IGameTableStore, Admin.GameTableStore>();
+        services.AddSingleton<Priston.Application.GameAdmin.IDonateBoxStore, Admin.DonateBoxStore>();
         services.AddHealthChecks().AddCheck<GameDatabaseHealthCheck>(HealthCheckName, tags: ["ready"]);
         return services;
     }

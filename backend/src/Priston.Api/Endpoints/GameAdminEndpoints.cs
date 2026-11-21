@@ -50,6 +50,14 @@ public static class GameAdminEndpoints
             await AdminEndpoints.Guard(auth, http, Capability.ManageEconomy, async me => Map(await svc.RemoveVipAsync(me, login, body, AuthEndpoints.Client(http), ct)), ct))
             .RequireRateLimiting(limit);
 
+        // Box Donate: cria o pacote no sistema de donate do servidor, que monta a caixa e entrega ao jogador
+        g.MapGet("/donate-box", async (StaffAuthService auth, DonateBoxService svc, HttpContext http, CancellationToken ct) =>
+            await AdminEndpoints.Guard(auth, http, Capability.ManageEconomy, async _ => Map(await svc.OverviewAsync(ct)), ct));
+
+        g.MapPost("/donate-box", async ([FromBody] DonateBoxRequest body, StaffAuthService auth, DonateBoxService svc, HttpContext http, CancellationToken ct) =>
+            await AdminEndpoints.Guard(auth, http, Capability.ManageEconomy, async me => Map(await svc.SendAsync(me, body, AuthEndpoints.Client(http), ct)), ct))
+            .RequireRateLimiting(limit);
+
         // Servidor
         g.MapGet("/server", async (StaffAuthService auth, ServerControlService svc, HttpContext http, CancellationToken ct) =>
             await AdminEndpoints.Guard(auth, http, Capability.ControlServer, _ => Task.FromResult(Results.Ok(new

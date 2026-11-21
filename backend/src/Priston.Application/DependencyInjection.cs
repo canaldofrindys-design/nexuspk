@@ -43,6 +43,7 @@ public static class DependencyInjection
         services.AddOptions<GameAdmin.GameServerControlOptions>().Bind(configuration.GetSection(GameAdmin.GameServerControlOptions.SectionName));
         services.AddSingleton<GameAdmin.StaffReauthService>();
         services.AddScoped<GameAdmin.GameAccountAdminService>();
+        services.AddScoped<GameAdmin.DonateBoxService>();
         services.AddSingleton<GameAdmin.RankingResetService>();
         services.AddSingleton<GameAdmin.ServerControlService>();
         services.AddSingleton<GameAdmin.GameTableService>();
