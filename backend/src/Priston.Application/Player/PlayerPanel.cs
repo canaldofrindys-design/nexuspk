@@ -256,7 +256,7 @@ public sealed partial class PlayerPanelService(
     }
 
     public static CharacterSheet WithFileIds(CharacterSheet sheet, Home.ItemNames names) =>
-        sheet with { Equipment = sheet.Equipment.Select(e => e with { FileId = names.FileId(e.Code) }).ToList() };
+        sheet with { Equipment = sheet.Equipment.Select(e => e with { FileId = names.FileId(e.Code, e.Name) }).ToList() };
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Falha ao ler o arquivo do personagem {Character}")]
     private static partial void LogSheetFailed(ILogger logger, Exception ex, string character);

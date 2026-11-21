@@ -119,4 +119,27 @@ public sealed class CharacterFileTests
 
         Assert.Equal("WS120", withIds.Equipment[0].FileId);
     }
+
+    [Fact]
+    public void Without_the_type_prefix_the_photo_comes_from_the_item_name()
+    {
+        // Sem os tipos do banco não há prefixo; o nome gravado no personagem é o do arquivo do item.
+        var names = ItemNames.Build([], new Dictionary<string, string>
+        {
+            ["DA111"] = "Armadura Carmesin +",
+            ["OR119"] = "Anel do Valento",
+            ["OR219"] = "Anel do Valento",
+            ["DA211"] = "Escudo Carmesin +",
+            ["DS161"] = "Escudo Carmesin +",
+        });
+        var sheet = CharacterFile.Parse(File("A", 10, 0, 3,
+            (3, 0x02010b00, "Armadura Carmesin +"), (5, 0x03041900, "Anel do Valento"), (2, 0x02043d00, "Escudo Carmesin +"), (9, 0x02031300, "Luvas")), "A", Saved)!;
+
+        var ids = PlayerPanelService.WithFileIds(sheet, names).Equipment.ToDictionary(e => e.Slot, e => e.FileId);
+
+        Assert.Equal("DA111", ids[3]);
+        Assert.Null(ids[5]);
+        Assert.Equal("DS161", ids[2]);
+        Assert.Null(ids[9]);
+    }
 }
