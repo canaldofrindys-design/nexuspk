@@ -170,8 +170,10 @@ public sealed class RareDropFeed(IMemoryCache cache, TimeProvider clock, IItemLo
     }
 
     /// <summary>
-    /// Vitrine para os espaços vazios da faixa: itens reais que caem de boss (1 ou 2 monstros derrubam), com imagem e nome,
-    /// fora ouro e poções. A seleção muda toda semana e é a mesma para todos. Sem arquivos do servidor: vazia.
+    /// Vitrine para os espaços vazios da faixa: itens reais do servidor, com a imagem do cliente e o nome do arquivo.
+    /// Primeiro os que caem de boss (1 ou 2 monstros derrubam), depois os outros drops de monstro e, se ainda faltar,
+    /// qualquer item com imagem; nunca poções. A seleção muda toda semana e é a mesma para todos.
+    /// Usa só os arquivos do servidor e as imagens (não precisa do banco do jogo). Sem imagens: vazia.
     /// </summary>
     public async Task<IReadOnlyList<ItemShowcase>> GetShowcaseAsync(int count, CancellationToken ct)
     {
@@ -185,18 +187,11 @@ public sealed class RareDropFeed(IMemoryCache cache, TimeProvider clock, IItemLo
             var week = System.Globalization.ISOWeek.GetWeekOfYear(clock.GetUtcNow().UtcDateTime) + (100 * clock.GetUtcNow().Year);
             var all = await cache.GetOrCreateAsync($"home:item-showcase:{week}", async e =>
             {
-                e.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10);
                 var names = await itemNames.GetAsync(ct).ConfigureAwait(false);
                 var withImage = await ImageIdsAsync(ct).ConfigureAwait(false);
-                return names.BossDrops()
-                    .Where(d => !GameItemCode.IsCommon(d.Code))
-                    .Select(d => (d.Boss, Id: names.FileId(d.Code)))
-                    .Where(d => d.Id is not null && withImage.Contains(d.Id) && names.FileNames.ContainsKey(d.Id))
-                    .Select(d => new ItemShowcase(d.Id!, names.FileNames[d.Id!], d.Boss))
-                    .DistinctBy(i => i.Code)
-                    .OrderBy(i => Stable(i.Code + ":" + week))
-                    .Take(RareDropFeed.MaxShown)
-                    .ToList();
+                var picked = PickShowcase(names, withImage, week);
+                e.AbsoluteExpirationRelativeToNow = picked.Count > 0 ? TimeSpan.FromMinutes(10) : TimeSpan.FromMinutes(1);
+                return picked;
             }).ConfigureAwait(false) ?? [];
             return all.Take(count).ToList();
         }
@@ -205,6 +200,27 @@ public sealed class RareDropFeed(IMemoryCache cache, TimeProvider clock, IItemLo
             return [];
         }
     }
+
+    /// <summary>Até <see cref="MaxShown"/> itens com imagem e nome: drops de boss, depois outros drops de monstro, depois o resto.</summary>
+    public static List<ItemShowcase> PickShowcase(ItemNames names, IReadOnlySet<string> withImage, int week) =>
+        names.FileNames
+            .Where(kv => withImage.Contains(kv.Key) && !IsPotionFile(kv.Key))
+            .Select(kv =>
+            {
+                var monsters = names.FileSources.GetValueOrDefault(kv.Key) ?? [];
+                var boss = monsters.Count is > 0 and <= ItemNames.MaxSources ? string.Join(" ou ", monsters) : null;
+                var tier = boss is not null ? 0 : monsters.Count > 0 ? 1 : 2;
+                return (Tier: tier, Item: new ItemShowcase(kv.Key, kv.Value, boss));
+            })
+            .OrderBy(x => x.Tier)
+            .ThenBy(x => Stable(x.Item.Code + ":" + week))
+            .Take(MaxShown)
+            .Select(x => x.Item)
+            .ToList();
+
+    /// <summary>Poções pelo código do arquivo: PL (vida), PS (resistência) e PM (mana).</summary>
+    private static bool IsPotionFile(string id) =>
+        id.Length >= 2 && char.ToUpperInvariant(id[0]) == 'P' && char.ToUpperInvariant(id[1]) is 'L' or 'S' or 'M';
 
     private async Task<IReadOnlySet<string>> ImageIdsAsync(CancellationToken ct)
     {

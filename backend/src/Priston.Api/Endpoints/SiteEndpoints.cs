@@ -209,6 +209,49 @@ public static class SiteEndpoints
                 }
             }, ct));
 
+        // Lojas dos NPCs lidas dos arquivos do servidor (NPC\*.npc), com nome e imagem dos itens. Só consulta.
+        admin.MapGet("/npc-shops", async (StaffAuthService auth, IServiceProvider services, IMemoryCache cache, HttpContext http, CancellationToken ct) =>
+            await AdminEndpoints.Guard(auth, http, Capability.ViewDashboard, async _ =>
+            {
+                if (services.GetService<INpcShopCatalog>() is not { } npcs)
+                {
+                    return Results.Ok(new { available = false, shops = Array.Empty<object>() });
+                }
+
+                try
+                {
+                    var list = await cache.GetOrCreateAsync("admin:npc-shops", async e =>
+                    {
+                        e.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5);
+                        return await npcs.ReadShopsAsync(ct);
+                    }) ?? [];
+                    var names = services.GetService<ItemNameSource>() is { } source ? await source.GetAsync(ct) : ItemNames.Empty;
+                    IReadOnlySet<string> withImage = new HashSet<string>();
+                    if (services.GetService<IItemImageStore>() is { } images)
+                    {
+                        try
+                        {
+                            withImage = await images.ListIdsAsync(ct);
+                        }
+                        catch (Exception ex) when (ex is not OperationCanceledException)
+                        {
+                            withImage = new HashSet<string>();
+                        }
+                    }
+
+                    object Items(IReadOnlyList<string> ids) => ids.Select(id => new { id, name = names.FileNames.GetValueOrDefault(id), image = withImage.Contains(id) });
+                    return Results.Ok(new
+                    {
+                        available = true,
+                        shops = list.Select(s => new { s.Name, s.File, weapons = Items(s.Weapons), armors = Items(s.Armors), misc = Items(s.Misc) }),
+                    });
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    return Results.Ok(new { available = false, shops = Array.Empty<object>() });
+                }
+            }, ct));
+
         // Banners (mesma permissão de notícias e eventos)
         admin.MapGet("/banners", async (StaffAuthService auth, SiteContentService site, HttpContext http, CancellationToken ct) =>
             await AdminEndpoints.Guard(auth, http, Capability.ManageContent, async _ => Results.Ok(await site.ListBannersAsync(ct)), ct));

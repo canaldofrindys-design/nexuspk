@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { ItemThumb } from "@/features/admin/ItemPicker";
-import type { CatalogItem, MonsterView } from "@/features/admin/types";
+import type { CatalogItem, MonsterView, NpcShopView } from "@/features/admin/types";
 
 const fmt = new Intl.NumberFormat("pt-BR");
 
@@ -99,6 +99,60 @@ export function MonsterDropsView({ monsters }: { monsters: MonsterView[] }) {
                 </li>
               ))}
             </ul>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+const shopGroups = [
+  { key: "weapons", label: "Armas" },
+  { key: "armors", label: "Armaduras" },
+  { key: "misc", label: "Diversos" },
+] as const;
+
+/** Lojas dos NPCs, lidas dos arquivos do servidor. Busca pelo NPC ou pelo item. Só consulta. */
+export function NpcShopsView({ shops }: { shops: NpcShopView[] }) {
+  const [q, setQ] = useState("");
+  const found = useMemo(() => {
+    const t = q.trim().toLowerCase();
+    if (!t) return shops;
+    return shops.filter(
+      (s) =>
+        s.name.toLowerCase().includes(t) ||
+        s.file.toLowerCase().includes(t) ||
+        shopGroups.some((g) => s[g.key].some((i) => i.id.toLowerCase().startsWith(t) || (i.name ?? "").toLowerCase().includes(t))),
+    );
+  }, [shops, q]);
+  return (
+    <div>
+      <SearchBox value={q} onChange={setQ} placeholder="Procurar NPC ou item (ex.: sabrine, poção, ec101)" />
+      <p className="mb-2 text-xs text-silver/55">
+        {fmt.format(found.length)} de {fmt.format(shops.length)} NPCs que vendem itens.
+      </p>
+      <ul className="flex flex-col gap-2">
+        {found.map((s) => (
+          <li key={s.file} className="rounded-sm border border-steel/60 bg-night/50 p-3">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <span className="text-gold-bright">{s.name}</span>
+              <span className="font-mono text-xs text-silver/50">{s.file}</span>
+            </div>
+            <div className="mt-2 flex flex-col gap-1.5">
+              {shopGroups
+                .filter((g) => s[g.key].length > 0)
+                .map((g) => (
+                  <div key={g.key} className="flex flex-wrap items-center gap-2 text-sm">
+                    <span className="w-20 shrink-0 text-data-info">{g.label}</span>
+                    {s[g.key].map((it) => (
+                      <span key={it.id} className="flex items-center gap-1.5 rounded-sm border border-steel/50 px-1.5 py-0.5" title={it.id}>
+                        <ItemThumb id={it.id} image={it.image} size={24} />
+                        <span className="text-xs text-silver">{it.name ?? it.id}</span>
+                      </span>
+                    ))}
+                  </div>
+                ))}
+            </div>
           </li>
         ))}
       </ul>

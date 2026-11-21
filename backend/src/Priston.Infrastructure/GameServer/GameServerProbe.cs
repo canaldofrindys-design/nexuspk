@@ -41,6 +41,12 @@ public sealed class GameServerOptions
     public string MonstersFolder { get; set; } = @"C:\ServidorPT\GameServer\Monster";
 
     /// <summary>
+    /// Pasta com um .npc por NPC do servidor do jogo, de onde saem as lojas (linhas <c>*잡화판매</c> e afins).
+    /// A conta do serviço da API precisa poder ler a pasta. Vazio: sem a consulta das lojas NPC.
+    /// </summary>
+    public string NpcFolder { get; set; } = @"C:\ServidorPT\GameServer\NPC";
+
+    /// <summary>
     /// Pasta com as imagens dos itens copiadas do cliente do jogo (<c>image\Sinimage\Items</c>, arquivos <c>it&lt;código&gt;.bmp</c>),
     /// em qualquer organização de subpastas. A conta do serviço da API precisa poder ler a pasta. Vazio: sem fotos.
     /// </summary>

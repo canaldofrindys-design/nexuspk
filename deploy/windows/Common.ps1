@@ -188,6 +188,46 @@ function Add-FolderRight([string]$Path, [string]$Identity, [string]$Rights) {
     Set-Acl -Path $Path -AclObject $acl
 }
 
+# Leitura das pastas do servidor do jogo que o portal consulta (itens, monstros, NPCs e fotos dos itens), para a
+# conta do serviço da API. Usa as pastas do portal.json (GameServer:*Folder) ou as padrão. Pasta que não existe fica
+# de fora; nunca cria pasta nem tira direito. Erro aqui só avisa: a atualização segue.
+function Grant-GameFileRead([hashtable]$Paths) {
+    $folders = [ordered]@{
+        ItemsFolder      = 'C:\ServidorPT\GameServer\OpenItem'
+        MonstersFolder   = 'C:\ServidorPT\GameServer\Monster'
+        NpcFolder        = 'C:\ServidorPT\GameServer\NPC'
+        ItemImagesFolder = 'C:\ServidorPT\ItemImages'
+    }
+    try {
+        $config = Get-Content -Raw -Path $Paths.ConfigFile -Encoding UTF8 | ConvertFrom-Json
+        if ($config.PSObject.Properties['GameServer']) {
+            foreach ($key in @($folders.Keys)) {
+                if ($config.GameServer.PSObject.Properties[$key]) { $folders[$key] = [string]$config.GameServer.$key }
+            }
+        }
+    }
+    catch { Write-Warn "não consegui ler $($Paths.ConfigFile); usando as pastas padrão do jogo" }
+
+    $account = Get-ServiceAccount $script:ApiService
+    foreach ($folder in $folders.Values) {
+        if ([string]::IsNullOrWhiteSpace($folder) -or -not (Test-Path -LiteralPath $folder -PathType Container)) { continue }
+        try {
+            $acl = Get-Acl -LiteralPath $folder
+            $has = $acl.Access | Where-Object {
+                $_.IdentityReference.Value -eq $account -and $_.AccessControlType -eq 'Allow' -and
+                ($_.FileSystemRights -band [System.Security.AccessControl.FileSystemRights]::ReadAndExecute) -eq [System.Security.AccessControl.FileSystemRights]::ReadAndExecute -and
+                ($_.InheritanceFlags -band [System.Security.AccessControl.InheritanceFlags]::ObjectInherit)
+            }
+            if ($has) { continue }
+            # icacls acrescenta o direito sem mexer no dono nem nos outros (Set-Acl regrava o descritor inteiro).
+            & icacls.exe $folder /grant "${account}:(OI)(CI)RX" | Out-Null
+            if ($LASTEXITCODE -ne 0) { throw "icacls saiu com código $LASTEXITCODE" }
+            Write-Ok "leitura liberada em $folder"
+        }
+        catch { Write-Warn "não consegui liberar a leitura em ${folder}: $($_.Exception.Message)" }
+    }
+}
+
 # Extrai o pacote numa pasta nova em releases\<versão>_<data>. Nunca sobrescreve uma versão existente.
 function Expand-PortalRelease([hashtable]$Paths, [string]$Package) {
     if (-not (Test-Path $Package)) { throw "Pacote não encontrado: $Package" }
