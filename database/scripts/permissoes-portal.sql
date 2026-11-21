@@ -73,6 +73,13 @@ BEGIN
 END
 GO
 
+-- Nomes dos tipos de item (drops raros da home). Só SELECT na tabela ItemType.
+IF DB_ID('ItemDB') IS NOT NULL
+BEGIN
+    EXEC ItemDB.sys.sp_executesql N'IF USER_ID(''portal_game_read'') IS NULL CREATE USER portal_game_read FOR LOGIN portal_game_read; GRANT SELECT ON dbo.ItemType TO portal_game_read;';
+END
+GO
+
 -- 2) Banco do portal: leitura e escrita nas próprias tabelas, sem alterar estrutura.
 --    As migrações rodam com um login administrativo só na hora da publicação.
 USE PortalDB;

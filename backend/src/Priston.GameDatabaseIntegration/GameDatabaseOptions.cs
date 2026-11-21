@@ -40,6 +40,9 @@ public sealed class GameDatabaseOptions
     /// <summary>Banco do log de itens (tabela IL), fonte dos drops raros da home.</summary>
     public string ItemLogDatabase { get; set; } = "ItemLogDB";
 
+    /// <summary>Banco com os nomes dos tipos de item (tabela ItemType).</summary>
+    public string ItemDatabase { get; set; } = "ItemDB";
+
     /// <summary>Valor de IL.Flag que o servidor grava quando o personagem pega um item do chão.</summary>
     public int ItemPickupFlag { get; set; }
 

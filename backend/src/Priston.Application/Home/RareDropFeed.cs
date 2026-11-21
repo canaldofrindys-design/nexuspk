@@ -21,10 +21,13 @@ public interface IItemLogReader
     Task<IReadOnlyList<ItemPickupStat>> ReadTopPickupsAsync(DateTime sinceLocal, int max, CancellationToken ct);
 }
 
-/// <summary>Nomes dos itens do jogo por código (ItemCode do log). Fonte fora do ar: lança; o feed usa o código decodificado.</summary>
+/// <summary>
+/// Nomes dos tipos de item do jogo (<c>ItemDB.dbo.ItemType</c>), pela chave <see cref="GameItemCode.TypeKey"/>
+/// (grupo e tipo, os dois bytes altos do ItemCode). Fonte fora do ar: lança; o feed usa o código decodificado.
+/// </summary>
 public interface IItemNameReader
 {
-    Task<IReadOnlyDictionary<int, string>> ReadNamesAsync(CancellationToken ct);
+    Task<IReadOnlyDictionary<int, string>> ReadTypeNamesAsync(CancellationToken ct);
 }
 
 /// <summary>
@@ -34,6 +37,32 @@ public interface IItemNameReader
 public static class GameItemCode
 {
     public static int Group(int code) => (code >> 24) & 0xFF;
+
+    /// <summary>Grupo e tipo (dois bytes altos), ex.: 0x0101 para 0x01013D00.</summary>
+    public static int TypeKey(int code) => (code >> 16) & 0xFFFF;
+
+    /// <summary>Número do item dentro do tipo (terceiro byte).</summary>
+    public static int Number(int code) => (code >> 8) & 0xFF;
+
+    /// <summary>
+    /// Lê o hexadecimal de ItemType ("0x01010000", "01010000", "0101" ou "0x0101") e devolve a chave do tipo.
+    /// null quando não dá para ler.
+    /// </summary>
+    public static int? ParseTypeHex(string? hex)
+    {
+        var h = hex?.Trim() ?? string.Empty;
+        if (h.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+        {
+            h = h[2..];
+        }
+
+        if (h.Length is 0 or > 8 || !uint.TryParse(h, System.Globalization.NumberStyles.HexNumber, System.Globalization.CultureInfo.InvariantCulture, out var v))
+        {
+            return null;
+        }
+
+        return h.Length > 4 ? (int)((v >> 16) & 0xFFFF) : (int)v;
+    }
 
     /// <summary>Ouro e poções: nunca são "drop raro".</summary>
     public static bool IsCommon(int code) => Group(code) is 4 or 5;
@@ -56,11 +85,13 @@ public static class GameItemCode
         _ => "Item",
     };
 
-    /// <summary>Nome do banco do jogo quando houver; sem ele, o grupo e o código ("Arma #01-3D").</summary>
-    public static string Name(int code, IReadOnlyDictionary<int, string> names) =>
-        names.TryGetValue(code, out var n) && !string.IsNullOrWhiteSpace(n)
-            ? n.Trim()
-            : $"{GroupName(code)} #{((code >> 16) & 0xFF):X2}-{((code >> 8) & 0xFF):X2}";
+    /// <summary>
+    /// Nome do tipo vindo do banco do jogo com o número do item ("Machado nº 61"); sem ele, o grupo e o código ("Arma #01-3D").
+    /// </summary>
+    public static string Name(int code, IReadOnlyDictionary<int, string> typeNames) =>
+        typeNames.TryGetValue(TypeKey(code), out var n) && !string.IsNullOrWhiteSpace(n)
+            ? $"{n.Trim()} nº {Number(code)}"
+            : $"{GroupName(code)} #{((code >> 16) & 0xFF):X2}-{Number(code):X2}";
 }
 
 /// <summary>
@@ -134,7 +165,7 @@ public sealed class RareDropFeed(IMemoryCache cache, TimeProvider clock, IItemLo
 
         var stats = await itemLog.ReadTopPickupsAsync(Local(now.AddDays(-RarityWindowDays)), MaxScanned, ct).ConfigureAwait(false);
         var times = stats.ToDictionary(s => s.ItemCode, s => s.Times);
-        var names = itemNames is null ? new Dictionary<int, string>() : await itemNames.ReadNamesAsync(ct).ConfigureAwait(false);
+        var names = await TypeNamesAsync(ct).ConfigureAwait(false);
         return recent
             .Where(r => byCode.ContainsKey(r.ItemCode) || IsRare(r.ItemCode, times.GetValueOrDefault(r.ItemCode, 1)))
             .Take(MaxShown)
@@ -142,6 +173,28 @@ public sealed class RareDropFeed(IMemoryCache cache, TimeProvider clock, IItemLo
                 ? new RareDrop(item.Name, item.Icon, null, r.Character, ToUtc(r.PickedLocal))
                 : new RareDrop(GameItemCode.Name(r.ItemCode, names), GameItemCode.Icon(r.ItemCode), null, r.Character, ToUtc(r.PickedLocal)))
             .ToList();
+    }
+
+    /// <summary>Nomes dos tipos (cache de 1 hora). Sem a tabela ou sem permissão: nenhum, e o nome sai do código.</summary>
+    private async Task<IReadOnlyDictionary<int, string>> TypeNamesAsync(CancellationToken ct)
+    {
+        if (itemNames is null)
+        {
+            return new Dictionary<int, string>();
+        }
+
+        try
+        {
+            return await cache.GetOrCreateAsync("home:item-type-names", async e =>
+            {
+                e.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1);
+                return await itemNames.ReadTypeNamesAsync(ct).ConfigureAwait(false);
+            }).ConfigureAwait(false) ?? new Dictionary<int, string>();
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            return new Dictionary<int, string>();
+        }
     }
 
     /// <summary>Raro: fora de ouro e poções e pego no máximo <see cref="RareMaxPickups"/> vezes na janela.</summary>
