@@ -80,7 +80,8 @@ public sealed partial class PlayerPanelService(
     ILogger<PlayerPanelService> logger,
     RankingService? ranking = null,
     ICharacterFileReader? characterFiles = null,
-    Home.ItemNameSource? itemNames = null)
+    Home.ItemNameSource? itemNames = null,
+    Home.IItemImageStore? itemImages = null)
 {
     /// <summary>Datas do jogo são gravadas no horário local do servidor (America/Sao_Paulo).</summary>
     private static readonly TimeZoneInfo GameTimeZone = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
@@ -226,6 +227,20 @@ public sealed partial class PlayerPanelService(
             }
         }
 
+        IReadOnlySet<string>? withImage = null;
+        if (itemImages is not null)
+        {
+            try
+            {
+                withImage = await itemImages.ListIdsAsync(ct).ConfigureAwait(false);
+            }
+#pragma warning disable CA1031 // Sem a lista de imagens vale o código mais provável de cada item.
+            catch (Exception) when (!ct.IsCancellationRequested)
+#pragma warning restore CA1031
+            {
+            }
+        }
+
         var characters = new List<PanelCharacter>(game.Characters.Count);
         var failed = false;
         foreach (var c in game.Characters)
@@ -249,7 +264,7 @@ public sealed partial class PlayerPanelService(
                 failed = true;
             }
 
-            characters.Add(sheet is null ? c : WithSheet(c, WithFileIds(sheet, names)));
+            characters.Add(sheet is null ? c : WithSheet(c, WithFileIds(sheet, names, withImage)));
         }
 
         return game with { Characters = characters };
@@ -271,8 +286,20 @@ public sealed partial class PlayerPanelService(
         };
     }
 
-    public static CharacterSheet WithFileIds(CharacterSheet sheet, Home.ItemNames names) =>
-        sheet with { Equipment = sheet.Equipment.Select(e => e with { FileId = names.FileId(e.Code, e.Name) }).ToList() };
+    /// <summary>
+    /// Código do arquivo de cada item equipado, para a foto e o link. Com a lista de imagens do servidor, vale o primeiro
+    /// código possível que tem imagem; sem ela (ou sem nenhum com imagem), o mais provável.
+    /// </summary>
+    public static CharacterSheet WithFileIds(CharacterSheet sheet, Home.ItemNames names, IReadOnlySet<string>? withImage = null) =>
+        sheet with
+        {
+            Equipment = sheet.Equipment.Select(e =>
+            {
+                var ids = names.FileIds(e.Code, e.Name);
+                var id = withImage is { Count: > 0 } ? ids.FirstOrDefault(withImage.Contains) ?? ids.FirstOrDefault() : ids.FirstOrDefault();
+                return e with { FileId = id };
+            }).ToList(),
+        };
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Falha ao ler o arquivo do personagem {Character}")]
     private static partial void LogSheetFailed(ILogger logger, Exception ex, string character);
