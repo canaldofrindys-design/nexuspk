@@ -1,4 +1,4 @@
-import type { PublicBanner, RareDrop } from "@/features/site/types";
+import type { ItemShowcase, PublicBanner, RareDrop } from "@/features/site/types";
 
 export type Availability = "unknown" | "online" | "offline" | "partial";
 
@@ -66,4 +66,5 @@ export type HomeSnapshot = {
   pvpTiers?: HomePvpTierLadder | null;
   biggestClan?: HomeClanLeader | null;
   rareDrops?: RareDrop[] | null;
+  showcase?: ItemShowcase[] | null;
 };

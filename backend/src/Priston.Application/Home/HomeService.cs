@@ -57,7 +57,8 @@ public sealed record HomeSnapshot(
     HomeClanLeader? SodLeader = null,
     PvpTierLadder? PvpTiers = null,
     HomeClanLeader? BiggestClan = null,
-    IReadOnlyList<RareDrop>? RareDrops = null);
+    IReadOnlyList<RareDrop>? RareDrops = null,
+    IReadOnlyList<ItemShowcase>? Showcase = null);
 
 /// <summary>
 /// Monta a homepage só com dados reais (ranking, status, notícias e eventos publicados).
@@ -115,6 +116,7 @@ public sealed class HomeService(
         HomeServerInfo server;
         IReadOnlyList<PublicBanner> banners = [];
         IReadOnlyList<RareDrop> drops = [];
+        IReadOnlyList<ItemShowcase> showcase = [];
         if (site is not null)
         {
             var snapshot = await site.GetAsync(cancellationToken).ConfigureAwait(false);
@@ -127,6 +129,10 @@ public sealed class HomeService(
             server = new HomeServerInfo(snapshot.Server.Name, snapshot.Server.Tagline, rates, snapshot.Server.CommunityLinks);
             banners = snapshot.Banners;
             drops = dropFeed is null ? snapshot.RareDrops ?? [] : await dropFeed.GetAsync(snapshot, cancellationToken).ConfigureAwait(false);
+            if (dropFeed is not null && drops.Count < RareDropFeed.MaxShown)
+            {
+                showcase = await dropFeed.GetShowcaseAsync(RareDropFeed.MaxShown - drops.Count, cancellationToken).ConfigureAwait(false);
+            }
         }
         else
         {
@@ -153,7 +159,8 @@ public sealed class HomeService(
             sod,
             tiers,
             biggest,
-            drops);
+            drops,
+            showcase);
     }
 
     /// <summary>Escada de elos pelo BP (Bronze a Grão-Mestre). Fonte fora: null.</summary>

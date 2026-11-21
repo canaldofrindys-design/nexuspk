@@ -29,7 +29,11 @@ public sealed record PublicBanner(int Id, string Title, string? Subtitle, string
 /// Drop raro anunciado pela equipe na home ("Drops raros da semana").
 /// <paramref name="Icon"/>: arte do espaço de inventário (uma das chaves de <see cref="SiteContentService.DropIcons"/>).
 /// </summary>
-public sealed record RareDrop(string Item, string Icon, string? Boss, string Player, DateTimeOffset DroppedUtc);
+/// <summary>Drop raro. <paramref name="Code"/>: código do arquivo do item ("CA182"), quando há imagem real do item.</summary>
+public sealed record RareDrop(string Item, string Icon, string? Boss, string Player, DateTimeOffset DroppedUtc, string? Code = null);
+
+/// <summary>Item real do jogo para a vitrine da home (drop de boss com imagem): código do arquivo, nome e de quem cai.</summary>
+public sealed record ItemShowcase(string Code, string Name, string? Boss);
 
 public sealed record RareDropSettings(IReadOnlyList<RareDrop> Items);
 

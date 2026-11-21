@@ -90,7 +90,7 @@ public static class GameItemCode
 /// "Drops raros da semana" automáticos: tudo que foi pego no log de itens e é raro (pouco pego no mês, fora ouro e poções),
 /// junto com os drops anunciados à mão (opcionais). Cache de 2 minutos; log fora do ar: só os anunciados.
 /// </summary>
-public sealed class RareDropFeed(IMemoryCache cache, TimeProvider clock, IItemLogReader? itemLog = null, ItemNameSource? itemNames = null)
+public sealed class RareDropFeed(IMemoryCache cache, TimeProvider clock, IItemLogReader? itemLog = null, ItemNameSource? itemNames = null, IItemImageStore? images = null)
 {
     private static readonly TimeZoneInfo GameTimeZone = TimeZoneInfo.FindSystemTimeZoneById(Priston.Domain.Time.RankingPeriods.TimeZoneId);
     private static readonly TimeSpan CacheFor = TimeSpan.FromMinutes(2);
@@ -158,13 +158,81 @@ public sealed class RareDropFeed(IMemoryCache cache, TimeProvider clock, IItemLo
         var stats = await itemLog.ReadTopPickupsAsync(Local(now.AddDays(-RarityWindowDays)), MaxScanned, ct).ConfigureAwait(false);
         var times = stats.ToDictionary(s => s.ItemCode, s => s.Times);
         var names = itemNames is null ? ItemNames.Empty : await itemNames.GetAsync(ct).ConfigureAwait(false);
+        var withImage = await ImageIdsAsync(ct).ConfigureAwait(false);
+        string? Code(int itemCode) => names.FileId(itemCode) is { } id && withImage.Contains(id) ? id : null;
         return recent
             .Where(r => byCode.ContainsKey(r.ItemCode) || IsRare(r.ItemCode, times.GetValueOrDefault(r.ItemCode, 1)))
             .Take(MaxShown)
             .Select(r => byCode.TryGetValue(r.ItemCode, out var item)
                 ? new RareDrop(item.Name, item.Icon, null, r.Character, ToUtc(r.PickedLocal))
-                : new RareDrop(names.Name(r.ItemCode), GameItemCode.Icon(r.ItemCode), names.Boss(r.ItemCode), r.Character, ToUtc(r.PickedLocal)))
+                : new RareDrop(names.Name(r.ItemCode), GameItemCode.Icon(r.ItemCode), names.Boss(r.ItemCode), r.Character, ToUtc(r.PickedLocal), Code(r.ItemCode)))
             .ToList();
+    }
+
+    /// <summary>
+    /// Vitrine para os espaços vazios da faixa: itens reais que caem de boss (1 ou 2 monstros derrubam), com imagem e nome,
+    /// fora ouro e poções. A seleção muda toda semana e é a mesma para todos. Sem arquivos do servidor: vazia.
+    /// </summary>
+    public async Task<IReadOnlyList<ItemShowcase>> GetShowcaseAsync(int count, CancellationToken ct)
+    {
+        if (itemNames is null || images is null || count <= 0)
+        {
+            return [];
+        }
+
+        try
+        {
+            var week = System.Globalization.ISOWeek.GetWeekOfYear(clock.GetUtcNow().UtcDateTime) + (100 * clock.GetUtcNow().Year);
+            var all = await cache.GetOrCreateAsync($"home:item-showcase:{week}", async e =>
+            {
+                e.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10);
+                var names = await itemNames.GetAsync(ct).ConfigureAwait(false);
+                var withImage = await ImageIdsAsync(ct).ConfigureAwait(false);
+                return names.BossDrops()
+                    .Where(d => !GameItemCode.IsCommon(d.Code))
+                    .Select(d => (d.Boss, Id: names.FileId(d.Code)))
+                    .Where(d => d.Id is not null && withImage.Contains(d.Id) && names.FileNames.ContainsKey(d.Id))
+                    .Select(d => new ItemShowcase(d.Id!, names.FileNames[d.Id!], d.Boss))
+                    .DistinctBy(i => i.Code)
+                    .OrderBy(i => Stable(i.Code + ":" + week))
+                    .Take(RareDropFeed.MaxShown)
+                    .ToList();
+            }).ConfigureAwait(false) ?? [];
+            return all.Take(count).ToList();
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            return [];
+        }
+    }
+
+    private async Task<IReadOnlySet<string>> ImageIdsAsync(CancellationToken ct)
+    {
+        if (images is null)
+        {
+            return new HashSet<string>();
+        }
+
+        try
+        {
+            return await images.ListIdsAsync(ct).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            return new HashSet<string>();
+        }
+    }
+
+    /// <summary>Hash FNV-1a: igual em toda execução (o string.GetHashCode muda a cada processo).</summary>
+    private static uint Stable(string text)
+    {
+        var h = 2166136261u;
+        foreach (var c in text)
+        {
+            h = (h ^ c) * 16777619u;
+        }
+
+        return h;
     }
 
     /// <summary>Raro: fora de ouro e poções e pego no máximo <see cref="RareMaxPickups"/> vezes na janela.</summary>
