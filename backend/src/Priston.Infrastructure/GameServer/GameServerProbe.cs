@@ -51,6 +51,13 @@ public sealed class GameServerOptions
     /// em qualquer organização de subpastas. A conta do serviço da API precisa poder ler a pasta. Vazio: sem fotos.
     /// </summary>
     public string ItemImagesFolder { get; set; } = @"C:\ServidorPT\ItemImages";
+
+    /// <summary>
+    /// Pasta com o arquivo de cada personagem (<c>DataServer\UserData\&lt;n&gt;\&lt;nick&gt;.dat</c>), de onde saem
+    /// experiência, atributos, mapa e equipamento no painel do jogador. A conta do serviço da API precisa poder ler a pasta.
+    /// Vazio: o painel mostra só o que está no banco.
+    /// </summary>
+    public string UserDataFolder { get; set; } = @"C:\ServidorPT\DataServer\UserData";
 }
 
 /// <summary>

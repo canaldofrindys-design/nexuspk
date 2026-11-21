@@ -10,6 +10,7 @@ import { getSessionToken } from "@/features/auth/session";
 import { formatDate, formatDateTime, formatNumber } from "@/features/home/format";
 import { ChangeEmailForm, ChangePasswordForm, ResendConfirmationButton, RevokeOthersButton } from "@/features/player/forms";
 import type { PlayerPanel } from "@/features/player/types";
+import { CharacterSheetCard } from "@/features/player/CharacterSheetCard";
 import { clientContext } from "@/features/auth/session";
 import { apiSend } from "@/services/api";
 import Link from "next/link";
@@ -88,8 +89,29 @@ function CharactersWindow({ panel }: { panel: PlayerPanel }) {
         </div>
       )}
       <p className="mt-2 text-xs text-silver/50">
-        Nível como o servidor grava hoje. EXP ainda não é publicada pelo servidor.
+        Nível como o servidor grava hoje.
         {panel.game?.rankTotal ? ` Ranking geral por nível entre ${formatNumber(panel.game.rankTotal)} personagens, atualizado a cada 5 minutos.` : ""}
+      </p>
+    </GameWindow>
+  );
+}
+
+function SheetsWindow({ panel }: { panel: PlayerPanel }) {
+  const withSheet = (panel.game?.characters ?? []).filter((c) => c.sheet);
+  if (!panel.gameDataAvailable || (panel.game?.characters ?? []).length === 0) return null;
+  return (
+    <GameWindow title="Ficha dos personagens" icon="personagem">
+      {withSheet.length === 0 ? (
+        <p className="text-sm text-silver/70">A ficha completa (experiência, atributos, mapa e equipamento) está indisponível no momento.</p>
+      ) : (
+        <div className="flex flex-col gap-4">
+          {withSheet.map((c) => (
+            <CharacterSheetCard key={c.name} character={c} />
+          ))}
+        </div>
+      )}
+      <p className="mt-2 text-xs text-silver/50">
+        Dados do arquivo do personagem no servidor, gravado quando ele salva ou sai do jogo. Mapa e experiência são os desse momento.
       </p>
     </GameWindow>
   );
@@ -237,6 +259,7 @@ async function Panel() {
     <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
       <div className="flex min-w-0 flex-col gap-4">
         <CharactersWindow panel={panel} />
+        <SheetsWindow panel={panel} />
         <Suspense fallback={null}>
           <SupportWindow />
         </Suspense>
@@ -254,7 +277,7 @@ async function Panel() {
 export default function PlayerPanelPage() {
   return (
     <>
-      <PageHero scene="vila-riacho" icon="conta" eyebrow="Sua conta" title="Painel do jogador" lead="Personagens, dados da conta, segurança e os seus chamados de suporte em um só lugar." />
+      <PageHero scene="vila-riacho" icon="conta" eyebrow="Sua conta" title="Painel do jogador" lead="Personagens com a ficha completa, dados da conta, segurança e os seus chamados de suporte em um só lugar." />
     <div className="mx-auto w-full max-w-7xl px-4 py-10">
       <Suspense fallback={<p className="text-sm text-silver/60">Carregando…</p>}>
         <Panel />
