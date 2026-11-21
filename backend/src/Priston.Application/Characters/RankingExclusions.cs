@@ -30,11 +30,12 @@ public sealed class RankingExclusions
     /// </summary>
     public bool Hides(string? account, string? name, int classCode)
     {
-        if (!CharacterClassNames.IsKnown(classCode))
-        {
-            return true;
-        }
+        return !CharacterClassNames.IsKnown(classCode) || HidesPerson(account, name);
+    }
 
+    /// <summary>Como <see cref="Hides"/>, sem olhar a classe (fontes que não trazem a classe, como o log de itens).</summary>
+    public bool HidesPerson(string? account, string? name)
+    {
         var n = name?.Trim() ?? string.Empty;
         if (n.Length == 0 || _characters.Contains(n))
         {

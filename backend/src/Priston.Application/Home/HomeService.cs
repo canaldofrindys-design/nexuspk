@@ -72,7 +72,8 @@ public sealed class HomeService(
     RankingQueryService? rankings = null,
     IBlessCastleOwnerReader? blessCastle = null,
     ISodRankingReader? sodPlayers = null,
-    TimeProvider? clock = null)
+    TimeProvider? clock = null,
+    RareDropFeed? dropFeed = null)
 {
     private static readonly TimeZoneInfo GameTimeZone = TimeZoneInfo.FindSystemTimeZoneById(Priston.Domain.Time.RankingPeriods.TimeZoneId);
 
@@ -125,7 +126,7 @@ public sealed class HomeService(
 
             server = new HomeServerInfo(snapshot.Server.Name, snapshot.Server.Tagline, rates, snapshot.Server.CommunityLinks);
             banners = snapshot.Banners;
-            drops = snapshot.RareDrops ?? [];
+            drops = dropFeed is null ? snapshot.RareDrops ?? [] : await dropFeed.GetAsync(snapshot, cancellationToken).ConfigureAwait(false);
         }
         else
         {
