@@ -14,9 +14,9 @@ namespace Priston.GameDatabaseIntegration.Characters;
 /// </summary>
 internal sealed class ItemLogReader(IGameDbConnectionFactory connections, IOptions<GameDatabaseOptions> options, IRankingExclusionSource exclusions) : IItemLogReader
 {
-    public async Task<IReadOnlyList<ItemPickupRow>> ReadPickupsAsync(IReadOnlyCollection<int> itemCodes, DateTime sinceLocal, int max, CancellationToken ct)
+    public async Task<IReadOnlyList<ItemPickupRow>> ReadRecentPickupsAsync(DateTime sinceLocal, int max, CancellationToken ct)
     {
-        if (itemCodes.Count == 0 || max <= 0)
+        if (max <= 0)
         {
             return [];
         }
@@ -25,16 +25,15 @@ internal sealed class ItemLogReader(IGameDbConnectionFactory connections, IOptio
         var sql = $"""
             SELECT TOP (@take) il.UserID AS Account, il.CharName AS Name, il.ItemCode AS ItemCode, il.RegistDay AS PickedLocal
             FROM {Quote(o.ItemLogDatabase)}.dbo.IL AS il
-            WHERE il.Flag = @flag AND il.RegistDay >= @since AND il.ItemCode IN @codes
+            WHERE il.Flag = @flag AND il.RegistDay >= @since AND il.ItemCode IS NOT NULL
               AND il.CharName IS NOT NULL AND LTRIM(RTRIM(il.CharName)) <> ''
               AND {NotGameMaster(o)}
             ORDER BY il.RegistDay DESC
             """;
-        var rows = await QueryAsync(sql, new { take = max * 2, flag = o.ItemPickupFlag, since = sinceLocal, codes = itemCodes.Distinct().ToArray() }, ct).ConfigureAwait(false);
+        var rows = await QueryAsync(sql, new { take = max, flag = o.ItemPickupFlag, since = sinceLocal }, ct).ConfigureAwait(false);
         var hidden = await exclusions.GetAsync(ct).ConfigureAwait(false);
         return rows
             .Where(r => r.ItemCode is not null && r.PickedLocal is not null && !hidden.HidesPerson(r.Account, r.Name))
-            .Take(max)
             .Select(r => new ItemPickupRow(r.ItemCode!.Value, r.Name!.Trim(), r.PickedLocal!.Value))
             .ToList();
     }

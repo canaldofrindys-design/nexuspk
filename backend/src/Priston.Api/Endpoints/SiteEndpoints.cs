@@ -84,7 +84,7 @@ public static class SiteEndpoints
                 {
                     var zone = TimeZoneInfo.FindSystemTimeZoneById(Priston.Domain.Time.RankingPeriods.TimeZoneId);
                     var since = TimeZoneInfo.ConvertTime(clock.GetUtcNow().AddDays(-30), zone).DateTime;
-                    var items = await itemLog.ReadTopPickupsAsync(since, 60, ct);
+                    var items = await itemLog.ReadTopPickupsAsync(since, 500, ct);
                     return Results.Ok(new
                     {
                         available = true,
