@@ -105,6 +105,43 @@ public sealed partial class ItemNames(
             ? prefix + GameItemCode.Number(code).ToString(GameItemCode.Number(code) < 100 ? "D2" : "D3", System.Globalization.CultureInfo.InvariantCulture)
             : null;
 
+    private Dictionary<string, List<string>>? byName;
+
+    /// <summary>
+    /// Código do arquivo pelo ItemCode e, quando o tipo não tem prefixo conhecido, pelo nome do item (o nome gravado no
+    /// personagem é o do arquivo do item). Com mais de um arquivo de mesmo nome, vale o de mesmo número do ItemCode.
+    /// </summary>
+    public string? FileId(int code, string? name)
+    {
+        if (FileId(code) is { } id)
+        {
+            return id;
+        }
+
+        var key = name?.Trim();
+        if (string.IsNullOrEmpty(key) || FileNames.Count == 0)
+        {
+            return null;
+        }
+
+        byName ??= FileNames
+            .GroupBy(f => f.Value.Trim(), StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.Select(f => f.Key).Order(StringComparer.OrdinalIgnoreCase).ToList(), StringComparer.OrdinalIgnoreCase);
+        if (!byName.TryGetValue(key, out var ids))
+        {
+            return null;
+        }
+
+        if (ids.Count == 1)
+        {
+            return ids[0];
+        }
+
+        var number = GameItemCode.Number(code);
+        var same = ids.Where(i => ParseFileId(i)?.Number == number).ToList();
+        return same.Count == 1 ? same[0] : null;
+    }
+
     /// <summary>
     /// Monstros que derrubam cada item, pelo código do arquivo em maiúsculas ("CA182" → ["Valento"]).
     /// Não depende do banco do jogo (os arquivos de monstro já usam o código do arquivo).
