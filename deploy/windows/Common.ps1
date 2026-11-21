@@ -197,6 +197,7 @@ function Grant-GameFileRead([hashtable]$Paths) {
         MonstersFolder   = 'C:\ServidorPT\GameServer\Monster'
         NpcFolder        = 'C:\ServidorPT\GameServer\NPC'
         ItemImagesFolder = 'C:\ServidorPT\ItemImages'
+        UserDataFolder   = 'C:\ServidorPT\DataServer\UserData'
     }
     try {
         $config = Get-Content -Raw -Path $Paths.ConfigFile -Encoding UTF8 | ConvertFrom-Json

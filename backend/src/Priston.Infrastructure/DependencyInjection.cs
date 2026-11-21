@@ -33,6 +33,7 @@ public static class DependencyInjection
         services.AddSingleton<Priston.Application.Home.IMonsterDropCatalog, MonsterFileCatalog>();
         services.AddSingleton<Priston.Application.Home.INpcShopCatalog, NpcFileCatalog>();
         services.AddSingleton<Priston.Application.Home.IItemImageStore, ItemImageFolder>();
+        services.AddSingleton<Priston.Application.Player.ICharacterFileReader, CharacterFileReader>();
         services.AddSingleton<IServerNoticeStore, ServerNoticeStore>();
         services.AddSingleton<Priston.Application.Support.ISupportStore, Support.SupportStore>();
         services.AddSingleton(TimeProvider.System);

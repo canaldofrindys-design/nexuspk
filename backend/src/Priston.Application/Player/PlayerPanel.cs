@@ -15,7 +15,8 @@ public sealed record PanelCharacter(
     int? PvpKills,
     int? PvpDeaths,
     int? RankPosition = null,
-    int? ClassRankPosition = null);
+    int? ClassRankPosition = null,
+    CharacterSheet? Sheet = null);
 
 public sealed record PanelVip(int? Plan, DateTimeOffset? StartsUtc, DateTimeOffset? EndsUtc, bool Active);
 
@@ -77,7 +78,9 @@ public sealed partial class PlayerPanelService(
     IEmailSender email,
     TimeProvider clock,
     ILogger<PlayerPanelService> logger,
-    RankingService? ranking = null)
+    RankingService? ranking = null,
+    ICharacterFileReader? characterFiles = null,
+    Home.ItemNameSource? itemNames = null)
 {
     /// <summary>Datas do jogo são gravadas no horário local do servidor (America/Sao_Paulo).</summary>
     private static readonly TimeZoneInfo GameTimeZone = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
@@ -112,6 +115,11 @@ public sealed partial class PlayerPanelService(
             {
                 LogRankingFailed(logger, ex, login);
             }
+        }
+
+        if (game is not null && characterFiles is not null && game.Characters.Count > 0)
+        {
+            game = await WithSheetsAsync(game, ct).ConfigureAwait(false);
         }
 
         return new PlayerPanel(
@@ -197,6 +205,61 @@ public sealed partial class PlayerPanelService(
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Falha ao ler os dados do jogo da conta {Login}")]
     private static partial void LogGameDataFailed(ILogger logger, Exception ex, string login);
+
+    /// <summary>
+    /// Ficha de cada personagem pelo arquivo dele no servidor do jogo (experiência, atributos, mapa e equipamento),
+    /// com o código do arquivo de cada item para a foto e o link. Arquivo que falta ou não abre: o personagem fica sem ficha.
+    /// </summary>
+    private async Task<PlayerGameData> WithSheetsAsync(PlayerGameData game, CancellationToken ct)
+    {
+        var names = Home.ItemNames.Empty;
+        if (itemNames is not null)
+        {
+            try
+            {
+                names = await itemNames.GetAsync(ct).ConfigureAwait(false);
+            }
+#pragma warning disable CA1031 // Sem os nomes dos itens a ficha sai sem foto.
+            catch (Exception) when (!ct.IsCancellationRequested)
+#pragma warning restore CA1031
+            {
+            }
+        }
+
+        var characters = new List<PanelCharacter>(game.Characters.Count);
+        var failed = false;
+        foreach (var c in game.Characters)
+        {
+            if (failed)
+            {
+                characters.Add(c);
+                continue;
+            }
+
+            CharacterSheet? sheet = null;
+            try
+            {
+                sheet = await characterFiles!.ReadAsync(c.Name, ct).ConfigureAwait(false);
+            }
+#pragma warning disable CA1031 // Pasta fora do alcance: o painel abre sem a ficha.
+            catch (Exception ex) when (!ct.IsCancellationRequested)
+#pragma warning restore CA1031
+            {
+                LogSheetFailed(logger, ex, c.Name);
+                failed = true;
+            }
+
+            characters.Add(sheet is null ? c : c with { Sheet = WithFileIds(sheet, names) });
+        }
+
+        return game with { Characters = characters };
+    }
+
+    public static CharacterSheet WithFileIds(CharacterSheet sheet, Home.ItemNames names) =>
+        sheet with { Equipment = sheet.Equipment.Select(e => e with { FileId = names.FileId(e.Code) }).ToList() };
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Falha ao ler o arquivo do personagem {Character}")]
+    private static partial void LogSheetFailed(ILogger logger, Exception ex, string character);
 
     /// <summary>Mostra só o começo do IP: suficiente para o jogador reconhecer o acesso.</summary>
     public static string? MaskIp(string? ip)
