@@ -18,7 +18,8 @@ internal sealed class PvpRankingReader(IGameDbConnectionFactory connections, IOp
         var sql = $"""
             SELECT bp.Account AS Account, bp.Nick AS Name, ISNULL(bp.Class, 0) AS ClassCode, ISNULL(bp.BPs, 0) AS BattlePoints,
                    bp.BPsSemanal AS WeeklyBattlePoints, bp.KillsPvP AS Kills, bp.MortesPvP AS Deaths,
-                   CAST(CASE WHEN bp.IsReiPvP = 1 THEN 1 ELSE 0 END AS bit) AS IsPvpKing
+                   CAST(CASE WHEN bp.IsReiPvP = 1 THEN 1 ELSE 0 END AS bit) AS IsPvpKing,
+                   ISNULL(bp.PontosPvP, 0) AS PvpPoints
             FROM {Quote(o.UserDatabase)}.dbo.BattlePoints AS bp
             WHERE bp.Nick IS NOT NULL AND LTRIM(RTRIM(bp.Nick)) <> ''
               AND NOT EXISTS (
@@ -30,11 +31,11 @@ internal sealed class PvpRankingReader(IGameDbConnectionFactory connections, IOp
         var rows = await conn.QueryAsync<Row>(new CommandDefinition(sql, commandTimeout: o.CommandTimeoutSeconds, cancellationToken: ct)).ConfigureAwait(false);
         return rows
             .Where(r => !hidden.Hides(r.Account, r.Name, r.ClassCode))
-            .Select(r => new PvpRow(r.Name.Trim(), r.ClassCode, r.BattlePoints, r.WeeklyBattlePoints, r.Kills, r.Deaths, r.IsPvpKing))
+            .Select(r => new PvpRow(r.Name.Trim(), r.ClassCode, r.BattlePoints, r.WeeklyBattlePoints, r.Kills, r.Deaths, r.IsPvpKing, r.PvpPoints))
             .ToList();
     }
 
-    private sealed record Row(string? Account, string Name, int ClassCode, int BattlePoints, int WeeklyBattlePoints, int Kills, int Deaths, bool IsPvpKing);
+    private sealed record Row(string? Account, string Name, int ClassCode, int BattlePoints, int WeeklyBattlePoints, int Kills, int Deaths, bool IsPvpKing, int PvpPoints);
 }
 
 /// <summary>Ranking de clãs de <c>ClanDB.dbo.CL</c>. Lê ClanZang (personagem líder); a conta do líder (UserID) não.</summary>

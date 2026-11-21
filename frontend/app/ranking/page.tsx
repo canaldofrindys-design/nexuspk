@@ -14,6 +14,7 @@ import type { ClanEntry, LevelEntry, PvpEntry, RankingPage } from "@/features/ra
 import { apiSend } from "@/services/api";
 import { KitIcon, PodiumMedal, type KitIconName } from "@/components/ui/KitIcon";
 import { ArtLink, kitArt } from "@/components/ui/ArtLink";
+import { PatentBadge } from "@/features/pvp/PatentBadge";
 
 export const metadata: Metadata = { title: "Ranking", description: "Ranking de nível, PvP e clãs do NexusPK." };
 
@@ -118,6 +119,9 @@ function PvpTable({ data }: { data: RankingPage<PvpEntry> }) {
           <tr key={c.name} className="border-t border-steel/60">
             <Position n={c.position} />
             <td className="py-1.5">
+              <span className="mr-1.5">
+                <PatentBadge level={c.patent} />
+              </span>
               <CharacterLink name={c.name} />
               {c.isPvpKing ? <span className="ml-2 border border-gold/60 px-1 text-xs text-gold-bright">Rei do PvP</span> : null}
             </td>

@@ -1,18 +1,19 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { pranchaArt, rankEmblems } from "@/components/ui/ArtLink";
+import { pranchaArt } from "@/components/ui/ArtLink";
+import { patentSrc, patents } from "@/features/pvp/patents";
 import { Countdown } from "./Countdown";
 import { formatDateTime, formatNumber } from "./format";
 import { ItemSlots } from "./PortalSections";
 import { RareDropsStrip, type DropView } from "./RareDropsStrip";
 import { nextBlessCastle } from "./serverEvents";
-import type { HomeEventItem, HomeSnapshot } from "./types";
+import type { HomeEventItem, HomePvpTier, HomeSnapshot } from "./types";
 
 /*
  * "Jornada do Herói": o centro da prancha deixa de ser só decoração e mostra o servidor vivo.
  * 1) Drops raros da semana (anunciados pela equipe no painel, em Banners);
- * 2) escada de elos PvP pelo ranking de BP, com quantos estão em cada elo e o melhor de cada um;
+ * 2) as patentes PvP do jogo (pontos PvP e Rei PvP), com quantos estão em cada uma e o melhor de cada;
  * 3) os cinco cards com informação ao vivo: próximo boss, evento de agora, líder da arena,
  *    dono do Bless Castle e o maior clã.
  * Sem dado, cada parte volta ao visual de antes com uma linha curta dizendo o porquê.
@@ -79,61 +80,59 @@ export function RareDropsRow({ home }: { home: HomeSnapshot | null }) {
   );
 }
 
-const pct = (share: number) => `${Math.round(share * 100)}%`;
+const range = (t: HomePvpTier) =>
+  t.minPoints == null ? "título do Rei PvP" : t.maxPoints == null ? `${formatNumber(t.minPoints)}+ pontos PvP` : `${formatNumber(t.minPoints)} a ${formatNumber(t.maxPoints)} pontos PvP`;
 
 export function PvpLadderRow({ home }: { home: HomeSnapshot | null }) {
   const ladder = home?.pvpTiers ?? null;
-  const byKey = new Map((ladder?.tiers ?? []).map((t) => [t.key, t]));
-  const keyOf = (name: string) =>
-    name
-      .normalize("NFD")
-      .replace(/[̀-ͯ]/g, "")
-      .toLowerCase()
-      .replace(/\s+/g, "-");
-  const gm = byKey.get("grao-mestre")?.top ?? null;
+  const byLevel = new Map((ladder?.tiers ?? []).map((t) => [t.level, t]));
+  const king = byLevel.get(8)?.top ?? null;
   return (
     <section aria-labelledby="elos-t">
       <RowTitle
         id="elos-t"
         aside={
-          gm ? (
+          king ? (
             <>
-              Grão-Mestre atual:{" "}
-              <Link href={`/personagens/${encodeURIComponent(gm.name)}`} className="text-gold-bright hover:underline">
-                {gm.name}
+              Rei PvP atual:{" "}
+              <Link href={`/personagens/${encodeURIComponent(king.name)}`} className="text-gold-bright hover:underline">
+                {king.name}
               </Link>
             </>
           ) : undefined
         }
       >
-        Elos PvP
+        Patentes PvP
       </RowTitle>
-      <ul className="grid grid-cols-4 items-start justify-items-center gap-x-1 gap-y-3 sm:grid-cols-7">
-        {rankEmblems.map((e) => {
-          const tier = byKey.get(keyOf(e.name));
-          const isGm = e.name === "Grão-Mestre";
-          const hint = tier
-            ? `${e.name}: ${isGm ? "o" : "até o"} ${pct(tier.topShare)} do topo do ranking de BP${tier.minBattlePoints != null ? `, a partir de ${formatNumber(tier.minBattlePoints)} BP` : ""}`
-            : e.name;
+      <ul className="grid grid-cols-4 items-start justify-items-center gap-x-1 gap-y-3">
+        {patents.map((p) => {
+          const tier = byLevel.get(p.level);
+          const isKing = p.level === 8;
+          const hint = tier ? `${p.name}: ${range(tier)}. Bônus: ${tier.bonus}` : p.name;
           return (
-            <li key={e.name} className={`nx-tier ${isGm && tier?.top ? "nx-tier--gm" : ""}`}>
+            <li key={p.level} className={`nx-tier ${isKing && tier?.top ? "nx-tier--gm" : ""}`}>
               <Link href="/ranking?tipo=pvp" className="art-link flex flex-col items-center" title={hint} aria-label={`${hint}. Ver o ranking PvP`}>
                 <Image
-                  src={e.src}
+                  src={patentSrc(p.emblem)}
                   alt=""
-                  width={e.width}
-                  height={e.height}
+                  width={p.width}
+                  height={p.height}
                   unoptimized
-                  className="h-[64px] w-auto object-contain sm:h-[80px] xl:h-[96px]"
+                  className="h-[56px] w-auto object-contain sm:h-[68px] xl:h-[80px]"
                 />
               </Link>
+              <span className="nx-tier__name">{p.name}</span>
               {tier ? (
                 <>
                   <span className="nx-tier__count tabular">
                     {formatNumber(tier.players)} {tier.players === 1 ? "jogador" : "jogadores"}
                   </span>
                   {tier.top ? (
-                    <Link href={`/personagens/${encodeURIComponent(tier.top.name)}`} className="nx-tier__top" title={`Melhor do elo: ${tier.top.name}, ${formatNumber(tier.top.battlePoints)} BP`}>
+                    <Link
+                      href={`/personagens/${encodeURIComponent(tier.top.name)}`}
+                      className="nx-tier__top"
+                      title={`Melhor da patente: ${tier.top.name}, ${formatNumber(tier.top.pvpPoints ?? 0)} pontos PvP`}
+                    >
                       {tier.top.name}
                     </Link>
                   ) : (
@@ -147,10 +146,10 @@ export function PvpLadderRow({ home }: { home: HomeSnapshot | null }) {
       </ul>
       <p className="nx-row-note">
         {!ladder
-          ? "Elos indisponíveis no momento."
+          ? "Patentes indisponíveis no momento."
           : ladder.total === 0
-            ? "Ninguém pontuou em batalha ainda: o primeiro BP já vira Grão-Mestre."
-            : `Elo pela posição no ranking de BP entre ${formatNumber(ladder.total)} guerreiros: Grão-Mestre é o 1% do topo.`}
+            ? "Ninguém chegou a 100 pontos PvP ainda: é o que falta para a primeira patente."
+            : `A mesma regra do jogo: a cada 100 pontos PvP sobe uma patente, e com 700 vira Mestre Supremo. ${formatNumber(ladder.total)} ${ladder.total === 1 ? "guerreiro tem" : "guerreiros têm"} patente.`}
       </p>
     </section>
   );

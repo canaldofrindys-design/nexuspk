@@ -163,7 +163,7 @@ public sealed class HomeService(
             showcase);
     }
 
-    /// <summary>Escada de elos pelo BP (Bronze a Grão-Mestre). Fonte fora: null.</summary>
+    /// <summary>Patentes PvP do jogo (pontos PvP e Rei PvP). Fonte fora: null.</summary>
     private async Task<PvpTierLadder?> PvpTiersAsync(CancellationToken ct)
     {
         if (rankings is null)

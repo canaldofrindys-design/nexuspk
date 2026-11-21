@@ -22,6 +22,8 @@ export type HomePvpEntry = {
   kills: number;
   deaths: number;
   isPvpKing: boolean;
+  pvpPoints?: number;
+  patent?: number;
 };
 export type HomeCharacter = { name: string; classCode: number; className: string; level: number | null };
 export type HomeClan = {
@@ -38,13 +40,19 @@ export type HomeClan = {
 export type HomeSodPlayer = { name: string; classCode: number; className: string; level: number; points: number; clan: string | null };
 /** available false: a fonte falhou. clan null com a fonte no ar: ninguém lidera agora. */
 export type HomeClanLeader = { available: boolean; clan: HomeClan | null; topPlayer?: HomeSodPlayer | null };
-/** Elo PvP (Bronze a Grão-Mestre) pela posição no ranking de BP. topShare: fatia acumulada do topo (0.01 = 1%). */
+/**
+ * Patente PvP do jogo (1 a 7 pelos pontos PvP, 8 = Rei PvP). minPoints/maxPoints: faixa de pontos PvP
+ * (maxPoints null na última; os dois null no Rei). emblem: nome do emblema do cliente em /kit/patentes.
+ */
 export type HomePvpTier = {
+  level: number;
   key: string;
   name: string;
-  topShare: number;
+  minPoints: number | null;
+  maxPoints: number | null;
+  bonus: string;
+  emblem: string;
   players: number;
-  minBattlePoints: number | null;
   top: HomePvpEntry | null;
 };
 export type HomePvpTierLadder = { total: number; tiers: HomePvpTier[] };

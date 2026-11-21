@@ -8,6 +8,7 @@ import { GameWindow } from "@/components/ui/GameWindow";
 import { formatNumber } from "@/features/home/format";
 import type { CharacterProfile } from "@/features/ranking/types";
 import { apiSend } from "@/services/api";
+import { PatentBadge } from "@/features/pvp/PatentBadge";
 
 export async function generateMetadata({ params }: PageProps<"/personagens/[nome]">): Promise<Metadata> {
   const { nome } = await params;
@@ -72,6 +73,12 @@ async function Profile({ params }: { params: Promise<{ nome: string }> }) {
               <span className="tabular text-data-info">
                 {formatNumber(c.pvp.kills)} / {formatNumber(c.pvp.deaths)}
               </span>
+            </Row>
+            <Row label="Patente">
+              {c.pvp.patent ? <PatentBadge level={c.pvp.patent} size={28} withName /> : <span className="text-silver/70">Nenhuma (a primeira vem com 100 pontos PvP)</span>}
+            </Row>
+            <Row label="Pontos PvP">
+              <span className="tabular text-data-info">{formatNumber(c.pvp.pvpPoints ?? 0)}</span>
             </Row>
             {c.pvp.isPvpKing ? <Row label="Título">Rei do PvP</Row> : null}
           </dl>
