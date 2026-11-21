@@ -35,9 +35,9 @@ public static class GameFunctions
     [
         new("box-send", "Enviar Box Donate", "Entrega uma Box Donate (ou item) para a conta do jogador.", GameFunctionMode.Insert,
             Capability.ManageEconomy, Capability.ManageEconomy, ["ServerDB", "NexusPKAdmin", "ItemDB"], ["box", "donat", "entreg", "distrib", "present", "post", "item"]),
-        new("box-prices", "Preços do NPC Box Donate", "Preço das box e dos pacotes de coins vendidos no NPC Box Donate.", GameFunctionMode.Edit,
+        new("box-prices", "Preços do NPC Box Donate", "Preço (em reais) e disponibilidade das Box Donate e dos pacotes de KC vendidos no NPC Box Donate.", GameFunctionMode.Edit,
             Capability.ManageGameData, Capability.ManageGameData, ["ServerDB", "CoinShopDB"], ["box", "donat", "preco", "price", "pacote", "package", "coin"]),
-        new("skin-shop", "Loja de Skin", "Itens, preços e disponibilidade da loja de skins.", GameFunctionMode.Edit,
+        new("skin-shop", "Loja de Skin (Coin Shop)", "Itens e preços em KC da Coin Shop, com a galeria de skins.", GameFunctionMode.Edit,
             Capability.ManageGameData, Capability.ManageGameData, ["CoinShopDB", "ServerDB"], ["skin", "costume", "traje", "visual", "shop"]),
         new("time-shop", "Loja de minutos", "Itens e preços da loja paga com minutos.", GameFunctionMode.Edit,
             Capability.ManageGameData, Capability.ManageGameData, ["TimeShopDB"], ["time", "tempo", "minut", "shop", "item"]),
@@ -52,6 +52,32 @@ public static class GameFunctions
     ];
 
     public static GameFunction? Find(string? key) => All.FirstOrDefault(f => f.Key == key);
+
+    /// <summary>Quem aparece como autor das tabelas que já vêm ligadas.</summary>
+    public const string BuiltInAuthor = "padrão do servidor";
+
+    /// <summary>
+    /// Tabelas que este servidor já usa, conferidas no diagnóstico das lojas (21/11/2026). A função funciona sem
+    /// "Configurar"; o superadministrador ainda pode trocar a tabela, e a configuração salva vale mais que esta.
+    /// </summary>
+    public static readonly IReadOnlyDictionary<string, GameSourceBinding> BuiltIn = new Dictionary<string, GameSourceBinding>(StringComparer.Ordinal)
+    {
+        // Produtos do NPC Box Donate: 11 Box Donate (Spec 1..11) e 6 pacotes de KC (Spec 12..17), preço em centavos de real.
+        ["box-prices"] = Built("box-prices", "NexusPKAdmin", "NexusPixProducts", ["ID"], ["Title", "PriceCents", "Enabled"], ["Title"], null, false, false, false),
+
+        // Coin Shop (KC) com a galeria de skins: CoinShopDB.ItemList, sem chave; código + seção identificam a linha.
+        ["skin-shop"] = Built("skin-shop", "CoinShopDB", "ItemList", ["szItemCode", "ItemSection"], ["Price"], ["szItemCode"], null, true, true, false),
+
+        // Loja de minutos: mesmo formato, em TimeShopDB.
+        ["time-shop"] = Built("time-shop", "TimeShopDB", "ItemList", ["szItemCode", "ItemSection"], ["Price"], ["szItemCode"], null, true, true, false),
+
+        // Log de itens do jogo; RegistDay só ordena (mais novos primeiro).
+        ["item-logs"] = Built("item-logs", "ItemLogDB", "IL", ["RegistDay"], [], ["UserID", "CharName"], "UserID", false, false, true),
+    };
+
+    private static GameSourceBinding Built(string key, string db, string table, string[] keys, string[] editable, string[] search, string? account,
+        bool insert, bool delete, bool newest) =>
+        new(key, db, table, keys, editable, search, account, insert, delete, newest, BuiltInAuthor, DateTimeOffset.UnixEpoch);
 }
 
 /// <summary>Coluna real de uma tabela do jogo (lida de sys.columns).</summary>
