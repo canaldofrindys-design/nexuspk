@@ -43,6 +43,9 @@ public sealed class GameDatabaseOptions
     /// <summary>Banco com os nomes dos tipos de item (tabela ItemType).</summary>
     public string ItemDatabase { get; set; } = "ItemDB";
 
+    /// <summary>Banco do sistema de donate do servidor (NexusDonatePackages, NexusDonateItems, NexusDonateRuntime).</summary>
+    public string DonateDatabase { get; set; } = "NexusPKAdmin";
+
     /// <summary>Valor de IL.Flag que o servidor grava quando o personagem pega um item do chão.</summary>
     public int ItemPickupFlag { get; set; }
 

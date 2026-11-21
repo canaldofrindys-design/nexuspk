@@ -16,7 +16,12 @@ const modeLabel = {
 } as const;
 
 /** Funções que, sem tabela configurada, abrem a consulta lida dos arquivos do servidor. */
-const fromFiles: Record<string, { href: string; note: string }> = {
+const fromFiles: Record<string, { href: string; note: string; label?: string }> = {
+  "box-send": {
+    href: "/admin/jogo/box-send",
+    note: "NexusPKAdmin, o mesmo sistema da Coin Shop",
+    label: "Donate do servidor",
+  },
   "item-catalog": {
     href: "/admin/jogo/catalogo",
     note: "GameServer\\OpenItem + fotos do cliente",
@@ -29,12 +34,6 @@ const fromFiles: Record<string, { href: string; note: string }> = {
     href: "/admin/jogo/lojas-npc",
     note: "GameServer\\NPC\\*.npc",
   },
-};
-
-/** Funções que ficam desligadas de propósito neste servidor, com o motivo. */
-const offOnPurpose: Record<string, string> = {
-  "box-send":
-    "Desligado de propósito: as Box Donate saem pelo sistema de donate do servidor, que monta o item com checksum.",
 };
 
 async function Body() {
@@ -55,7 +54,7 @@ async function Body() {
       ) : null}
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {r.data.functions.map((f) => {
-          const file = !f.configured ? fromFiles[f.key] : undefined;
+          const file = !f.configured || f.key === "box-send" ? fromFiles[f.key] : undefined;
           const href = file?.href ?? `/admin/jogo/${f.key}`;
           return (
             <div
@@ -71,11 +70,12 @@ async function Body() {
                     {f.label}
                   </Link>
                   <Pill tone={f.configured || file ? "ok" : "warn"}>
-                    {f.configured
-                      ? modeLabel[f.mode]
-                      : file
-                        ? "Arquivos do servidor"
-                        : "Não configurado"}
+                    {file?.label ??
+                      (f.configured
+                        ? modeLabel[f.mode]
+                        : file
+                          ? "Arquivos do servidor"
+                          : "Não configurado")}
                   </Pill>
                 </div>
                 <p className="mt-1 text-xs text-silver/60">{f.description}</p>
@@ -86,12 +86,7 @@ async function Body() {
                 ) : null}
                 {file ? (
                   <p className="mt-2 font-mono text-[0.7rem] text-silver/45">
-                    {file.note} (consulta)
-                  </p>
-                ) : null}
-                {!f.configured && !file && offOnPurpose[f.key] ? (
-                  <p className="mt-2 text-[0.7rem] text-silver/50">
-                    {offOnPurpose[f.key]}
+                    {file.note}{file.label ? "" : " (consulta)"}
                   </p>
                 ) : null}
               </div>

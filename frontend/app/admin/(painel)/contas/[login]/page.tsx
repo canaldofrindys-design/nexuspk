@@ -136,6 +136,11 @@ async function Body({ params }: { params: Promise<{ login: string }> }) {
         >
           <p className="tabular text-3xl text-data-name">{a.coins == null ? "—" : a.coins.toLocaleString("pt-BR")}</p>
           <p className="mt-1 text-xs text-silver/55">Saldo em CoinShopDB.UserInfo. Toda mudança fica na auditoria com o antes e o depois.</p>
+          {can("ManageEconomy") ? (
+            <Link href={`/admin/jogo/box-send?${new URLSearchParams({ conta: a.login })}`} className="mt-3 inline-block text-sm text-arcane hover:underline">
+              Enviar Box Donate para esta conta →
+            </Link>
+          ) : null}
         </GameWindow>
 
         <GameWindow
