@@ -108,38 +108,59 @@ public sealed partial class ItemNames(
     private Dictionary<string, List<string>>? byName;
 
     /// <summary>
-    /// Código do arquivo pelo ItemCode e, quando o tipo não tem prefixo conhecido, pelo nome do item (o nome gravado no
-    /// personagem é o do arquivo do item). Com mais de um arquivo de mesmo nome, vale o de mesmo número do ItemCode.
+    /// Código do arquivo pelo ItemCode e pelo nome do item: o primeiro de <see cref="FileIds"/>.
     /// </summary>
     public string? FileId(int code, string? name)
     {
-        if (FileId(code) is { } id)
+        var ids = FileIds(code, name);
+        return ids.Count > 0 ? ids[0] : null;
+    }
+
+    /// <summary>
+    /// Códigos de arquivo possíveis para um item, do mais confiável para o menos. O nome gravado no personagem é o do
+    /// arquivo do item, então um nome que só existe em um arquivo vem primeiro (o prefixo do tipo pode sair errado quando
+    /// a tabela de tipos do banco tem siglas repetidas). Depois vem o código pelo prefixo do tipo e, com mais de um
+    /// arquivo de mesmo nome, o de mesmo número do ItemCode.
+    /// </summary>
+    public IReadOnlyList<string> FileIds(int code, string? name)
+    {
+        var list = new List<string>(2);
+        var ids = IdsByName(name);
+        if (ids.Count == 1)
         {
-            return id;
+            list.Add(ids[0]);
         }
 
+        if (FileId(code) is { } id && !list.Contains(id, StringComparer.OrdinalIgnoreCase))
+        {
+            list.Add(id);
+        }
+
+        if (ids.Count > 1)
+        {
+            var number = GameItemCode.Number(code);
+            var same = ids.Where(i => ParseFileId(i)?.Number == number).ToList();
+            if (same.Count == 1 && !list.Contains(same[0], StringComparer.OrdinalIgnoreCase))
+            {
+                list.Add(same[0]);
+            }
+        }
+
+        return list;
+    }
+
+    private List<string> IdsByName(string? name)
+    {
         var key = name?.Trim();
         if (string.IsNullOrEmpty(key) || FileNames.Count == 0)
         {
-            return null;
+            return [];
         }
 
         byName ??= FileNames
             .GroupBy(f => f.Value.Trim(), StringComparer.OrdinalIgnoreCase)
             .ToDictionary(g => g.Key, g => g.Select(f => f.Key).Order(StringComparer.OrdinalIgnoreCase).ToList(), StringComparer.OrdinalIgnoreCase);
-        if (!byName.TryGetValue(key, out var ids))
-        {
-            return null;
-        }
-
-        if (ids.Count == 1)
-        {
-            return ids[0];
-        }
-
-        var number = GameItemCode.Number(code);
-        var same = ids.Where(i => ParseFileId(i)?.Number == number).ToList();
-        return same.Count == 1 ? same[0] : null;
+        return byName.TryGetValue(key, out var ids) ? ids : [];
     }
 
     /// <summary>

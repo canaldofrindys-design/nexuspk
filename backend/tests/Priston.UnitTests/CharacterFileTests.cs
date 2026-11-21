@@ -144,6 +144,33 @@ public sealed class CharacterFileTests
     }
 
     [Fact]
+    public void Item_name_that_only_one_file_has_beats_a_wrong_type_prefix()
+    {
+        // Armor e Robe com a mesma sigla "DA" no banco: o prefixo do tipo da armadura sai errado ("DA2"), mas o nome
+        // gravado no personagem só existe no arquivo DA130.
+        var names = ItemNames.Build(
+            [new ItemTypeInfo(0x0201, "Armor", "DA2"), new ItemTypeInfo(0x0202, "Boots", "DB1")],
+            new Dictionary<string, string> { ["DA130"] = "Armadura Scarn", ["DA223"] = "Roupão Scarn", ["DB126"] = "Botas Scarn" });
+        var sheet = CharacterFile.Parse(File("A", 10, 0, 3,
+            (3, 0x02011e00, "Armadura Scarn"), (10, 0x02021a00, "Botas Scarn")), "A", Saved)!;
+
+        var ids = PlayerPanelService.WithFileIds(sheet, names).Equipment.ToDictionary(e => e.Slot, e => e.FileId);
+
+        Assert.Equal("DA130", ids[3]);
+        Assert.Equal("DB126", ids[10]);
+    }
+
+    [Fact]
+    public void With_the_image_list_the_photo_uses_a_code_that_has_an_image()
+    {
+        var names = ItemNames.Build([new ItemTypeInfo(0x0203, "Gauntlets", "DG1")], new Dictionary<string, string>());
+        var sheet = CharacterFile.Parse(File("A", 10, 0, 3, (9, 0x02031a00, "Luvas Scarn")), "A", Saved)!;
+
+        Assert.Equal("DG126", PlayerPanelService.WithFileIds(sheet, names, new HashSet<string>(["DG126"])).Equipment[0].FileId);
+        Assert.Equal("DG126", PlayerPanelService.WithFileIds(sheet, names, new HashSet<string>(["DB101"])).Equipment[0].FileId);
+    }
+
+    [Fact]
     public void New_character_takes_class_and_level_from_the_file_when_the_ranking_table_does_not_have_them_yet()
     {
         var data = File("Frindys", 200, 0, 3);
