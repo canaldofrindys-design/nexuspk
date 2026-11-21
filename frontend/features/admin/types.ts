@@ -246,3 +246,8 @@ export type TableSuggestion = { name: string; rows: number; suggested: boolean }
 /** Item do servidor: código do arquivo ("WA161"), nome (pasta OpenItem) e se há imagem (copiada do cliente). */
 export type CatalogItem = { id: string; name: string | null; image: boolean };
 export type ItemCatalog = { images: number; items: CatalogItem[] };
+
+/** Monstro lido dos arquivos do servidor (Monster\*.inf), com as linhas de drop. */
+export type MonsterDropView = { chance: string; gold: string | null; items: CatalogItem[] };
+export type MonsterView = { name: string; file: string; hp: number | null; drops: MonsterDropView[] };
+export type MonsterList = { available: boolean; monsters: MonsterView[] };

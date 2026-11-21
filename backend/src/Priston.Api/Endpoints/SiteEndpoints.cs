@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 using Priston.Application.Admin;
 using Priston.Application.Home;
 using Priston.Application.Site;
@@ -153,6 +154,59 @@ public static class SiteEndpoints
                     images = withImage.Count,
                     items = ids.Select(id => new { id, name = names.FileNames.GetValueOrDefault(id), image = withImage.Contains(id) }),
                 });
+            }, ct));
+
+        // Drops dos monstros lidos dos arquivos do servidor (Monster\*.inf), com nome e imagem dos itens. Só consulta.
+        admin.MapGet("/monsters", async (StaffAuthService auth, IServiceProvider services, IMemoryCache cache, HttpContext http, CancellationToken ct) =>
+            await AdminEndpoints.Guard(auth, http, Capability.ViewDashboard, async _ =>
+            {
+                if (services.GetService<IMonsterDropCatalog>() is not { } monsters)
+                {
+                    return Results.Ok(new { available = false, monsters = Array.Empty<object>() });
+                }
+
+                try
+                {
+                    var list = await cache.GetOrCreateAsync("admin:monsters", async e =>
+                    {
+                        e.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5);
+                        return await monsters.ReadMonstersAsync(ct);
+                    }) ?? [];
+                    var names = services.GetService<ItemNameSource>() is { } source ? await source.GetAsync(ct) : ItemNames.Empty;
+                    IReadOnlySet<string> withImage = new HashSet<string>();
+                    if (services.GetService<IItemImageStore>() is { } images)
+                    {
+                        try
+                        {
+                            withImage = await images.ListIdsAsync(ct);
+                        }
+                        catch (Exception ex) when (ex is not OperationCanceledException)
+                        {
+                            withImage = new HashSet<string>();
+                        }
+                    }
+
+                    return Results.Ok(new
+                    {
+                        available = true,
+                        monsters = list.Select(m => new
+                        {
+                            m.Name,
+                            m.File,
+                            m.Hp,
+                            drops = m.Drops.Select(d => new
+                            {
+                                d.Chance,
+                                d.Gold,
+                                items = d.Items.Select(id => new { id, name = names.FileNames.GetValueOrDefault(id), image = withImage.Contains(id) }),
+                            }),
+                        }),
+                    });
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    return Results.Ok(new { available = false, monsters = Array.Empty<object>() });
+                }
             }, ct));
 
         // Banners (mesma permissão de notícias e eventos)
