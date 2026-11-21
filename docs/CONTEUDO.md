@@ -33,3 +33,11 @@ Texto simples, sem HTML (qualquer marcação aparece como texto):
 ## Cadastro
 
 Pelo painel da equipe em `/admin/noticias` e `/admin/eventos` (funções moderador, administrador e superadministrador). Os horários do formulário são de Brasília. O site mostra a alteração na hora. Ver `docs/ADMIN.md`.
+
+## Jornada do Herói (centro da home)
+
+A faixa do meio da home mostra o servidor ao vivo, em três fileiras:
+
+1. **Drops raros da semana**: a equipe anuncia em `/admin/banners`, no quadro "Drops raros da semana" (item, arte, boss, personagem e quando caiu, no horário de Brasília). A home mostra os drops dos últimos 7 dias; passar o mouse ou tocar num item mostra quem pegou e de qual boss. Sem drops na semana, voltam os itens que levam aos guias. Guardado em `PortalDB.dbo.SiteSetting` (chave `drops`, migração `0010`).
+2. **Elos PvP**: calculados sozinhos pelo ranking de BP (já sem equipe e contas escondidas). Pela posição: Grão-Mestre é o 1% do topo, Mestre até 4%, Diamante até 10%, Platina até 20%, Ouro até 40%, Prata até 70% e o resto Bronze. O 1º do ranking é sempre Grão-Mestre; empate em BP fica no mesmo elo. Cada elo mostra quantos jogadores tem e o melhor dele.
+3. **Cards ao vivo**: próximo boss (evento da agenda com categoria `boss`, com contagem regressiva), evento de agora ou o próximo, líder da arena (1º em BP), dono do Bless Castle com a contagem até a próxima guerra e o maior clã (mais membros).

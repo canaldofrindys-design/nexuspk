@@ -56,6 +56,13 @@ public static class SiteEndpoints
         admin.MapPut("/site/downloads", async ([FromBody] DownloadSettingsInput body, StaffAuthService auth, SiteContentService site, HttpContext http, CancellationToken ct) =>
             await AdminEndpoints.Guard(auth, http, Capability.ManageSite, async me => AdminEndpoints.Saved(await site.SaveDownloadSettingsAsync(me, body, AuthEndpoints.Client(http), ct)), ct));
 
+        // Drops raros da semana (mesma permissão de notícias, eventos e banners)
+        admin.MapGet("/site/drops", async (StaffAuthService auth, SiteContentService site, HttpContext http, CancellationToken ct) =>
+            await AdminEndpoints.Guard(auth, http, Capability.ManageContent, async _ => Results.Ok(await site.GetRareDropSettingsAsync(ct)), ct));
+
+        admin.MapPut("/site/drops", async ([FromBody] RareDropSettingsInput body, StaffAuthService auth, SiteContentService site, HttpContext http, CancellationToken ct) =>
+            await AdminEndpoints.Guard(auth, http, Capability.ManageContent, async me => AdminEndpoints.Saved(await site.SaveRareDropSettingsAsync(me, body, AuthEndpoints.Client(http), ct)), ct));
+
         // Banners (mesma permissão de notícias e eventos)
         admin.MapGet("/banners", async (StaffAuthService auth, SiteContentService site, HttpContext http, CancellationToken ct) =>
             await AdminEndpoints.Guard(auth, http, Capability.ManageContent, async _ => Results.Ok(await site.ListBannersAsync(ct)), ct));

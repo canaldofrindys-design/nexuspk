@@ -54,7 +54,10 @@ public sealed record HomeSnapshot(
     IReadOnlyList<PvpEntry>? TopBattlePoints = null,
     bool BattlePointsAvailable = false,
     HomeClanLeader? BlessCastle = null,
-    HomeClanLeader? SodLeader = null);
+    HomeClanLeader? SodLeader = null,
+    PvpTierLadder? PvpTiers = null,
+    HomeClanLeader? BiggestClan = null,
+    IReadOnlyList<RareDrop>? RareDrops = null);
 
 /// <summary>
 /// Monta a homepage só com dados reais (ranking, status, notícias e eventos publicados).
@@ -110,6 +113,7 @@ public sealed class HomeService(
         // Textos editados no painel; sem eles (ou sem o banco do portal), os do appsettings.
         HomeServerInfo server;
         IReadOnlyList<PublicBanner> banners = [];
+        IReadOnlyList<RareDrop> drops = [];
         if (site is not null)
         {
             var snapshot = await site.GetAsync(cancellationToken).ConfigureAwait(false);
@@ -121,6 +125,7 @@ public sealed class HomeService(
 
             server = new HomeServerInfo(snapshot.Server.Name, snapshot.Server.Tagline, rates, snapshot.Server.CommunityLinks);
             banners = snapshot.Banners;
+            drops = snapshot.RareDrops ?? [];
         }
         else
         {
@@ -129,7 +134,8 @@ public sealed class HomeService(
         }
 
         var (battlePoints, battlePointsAvailable) = await TopBattlePointsAsync(cancellationToken).ConfigureAwait(false);
-        var (castle, sod) = await ClanLeadersAsync(cancellationToken).ConfigureAwait(false);
+        var (castle, sod, biggest) = await ClanLeadersAsync(cancellationToken).ConfigureAwait(false);
+        var tiers = await PvpTiersAsync(cancellationToken).ConfigureAwait(false);
 
         return new HomeSnapshot(
             server,
@@ -143,7 +149,28 @@ public sealed class HomeService(
             battlePoints,
             battlePointsAvailable,
             castle,
-            sod);
+            sod,
+            tiers,
+            biggest,
+            drops);
+    }
+
+    /// <summary>Escada de elos pelo BP (Bronze a Grão-Mestre). Fonte fora: null.</summary>
+    private async Task<PvpTierLadder?> PvpTiersAsync(CancellationToken ct)
+    {
+        if (rankings is null)
+        {
+            return null;
+        }
+
+        try
+        {
+            return await rankings.GetPvpTiersAsync(ct).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            return null;
+        }
     }
 
     /// <summary>Os primeiros do ranking de BP (UserDB.dbo.BattlePoints.BPs), sem GMs.</summary>
@@ -167,14 +194,14 @@ public sealed class HomeService(
 
     /// <summary>
     /// Dono do Bless Castle (BlessCastle.dat → CL.MIconCnt) e líder do SoD (clã com mais pontos em CL.Cpoint,
-    /// a mesma regra do site antigo).
+    /// a mesma regra do site antigo) e o maior clã (mais membros).
     /// </summary>
-    private async Task<(HomeClanLeader Castle, HomeClanLeader Sod)> ClanLeadersAsync(CancellationToken ct)
+    private async Task<(HomeClanLeader Castle, HomeClanLeader Sod, HomeClanLeader Biggest)> ClanLeadersAsync(CancellationToken ct)
     {
         var unavailable = new HomeClanLeader(false, null);
         if (rankings is null)
         {
-            return (unavailable, unavailable);
+            return (unavailable, unavailable, unavailable);
         }
 
         IReadOnlyList<ClanRow> clans;
@@ -184,7 +211,7 @@ public sealed class HomeService(
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            return (unavailable, unavailable);
+            return (unavailable, unavailable, unavailable);
         }
 
         // Classe e nível do líder vêm da LevelTable (mesmo cache do ranking). Sem ela, só o nome.
@@ -218,6 +245,14 @@ public sealed class HomeService(
         var sodTop = sodOrder.FirstOrDefault();
         var sod = new HomeClanLeader(true, sodTop is null ? null : Detail(sodTop), await TopSodPlayerAsync(ct).ConfigureAwait(false));
 
+        var biggestRow = clans
+            .Where(c => c.Members > 0)
+            .OrderByDescending(c => c.Members)
+            .ThenByDescending(c => c.Points)
+            .ThenBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
+            .FirstOrDefault();
+        var biggest = new HomeClanLeader(true, biggestRow is null ? null : Detail(biggestRow));
+
         var castle = unavailable;
         if (blessCastle is not null)
         {
@@ -233,7 +268,7 @@ public sealed class HomeService(
             }
         }
 
-        return (castle, sod);
+        return (castle, sod, biggest);
     }
 
     /// <summary>Melhor personagem do SoD no mês corrente (Brasília). Falha ou sem acesso ao sodDB: null.</summary>

@@ -157,6 +157,36 @@ public sealed class SiteContentTests : IDisposable
     }
 
     [Fact]
+    public async Task Rare_drops_are_validated_and_only_the_last_seven_days_reach_the_home()
+    {
+        using var svc = Service();
+        var bad = await svc.SaveRareDropSettingsAsync(Admin, new RareDropSettingsInput(
+            [new RareDropInput("Cristal Azul", "nao-existe", "Valento", "Fulano", null)]), Client, CancellationToken.None);
+        Assert.Equal("items", Assert.Single(bad.Errors!).Key);
+
+        var future = await svc.SaveRareDropSettingsAsync(Admin, new RareDropSettingsInput(
+            [new RareDropInput("Cristal Azul", "cristal", null, "Fulano", "2026-11-20T10:00")]), Client, CancellationToken.None);
+        Assert.Equal(StaffAuthStatus.ValidationFailed, future.Status);
+
+        var ok = await svc.SaveRareDropSettingsAsync(Admin, new RareDropSettingsInput(
+        [
+            new RareDropInput("Asas de Fênix", "asas", "Fúria", "Beltrano", "2026-11-01T20:00"), // fora da semana
+            new RareDropInput(" Cristal Azul ", "cristal", "Valento", "Fulano", "2026-11-09T21:30"),
+            new RareDropInput("Baú Lendário", "bau", null, "Ciclana", null), // sem data: agora
+            new RareDropInput("", null, "", "", ""),
+        ]), Client, CancellationToken.None);
+        Assert.Equal(StaffAuthStatus.Ok, ok.Status);
+
+        var site = await svc.GetAsync(CancellationToken.None);
+        Assert.Equal(["Baú Lendário", "Cristal Azul"], site.RareDrops!.Select(d => d.Item));
+        Assert.Equal(Now, site.RareDrops![0].DroppedUtc);
+        Assert.Equal("Valento", site.RareDrops[1].Boss);
+        Assert.Equal(new DateTimeOffset(2026, 11, 10, 0, 30, 0, TimeSpan.Zero), site.RareDrops[1].DroppedUtc);
+        Assert.Equal(3, (await svc.GetRareDropSettingsAsync(CancellationToken.None)).Value.Items.Count);
+        Assert.Contains(_audit.Rows, r => r.Action == "site.drops.updated");
+    }
+
+    [Fact]
     public async Task Uploaded_media_must_be_a_real_png_or_jpg()
     {
         using var svc = Service();

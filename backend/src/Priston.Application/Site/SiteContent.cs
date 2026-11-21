@@ -25,7 +25,22 @@ public sealed record DownloadSettings(string Intro, string Requirements, IReadOn
 
 public sealed record PublicBanner(int Id, string Title, string? Subtitle, string? ImageUrl, string? LinkUrl, string? LinkLabel);
 
-public sealed record SiteSnapshot(ServerSettings Server, DownloadSettings Downloads, IReadOnlyList<PublicBanner> Banners, DateTimeOffset? ServerUpdatedUtc, DateTimeOffset? DownloadsUpdatedUtc);
+/// <summary>
+/// Drop raro anunciado pela equipe na home ("Drops raros da semana").
+/// <paramref name="Icon"/>: arte do espaço de inventário (uma das chaves de <see cref="SiteContentService.DropIcons"/>).
+/// </summary>
+public sealed record RareDrop(string Item, string Icon, string? Boss, string Player, DateTimeOffset DroppedUtc);
+
+public sealed record RareDropSettings(IReadOnlyList<RareDrop> Items);
+
+/// <param name="RareDrops">Drops raros dos últimos <see cref="SiteContentService.DropDays"/> dias, o mais novo primeiro.</param>
+public sealed record SiteSnapshot(
+    ServerSettings Server,
+    DownloadSettings Downloads,
+    IReadOnlyList<PublicBanner> Banners,
+    DateTimeOffset? ServerUpdatedUtc,
+    DateTimeOffset? DownloadsUpdatedUtc,
+    IReadOnlyList<RareDrop>? RareDrops = null);
 
 public sealed record SiteSettingRow(string Value, DateTimeOffset UpdatedUtc, string? UpdatedBy);
 
@@ -45,6 +60,10 @@ public sealed record ServerSettingsInput(string? Name, string? Tagline, string? 
 public sealed record DownloadItemInput(string? Name, string? Description, string? Url, string? Size, string? Version);
 
 public sealed record DownloadSettingsInput(string? Intro, string? Requirements, IReadOnlyList<DownloadItemInput>? Items);
+
+public sealed record RareDropInput(string? Item, string? Icon, string? Boss, string? Player, string? DroppedLocal);
+
+public sealed record RareDropSettingsInput(IReadOnlyList<RareDropInput>? Items);
 
 public sealed record BannerInput(string? Title, string? Subtitle, string? ImageUrl, string? LinkUrl, string? LinkLabel, int? SortOrder, bool Active, string? StartsLocal, string? EndsLocal);
 
@@ -88,6 +107,17 @@ public sealed partial class SiteContentService(
 {
     public const string ServerKey = "server";
     public const string DownloadsKey = "downloads";
+    public const string DropsKey = "drops";
+    public const int MaxDrops = 30;
+
+    /// <summary>Quantos dias um drop fica em "Drops raros da semana".</summary>
+    public const int DropDays = 7;
+
+    /// <summary>Artes de item da prancha que a equipe pode escolher para um drop.</summary>
+    public static readonly IReadOnlySet<string> DropIcons = new HashSet<string>(StringComparer.Ordinal)
+    {
+        "pocao-hp", "pocao-mp", "pergaminho", "cristal", "bigorna", "martelo", "sheltom-rubi", "sheltom-safira", "bau", "chave", "asas",
+    };
     public const int MaxRates = 12;
     public const int MaxLinks = 8;
     public const int MaxDownloads = 10;
@@ -115,12 +145,14 @@ public sealed partial class SiteContentService(
                 var server = await store.GetSettingAsync(ServerKey, ct).ConfigureAwait(false);
                 var downloads = await store.GetSettingAsync(DownloadsKey, ct).ConfigureAwait(false);
                 var banners = await store.ListBannersAsync(ct).ConfigureAwait(false);
+                var drops = await store.GetSettingAsync(DropsKey, ct).ConfigureAwait(false);
                 return new Cached(
                     ParseServer(server?.Value) ?? DefaultServer(),
                     ParseDownloads(downloads?.Value) ?? EmptyDownloads,
                     banners.Where(b => b.Active).OrderBy(b => b.SortOrder).ThenByDescending(b => b.Id).ToList(),
                     server?.UpdatedUtc,
-                    downloads?.UpdatedUtc);
+                    downloads?.UpdatedUtc,
+                    ParseDrops(drops?.Value)?.Items ?? []);
             }).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
@@ -134,13 +166,19 @@ public sealed partial class SiteContentService(
             return new SiteSnapshot(DefaultServer(), EmptyDownloads, [], null, null);
         }
 
+        var dropsFrom = clock.GetUtcNow().AddDays(-DropDays);
+        var recentDrops = data.Drops
+            .Where(d => d.DroppedUtc >= dropsFrom)
+            .OrderByDescending(d => d.DroppedUtc)
+            .ToList();
+
         var now = clock.GetUtcNow();
         var visible = data.Banners
             .Where(b => (b.StartsUtc is null || b.StartsUtc <= now) && (b.EndsUtc is null || b.EndsUtc > now))
             .Take(MaxPublicBanners)
             .Select(b => new PublicBanner(b.Id, b.Title, b.Subtitle, b.ImageUrl, b.LinkUrl, b.LinkLabel))
             .ToList();
-        return new SiteSnapshot(data.Server, data.Downloads, visible, data.ServerUpdatedUtc, data.DownloadsUpdatedUtc);
+        return new SiteSnapshot(data.Server, data.Downloads, visible, data.ServerUpdatedUtc, data.DownloadsUpdatedUtc, recentDrops);
     }
 
     public Task<AttachmentContent?> GetMediaAsync(Guid id, CancellationToken ct) => store.GetMediaAsync(id, ct);
@@ -157,6 +195,75 @@ public sealed partial class SiteContentService(
     {
         var row = await store.GetSettingAsync(DownloadsKey, ct).ConfigureAwait(false);
         return new(ParseDownloads(row?.Value) ?? EmptyDownloads, row?.UpdatedUtc, row?.UpdatedBy);
+    }
+
+    public async Task<SettingView<RareDropSettings>> GetRareDropSettingsAsync(CancellationToken ct)
+    {
+        var row = await store.GetSettingAsync(DropsKey, ct).ConfigureAwait(false);
+        return new(ParseDrops(row?.Value) ?? new RareDropSettings([]), row?.UpdatedUtc, row?.UpdatedBy);
+    }
+
+    public async Task<SaveResult> SaveRareDropSettingsAsync(StaffPrincipal me, RareDropSettingsInput input, ClientInfo client, CancellationToken ct)
+    {
+        var (value, errors) = ValidateDrops(input, clock.GetUtcNow());
+        if (value is null)
+        {
+            return new(StaffAuthStatus.ValidationFailed, null, errors);
+        }
+
+        await store.SaveSettingAsync(DropsKey, JsonSerializer.Serialize(value, Json), me.Username, ct).ConfigureAwait(false);
+        await audit.WriteAsync("staff", me.Username, "site.drops.updated", "site", DropsKey, client.IpAddress,
+            JsonSerializer.Serialize(new { drops = value.Items.Select(d => new { d.Item, d.Player, d.Boss }) }), ct).ConfigureAwait(false);
+        Invalidate();
+        return new(StaffAuthStatus.Ok);
+    }
+
+    /// <summary>Linha toda vazia é ignorada. Sem data, vale o momento de salvar. Mais novos primeiro.</summary>
+    public static (RareDropSettings? Value, Dictionary<string, string> Errors) ValidateDrops(RareDropSettingsInput input, DateTimeOffset now)
+    {
+        var errors = new Dictionary<string, string>();
+        var items = new List<RareDrop>();
+        foreach (var (d, i) in (input.Items ?? []).Select((d, i) => (d, i + 1)))
+        {
+            var item = d.Item?.Trim() ?? string.Empty;
+            var player = d.Player?.Trim() ?? string.Empty;
+            var boss = Optional(d.Boss);
+            var when = Optional(d.DroppedLocal);
+            if (item.Length == 0 && player.Length == 0 && boss is null && when is null)
+            {
+                continue;
+            }
+
+            if (item.Length is 0 or > 60 || player.Length is 0 or > 32 || boss?.Length > 60)
+            {
+                errors["items"] = $"Drop {i}: informe o item (até 60 caracteres) e o personagem (até 32); o boss é opcional (até 60).";
+                continue;
+            }
+
+            var icon = d.Icon?.Trim() ?? string.Empty;
+            if (!DropIcons.Contains(icon))
+            {
+                errors["items"] = $"Drop {i}: escolha a arte do item.";
+                continue;
+            }
+
+            var dateErrors = new Dictionary<string, string>();
+            var dropped = ContentAdminService.Local(when, "droppedLocal", dateErrors) ?? now;
+            if (dateErrors.Count > 0 || dropped > now.AddMinutes(5))
+            {
+                errors["items"] = $"Drop {i}: data inválida (não pode ser no futuro).";
+                continue;
+            }
+
+            items.Add(new RareDrop(item, icon, boss, player, dropped));
+        }
+
+        if (items.Count > MaxDrops)
+        {
+            errors["items"] = $"Use no máximo {MaxDrops} drops.";
+        }
+
+        return errors.Count > 0 ? (null, errors) : (new RareDropSettings(items.OrderByDescending(d => d.DroppedUtc).ToList()), errors);
     }
 
     public async Task<SaveResult> SaveServerSettingsAsync(StaffPrincipal me, ServerSettingsInput input, ClientInfo client, CancellationToken ct)
@@ -443,6 +550,10 @@ public sealed partial class SiteContentService(
         ? d with { Intro = d.Intro ?? string.Empty, Requirements = d.Requirements ?? string.Empty, Items = d.Items ?? [] }
         : null;
 
+    private static RareDropSettings? ParseDrops(string? json) => Parse<RareDropSettings>(json) is { } d
+        ? d with { Items = (d.Items ?? []).Where(i => i is not null && !string.IsNullOrEmpty(i.Item) && DropIcons.Contains(i.Icon ?? string.Empty)).ToList() }
+        : null;
+
     private static T? Parse<T>(string? json)
         where T : class
     {
@@ -472,5 +583,11 @@ public sealed partial class SiteContentService(
     [LoggerMessage(Level = LogLevel.Warning, Message = "Falha ao ler o conteúdo do site no banco do portal")]
     private static partial void LogReadFailed(ILogger logger, Exception ex);
 
-    private sealed record Cached(ServerSettings Server, DownloadSettings Downloads, IReadOnlyList<BannerRecord> Banners, DateTimeOffset? ServerUpdatedUtc, DateTimeOffset? DownloadsUpdatedUtc);
+    private sealed record Cached(
+        ServerSettings Server,
+        DownloadSettings Downloads,
+        IReadOnlyList<BannerRecord> Banners,
+        DateTimeOffset? ServerUpdatedUtc,
+        DateTimeOffset? DownloadsUpdatedUtc,
+        IReadOnlyList<RareDrop> Drops);
 }
