@@ -116,14 +116,14 @@ public class HomeHighlightsTests
     }
 
     [Fact]
-    public async Task Home_shows_pvp_tier_ladder_and_biggest_clan()
+    public async Task Home_shows_game_patents_and_biggest_clan()
     {
         using var cache = new MemoryCache(new MemoryCacheOptions());
         using var content = new ContentFixture();
         var pvp = new Pvp(
-            new("Alfa", 1, 500, 0, 10, 2, false),
-            new("Bravo", 7, 900, 0, 30, 9, true),
-            new("Zero", 2, 0, 0, 0, 0, false));
+            new("Alfa", 1, 500, 0, 10, 2, false, 250),
+            new("Bravo", 7, 900, 0, 30, 9, true, 120),
+            new("Zero", 2, 0, 0, 0, 0, false, 40));
         var home = Create(cache, content, pvp, new Castle(null),
             new ClanRow("Guarda", 12, 300, 5, 1, null, 42),
             new ClanRow("Lobos", 20, 800, 2, 2, null, 7));
@@ -131,36 +131,49 @@ public class HomeHighlightsTests
         var snapshot = await home.GetAsync(CancellationToken.None);
 
         Assert.Equal(2, snapshot.PvpTiers!.Total);
-        Assert.Equal("bronze", snapshot.PvpTiers.Tiers[0].Key);
-        var gm = snapshot.PvpTiers.Tiers[^1];
-        Assert.Equal("grao-mestre", gm.Key);
-        Assert.Equal("Bravo", gm.Top!.Name);
+        Assert.Equal("prata-de-elite", snapshot.PvpTiers.Tiers[0].Key);
+        Assert.Equal("Alfa", snapshot.PvpTiers.Tiers.Single(t => t.Key == "ouro-mestre").Top!.Name);
+        var king = snapshot.PvpTiers.Tiers[^1];
+        Assert.Equal("rei-pvp", king.Key);
+        Assert.Equal("Bravo", king.Top!.Name);
         Assert.Equal("Lobos", snapshot.BiggestClan!.Clan!.Name);
         Assert.Equal(20, snapshot.BiggestClan.Clan.Members);
     }
 
-    [Fact]
-    public void Pvp_tiers_split_by_share_of_the_ranking_and_keep_ties_together()
+    [Theory]
+    [InlineData(0, false, 0)]
+    [InlineData(99, false, 0)]
+    [InlineData(100, false, 1)]
+    [InlineData(199, false, 1)]
+    [InlineData(250, false, 2)]
+    [InlineData(699, false, 6)]
+    [InlineData(700, false, 7)]
+    [InlineData(500000, false, 7)]
+    [InlineData(10, true, 8)]
+    public void Patent_follows_the_game_client_rule(int points, bool king, int level)
     {
-        var ranked = Enumerable.Range(1, 100)
-            .Select(i => new PvpEntry(i, $"P{i}", 1, "Lutador", i == 3 ? 1000 - 2 : 1000 - i, 0, 0, 0, false))
-            .ToList();
-        // P2 e P3 empatam com 998 BP.
-        var ladder = RankingQueryService.BuildTiers(ranked);
+        Assert.Equal(level, PvpPatents.LevelOf(points, king));
+        Assert.Equal(level == 0 ? (int?)null : level, PvpPatents.Of(points, king)?.Level);
+    }
+
+    [Fact]
+    public void Patent_ladder_groups_by_points_and_keeps_the_king_apart()
+    {
+        PvpEntry P(string name, int points, bool king = false) => new(0, name, 1, "Lutador", 0, 0, 0, 0, king, points);
+        var ladder = RankingQueryService.BuildTiers([P("A", 150), P("B", 180), P("C", 720), P("D", 99), P("Rei", 900, true)]);
 
         var byKey = ladder.Tiers.ToDictionary(t => t.Key);
-        Assert.Equal(100, ladder.Total);
-        Assert.Equal(1, byKey["grao-mestre"].Players);
-        Assert.Equal("P1", byKey["grao-mestre"].Top!.Name);
-        Assert.Equal(3, byKey["mestre"].Players); // P2, P3 e P4
-        Assert.Equal("P2", byKey["mestre"].Top!.Name);
-        Assert.Equal(6, byKey["diamante"].Players);
-        Assert.Equal(30, byKey["bronze"].Players);
-        Assert.Equal(100, ladder.Tiers.Sum(t => t.Players));
+        Assert.Equal(8, ladder.Tiers.Count);
+        Assert.Equal(4, ladder.Total);
+        Assert.Equal(2, byKey["prata-de-elite"].Players);
+        Assert.Equal("B", byKey["prata-de-elite"].Top!.Name);
+        Assert.Equal(1, byKey["mestre-supremo"].Players);
+        Assert.Equal("Rei", byKey["rei-pvp"].Top!.Name);
+        Assert.Equal(0, byKey["ouro-mestre"].Players);
+        Assert.Null(byKey["ouro-mestre"].Top);
 
         var empty = RankingQueryService.BuildTiers([]);
         Assert.All(empty.Tiers, t => Assert.Equal(0, t.Players));
-        Assert.All(empty.Tiers, t => Assert.Null(t.Top));
     }
 
     [Fact]

@@ -21,15 +21,19 @@ public enum PvpKind
 
 public sealed record LevelEntry(int Position, string Name, int ClassCode, string ClassName, int Level, int? LevelsGained, string? Clan);
 
-public sealed record PvpEntry(int Position, string Name, int ClassCode, string ClassName, int BattlePoints, int WeeklyBattlePoints, int Kills, int Deaths, bool IsPvpKing);
+/// <summary><paramref name="PvpPoints"/>: <c>PontosPvP</c>, que decide a patente; <paramref name="Patent"/>: nível dela (0 = nenhuma, 8 = Rei PvP).</summary>
+public sealed record PvpEntry(int Position, string Name, int ClassCode, string ClassName, int BattlePoints, int WeeklyBattlePoints, int Kills, int Deaths, bool IsPvpKing, int PvpPoints = 0)
+{
+    public int Patent => PvpPatents.LevelOf(PvpPoints, IsPvpKing);
+}
 
 /// <summary>
-/// Um elo PvP (Bronze a Grão-Mestre). <paramref name="Players"/>: quantos personagens estão nele;
-/// <paramref name="MinBattlePoints"/>: o menor BP do elo (null se vazio); <paramref name="Top"/>: o melhor do elo.
+/// Uma patente PvP do jogo com quem está nela agora. <paramref name="Players"/>: quantos personagens têm essa patente;
+/// <paramref name="Top"/>: o de mais pontos PvP nela (no Rei, o próprio rei).
 /// </summary>
-public sealed record PvpTier(string Key, string Name, double TopShare, int Players, int? MinBattlePoints, PvpEntry? Top);
+public sealed record PvpTier(int Level, string Key, string Name, int? MinPoints, int? MaxPoints, string Bonus, string Emblem, int Players, PvpEntry? Top);
 
-/// <summary>Escada de elos pelo BP. <paramref name="Total"/>: personagens com BP acima de zero.</summary>
+/// <summary>As patentes da primeira à Rei PvP. <paramref name="Total"/>: personagens com alguma patente.</summary>
 public sealed record PvpTierLadder(int Total, IReadOnlyList<PvpTier> Tiers);
 
 public sealed record ClanEntry(int Position, string Name, int Members, int Points, int Wins, int Losses, DateTimeOffset? CreatedUtc);
@@ -137,58 +141,33 @@ public sealed class RankingQueryService(
     }
 
     /// <summary>
-    /// Elos do Grão-Mestre ao Bronze, com a fatia (acumulada) dos melhores em BP que cada um pega.
-    /// Ex.: Grão-Mestre são o 1% melhor, Mestre vai até os 4% melhores, e assim por diante.
-    /// </summary>
-    public static readonly IReadOnlyList<(string Key, string Name, double TopShare)> TierRules =
-    [
-        ("grao-mestre", "Grão-Mestre", 0.01),
-        ("mestre", "Mestre", 0.04),
-        ("diamante", "Diamante", 0.10),
-        ("platina", "Platina", 0.20),
-        ("ouro", "Ouro", 0.40),
-        ("prata", "Prata", 0.70),
-        ("bronze", "Bronze", 1.00),
-    ];
-
-    /// <summary>
-    /// Divide quem tem BP em elos pela posição no ranking (fatia acumulada, arredondada para cima: o 1º é
-    /// sempre Grão-Mestre). Empate em BP fica no mesmo elo do de cima. Volta do Bronze ao Grão-Mestre.
+    /// Quem está em cada patente do jogo agora, pelos pontos PvP (<c>PontosPvP</c>) e pelo Rei PvP (<c>IsReiPvP</c>).
+    /// A regra é a do cliente (<see cref="PvpPatents"/>).
     /// </summary>
     public async Task<PvpTierLadder> GetPvpTiersAsync(CancellationToken ct)
     {
         var entries = (await AllPvpAsync(ct).ConfigureAwait(false))
-            .Where(r => r.BattlePoints > 0)
-            .OrderByDescending(r => r.BattlePoints).ThenByDescending(r => r.Kills).ThenBy(r => r.Name, StringComparer.OrdinalIgnoreCase)
+            .OrderByDescending(r => r.PvpPoints).ThenByDescending(r => r.BattlePoints).ThenBy(r => r.Name, StringComparer.OrdinalIgnoreCase)
             .Select((r, i) => ToPvpEntry(r, i + 1))
             .ToList();
         return BuildTiers(entries);
     }
 
-    /// <summary>Monta a escada a partir do ranking de BP já ordenado (posição 1 primeiro).</summary>
-    public static PvpTierLadder BuildTiers(IReadOnlyList<PvpEntry> ranked)
+    /// <summary>Agrupa os personagens pela patente (da primeira à Rei PvP); quem não tem patente fica de fora.</summary>
+    public static PvpTierLadder BuildTiers(IReadOnlyList<PvpEntry> players)
     {
-        var n = ranked.Count;
-        var cuts = TierRules.Select(t => (int)Math.Ceiling(Math.Round(n * t.TopShare, 6))).ToArray();
-        var members = TierRules.Select(_ => new List<PvpEntry>()).ToArray();
-        var previousTier = 0;
-        for (var i = 0; i < n; i++)
-        {
-            var tier = Array.FindIndex(cuts, c => i + 1 <= c);
-            if (i > 0 && ranked[i].BattlePoints == ranked[i - 1].BattlePoints)
+        var byLevel = players
+            .Where(p => p.Patent > 0)
+            .GroupBy(p => p.Patent)
+            .ToDictionary(g => g.Key, g => g.OrderByDescending(p => p.PvpPoints).ThenByDescending(p => p.BattlePoints).ToList());
+        var tiers = PvpPatents.All
+            .Select(t =>
             {
-                tier = previousTier;
-            }
-
-            members[tier].Add(ranked[i]);
-            previousTier = tier;
-        }
-
-        var tiers = TierRules
-            .Select((t, i) => new PvpTier(t.Key, t.Name, t.TopShare, members[i].Count, members[i].Count == 0 ? null : members[i][^1].BattlePoints, members[i].FirstOrDefault()))
-            .Reverse()
+                var members = byLevel.GetValueOrDefault(t.Level) ?? [];
+                return new PvpTier(t.Level, t.Key, t.Name, t.MinPoints, t.MaxPoints, t.Bonus, t.Emblem, members.Count, members.FirstOrDefault());
+            })
             .ToList();
-        return new PvpTierLadder(n, tiers);
+        return new PvpTierLadder(tiers.Sum(t => t.Players), tiers);
     }
 
     /// <summary>Todos os clãs de <c>ClanDB.dbo.CL</c>, do cache (5 minutos).</summary>
@@ -281,7 +260,7 @@ public sealed class RankingQueryService(
 
     private static PvpEntry ToPvpEntry(PvpRow r, int position) =>
         new(position, r.Name, r.ClassCode, CharacterClassNames.ToPortuguese(CharacterClassNames.FromCode(r.ClassCode)),
-            r.BattlePoints, r.WeeklyBattlePoints, r.Kills, r.Deaths, r.IsPvpKing);
+            r.BattlePoints, r.WeeklyBattlePoints, r.Kills, r.Deaths, r.IsPvpKing, r.PvpPoints);
 
     private static RankingPage<T> Paged<T>(List<T> all, int page, int pageSize, bool available, DateOnly? start, DateOnly? since, DateTimeOffset now)
     {

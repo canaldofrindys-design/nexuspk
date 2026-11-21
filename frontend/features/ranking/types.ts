@@ -29,6 +29,9 @@ export type PvpEntry = {
   kills: number;
   deaths: number;
   isPvpKing: boolean;
+  /** Pontos PvP (decidem a patente) e o nível da patente: 0 nenhuma, 1 a 7, 8 Rei PvP. */
+  pvpPoints?: number;
+  patent?: number;
 };
 
 export type ClanEntry = {

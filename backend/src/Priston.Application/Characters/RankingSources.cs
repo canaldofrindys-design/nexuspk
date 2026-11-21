@@ -1,7 +1,7 @@
 namespace Priston.Application.Characters;
 
 /// <summary>Linha do ranking PvP (UserDB.dbo.BattlePoints). Sem a conta.</summary>
-public sealed record PvpRow(string Name, int ClassCode, int BattlePoints, int WeeklyBattlePoints, int Kills, int Deaths, bool IsPvpKing);
+public sealed record PvpRow(string Name, int ClassCode, int BattlePoints, int WeeklyBattlePoints, int Kills, int Deaths, bool IsPvpKing, int PvpPoints = 0);
 
 /// <summary>
 /// Linha do ranking de clãs (ClanDB.dbo.CL).
