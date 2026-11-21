@@ -39,6 +39,18 @@ public sealed record MonsterDropGroup(string Chance, IReadOnlyList<string> Items
 /// <summary>Monstro do arquivo do servidor: nome, arquivo, vida e linhas de drop.</summary>
 public sealed record MonsterInfo(string Name, string File, long? Hp, IReadOnlyList<MonsterDropGroup> Drops);
 
+/// <summary>Loja de um NPC do servidor do jogo: nome, arquivo e os códigos dos itens à venda (armas, armaduras e o resto).</summary>
+public sealed record NpcShop(string Name, string File, IReadOnlyList<string> Weapons, IReadOnlyList<string> Armors, IReadOnlyList<string> Misc);
+
+/// <summary>
+/// Lojas dos NPCs nos arquivos do servidor do jogo (<c>GameServer\NPC\*.npc</c>, linhas <c>*무기판매</c>, <c>*방어구판매</c>
+/// e <c>*잡화판매</c> com os códigos). Só os NPCs que vendem algo. Pasta fora do alcance: lança.
+/// </summary>
+public interface INpcShopCatalog
+{
+    Task<IReadOnlyList<NpcShop>> ReadShopsAsync(CancellationToken ct);
+}
+
 /// <summary>Imagem de um item do cliente do jogo (<c>it&lt;código&gt;.bmp</c>).</summary>
 public sealed record ItemImage(byte[] Data, string ContentType);
 
@@ -64,7 +76,8 @@ public sealed partial class ItemNames(
     IReadOnlyDictionary<int, string> exact,
     IReadOnlyDictionary<int, IReadOnlyList<string>>? sources = null,
     IReadOnlyDictionary<string, string>? fileNames = null,
-    IReadOnlyDictionary<int, string>? filePrefixes = null)
+    IReadOnlyDictionary<int, string>? filePrefixes = null,
+    IReadOnlyDictionary<string, IReadOnlyList<string>>? fileSources = null)
 {
     /// <summary>Acima de tantos monstros o item é "de qualquer lugar" e o drop fica sem boss.</summary>
     public const int MaxSources = 2;
@@ -83,11 +96,11 @@ public sealed partial class ItemNames(
             ? prefix + GameItemCode.Number(code).ToString(GameItemCode.Number(code) < 100 ? "D2" : "D3", System.Globalization.CultureInfo.InvariantCulture)
             : null;
 
-    /// <summary>Itens que só 1 ou 2 monstros derrubam (drops de boss), com o nome do boss.</summary>
-    public IEnumerable<(int Code, string Boss)> BossDrops() =>
-        (sources ?? new Dictionary<int, IReadOnlyList<string>>())
-            .Where(kv => kv.Value.Count is > 0 and <= MaxSources)
-            .Select(kv => (kv.Key, string.Join(" ou ", kv.Value)));
+    /// <summary>
+    /// Monstros que derrubam cada item, pelo código do arquivo em maiúsculas ("CA182" → ["Valento"]).
+    /// Não depende do banco do jogo (os arquivos de monstro já usam o código do arquivo).
+    /// </summary>
+    public IReadOnlyDictionary<string, IReadOnlyList<string>> FileSources { get; } = fileSources ?? new Dictionary<string, IReadOnlyList<string>>();
 
     /// <summary>Nomes pelo código do arquivo do item, em maiúsculas ("CA182" → "Traje Caos F").</summary>
     public IReadOnlyDictionary<string, string> FileNames { get; } = fileNames ?? new Dictionary<string, string>();
@@ -164,8 +177,26 @@ public sealed partial class ItemNames(
             }
         }
 
+        var bySourceId = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (id, monsters) in dropSources ?? new Dictionary<string, IReadOnlyList<string>>())
+        {
+            if (ParseFileId(id) is null)
+            {
+                continue;
+            }
+
+            var key = id.Trim().ToUpperInvariant();
+            var list = monsters.Where(m => !string.IsNullOrWhiteSpace(m)).Select(m => m.Trim())
+                .Concat(bySourceId.GetValueOrDefault(key) ?? [])
+                .Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase).ToList();
+            if (list.Count > 0)
+            {
+                bySourceId[key] = list;
+            }
+        }
+
         var reverse = prefixes.GroupBy(kv => kv.Value).ToDictionary(g => g.Key, g => g.Select(kv => kv.Key.ToUpperInvariant()).Order(StringComparer.Ordinal).First());
-        return new ItemNames(typeNames, exact, sources, byId, reverse);
+        return new ItemNames(typeNames, exact, sources, byId, reverse, bySourceId);
     }
 
     private static int? Code(string id, IReadOnlyDictionary<string, int> prefixes) =>

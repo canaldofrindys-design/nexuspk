@@ -251,3 +251,7 @@ export type ItemCatalog = { images: number; items: CatalogItem[] };
 export type MonsterDropView = { chance: string; gold: string | null; items: CatalogItem[] };
 export type MonsterView = { name: string; file: string; hp: number | null; drops: MonsterDropView[] };
 export type MonsterList = { available: boolean; monsters: MonsterView[] };
+
+/** Loja de NPC lida dos arquivos do servidor (NPC\*.npc): armas, armaduras e o resto à venda. */
+export type NpcShopView = { name: string; file: string; weapons: CatalogItem[]; armors: CatalogItem[]; misc: CatalogItem[] };
+export type NpcShopList = { available: boolean; shops: NpcShopView[] };

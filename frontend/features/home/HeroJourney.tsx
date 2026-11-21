@@ -67,7 +67,7 @@ export function RareDropsRow({ home }: { home: HomeSnapshot | null }) {
       {slots.length ? (
         <>
           <RareDropsStrip drops={slots} slots={dropSlots} />
-          {drops.length === 0 ? <p className="nx-row-note">Nenhum drop raro nesta semana ainda. Estes itens caem dos bosses do servidor.</p> : null}
+          {drops.length === 0 ? <p className="nx-row-note">Nenhum drop raro nesta semana ainda. Estes são itens do servidor que você pode conseguir.</p> : null}
         </>
       ) : (
         <>

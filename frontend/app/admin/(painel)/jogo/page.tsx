@@ -25,14 +25,16 @@ const fromFiles: Record<string, { href: string; note: string }> = {
     href: "/admin/jogo/drops",
     note: "GameServer\\Monster\\*.inf",
   },
+  "npc-shops": {
+    href: "/admin/jogo/lojas-npc",
+    note: "GameServer\\NPC\\*.npc",
+  },
 };
 
 /** Funções que ficam desligadas de propósito neste servidor, com o motivo. */
 const offOnPurpose: Record<string, string> = {
   "box-send":
     "Desligado de propósito: as Box Donate saem pelo sistema de donate do servidor, que monta o item com checksum.",
-  "npc-shops":
-    "As lojas NPC ficam nos arquivos da pasta GameServer\\NPC, não no banco.",
 };
 
 async function Body() {

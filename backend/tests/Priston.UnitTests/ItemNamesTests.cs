@@ -206,6 +206,83 @@ public class ItemNamesTests
         }
     }
 
+    // Trechos reais de arquivos .npc (CP949, cabeçalhos coreanos e nomes em português).
+    private const string ShopNpc =
+        "\r\n*속성\t\tNPC\r\n*모양파일\t\"char\\npc\\TN-005\\TN-005.ini\"\r\n" +
+        "*이름\t\t\"Loja da Sabrine\"\r\n*Name\t\t\"Loja da Sabrine\"\r\n" +
+        "//*대화\t\t\"빨간약은 생명력을\"\r\n" +
+        "*무기판매\t없음\r\n\r\n*방어구판매\t없음\r\n\r\n" +
+        "*잡화판매\tEC101 EC102 ec104 BI108 PL104\t\t\r\n" +
+        "*잡화판매\tOS103\r\n" +
+        "//*잡화판매\tOS110\r\n";
+
+    private const string KoreanNameNpc =
+        "*이름\t\t\t\"대장장이 엄프\"\r\n*무기판매\tWA161\r\n*방어구판매\tDA110 da110\r\n*잡화판매\t없음\r\n";
+
+    private static string AsGameFile(string text)
+    {
+        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+        return Encoding.GetEncoding(1252).GetString(Encoding.GetEncoding(949).GetBytes(text));
+    }
+
+    [Fact]
+    public void Npc_file_gives_the_shop_items_by_kind()
+    {
+        var shop = NpcFileCatalog.Parse("LojadePotes.NPC", AsGameFile(ShopNpc));
+
+        Assert.NotNull(shop);
+        Assert.Equal("Loja da Sabrine", shop.Name);
+        Assert.Equal("LojadePotes.NPC", shop.File);
+        Assert.Empty(shop.Weapons);
+        Assert.Empty(shop.Armors);
+        Assert.Equal(["EC101", "EC102", "EC104", "BI108", "PL104", "OS103"], shop.Misc);
+    }
+
+    [Fact]
+    public void Npc_with_a_korean_name_uses_the_file_name()
+    {
+        var shop = NpcFileCatalog.Parse("navisko-equip.npc.npc", AsGameFile(KoreanNameNpc));
+
+        Assert.NotNull(shop);
+        Assert.Equal("navisko-equip", shop.Name);
+        Assert.Equal(["WA161"], shop.Weapons);
+        Assert.Equal(["DA110"], shop.Armors);
+        Assert.Empty(shop.Misc);
+
+        var portuguese = NpcFileCatalog.Parse("Migracao.NPC", AsGameFile(KoreanNameNpc).Replace("\"" + AsGameFile("대장장이 엄프") + "\"", "\"Ação\""));
+        Assert.Equal("Ação", portuguese!.Name);
+    }
+
+    [Fact]
+    public void Npc_without_a_shop_is_left_out()
+    {
+        Assert.Null(NpcFileCatalog.Parse("Bancaria.NPC", AsGameFile("*Name\t\"Banco\"\r\n*무기판매\t\r\n*잡화판매\t없음\r\n")));
+    }
+
+    [Fact]
+    public async Task Npc_folder_lists_only_npcs_that_sell()
+    {
+        var dir = Directory.CreateTempSubdirectory("npc");
+        try
+        {
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+            var korean = Encoding.GetEncoding(949);
+            await File.WriteAllBytesAsync(Path.Combine(dir.FullName, "LojadePotes.NPC"), korean.GetBytes(ShopNpc));
+            await File.WriteAllBytesAsync(Path.Combine(dir.FullName, "navisko-equip.npc"), korean.GetBytes(KoreanNameNpc));
+            await File.WriteAllBytesAsync(Path.Combine(dir.FullName, "Bancaria.NPC"), korean.GetBytes("*Name \"Banco\"\r\n"));
+            await File.WriteAllBytesAsync(Path.Combine(dir.FullName, "Agiota.zhoon"), korean.GetBytes("*잡화판매\tEC101\r\n"));
+            var catalog = new NpcFileCatalog(Options.Create(new GameServerOptions { NpcFolder = dir.FullName }));
+
+            var shops = await catalog.ReadShopsAsync(CancellationToken.None);
+
+            Assert.Equal(["Loja da Sabrine", "navisko-equip"], shops.Select(s => s.Name));
+        }
+        finally
+        {
+            dir.Delete(recursive: true);
+        }
+    }
+
     [Theory]
     [InlineData("itWA161.bmp", "WA161")]
     [InlineData("ITca182.BMP", "CA182")]
@@ -269,8 +346,31 @@ public class ItemNamesTests
 
         var showcase = await feed.GetShowcaseAsync(11, CancellationToken.None);
 
-        var item = Assert.Single(showcase);
-        Assert.Equal(new ItemShowcase("CA182", "Traje Caos F", "Valento"), item);
+        // Boss primeiro; depois o item que cai de qualquer monstro. Sem imagem (WA161) fica fora.
+        Assert.Equal([new ItemShowcase("CA182", "Traje Caos F", "Valento"), new ItemShowcase("OS110", "Sheltom", null)], showcase);
+    }
+
+    [Fact]
+    public async Task Showcase_works_without_the_game_database()
+    {
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var source = new ItemNameSource(cache, null, new Files(), new Drops());
+        var feed = new RareDropFeed(cache, TimeProvider.System, null, source, new Images());
+
+        var showcase = await feed.GetShowcaseAsync(1, CancellationToken.None);
+
+        Assert.Equal([new ItemShowcase("CA182", "Traje Caos F", "Valento")], showcase);
+    }
+
+    [Fact]
+    public void Showcase_fills_with_other_server_items_but_never_potions()
+    {
+        var names = ItemNames.Build([], new Dictionary<string, string> { ["PL104"] = "Poção", ["DA110"] = "Armadura", ["CA182"] = "Traje" },
+            new Dictionary<string, IReadOnlyList<string>> { ["CA182"] = ["Valento", "Babel"] });
+
+        var picked = RareDropFeed.PickShowcase(names, new HashSet<string>(["PL104", "DA110", "CA182"]), 202647);
+
+        Assert.Equal([new ItemShowcase("CA182", "Traje", "Babel ou Valento"), new ItemShowcase("DA110", "Armadura", null)], picked);
     }
 
     private sealed class Files : IItemFileCatalog

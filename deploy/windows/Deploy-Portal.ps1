@@ -70,6 +70,9 @@ catch {
     throw
 }
 
+Write-Step 'Leitura dos arquivos do jogo'
+Grant-GameFileRead $paths
+
 Write-Step 'Trocando para a versão nova'
 Set-CurrentRelease $paths $release.Folder
 Start-Portal $paths
