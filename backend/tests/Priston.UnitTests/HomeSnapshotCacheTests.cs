@@ -17,12 +17,33 @@ public sealed class HomeSnapshotCacheTests
         new ServerStatus(ServerAvailability.Unknown, null, null),
         [], true, [], [], [], []);
 
+    private static Task<HomeSnapshot> Same(HomeSnapshot home, CancellationToken _) => Task.FromResult(home);
+
+    [Fact]
+    public async Task Portal_parts_are_read_again_on_every_call_even_from_the_saved_home()
+    {
+        var clock = new Clock();
+        var builds = 0;
+        var banners = 0;
+        var cache = new HomeSnapshotCache(
+            _ => Task.FromResult(Snap(++builds)),
+            (home, _) => Task.FromResult(home with { Server = home.Server with { Tagline = $"portal {++banners}" } }),
+            clock);
+
+        await cache.GetAsync(CancellationToken.None);
+        var second = await cache.GetAsync(CancellationToken.None);
+
+        Assert.Equal(1, builds);
+        Assert.Equal("S1", second.Server.Name);
+        Assert.Equal("portal 1", second.Server.Tagline);
+    }
+
     [Fact]
     public async Task First_call_waits_for_the_home_and_the_next_ones_reuse_it()
     {
         var clock = new Clock();
         var builds = 0;
-        var cache = new HomeSnapshotCache(_ => Task.FromResult(Snap(++builds)), clock);
+        var cache = new HomeSnapshotCache(_ => Task.FromResult(Snap(++builds)), Same, clock);
 
         var first = await cache.GetAsync(CancellationToken.None);
         var second = await cache.GetAsync(CancellationToken.None);
@@ -38,7 +59,7 @@ public sealed class HomeSnapshotCacheTests
         var clock = new Clock();
         var builds = 0;
         var slow = new TaskCompletionSource<HomeSnapshot>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var cache = new HomeSnapshotCache(_ => ++builds == 1 ? Task.FromResult(Snap(1)) : slow.Task, clock);
+        var cache = new HomeSnapshotCache(_ => ++builds == 1 ? Task.FromResult(Snap(1)) : slow.Task, Same, clock);
         await cache.GetAsync(CancellationToken.None);
 
         clock.Now += HomeSnapshotCache.FreshFor + TimeSpan.FromSeconds(1);
@@ -60,7 +81,7 @@ public sealed class HomeSnapshotCacheTests
     {
         var clock = new Clock();
         var builds = 0;
-        var cache = new HomeSnapshotCache(_ => ++builds == 1 ? throw new InvalidOperationException("fora") : Task.FromResult(Snap(builds)), clock);
+        var cache = new HomeSnapshotCache(_ => ++builds == 1 ? throw new InvalidOperationException("fora") : Task.FromResult(Snap(builds)), Same, clock);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => cache.GetAsync(CancellationToken.None));
         var home = await cache.GetAsync(CancellationToken.None);

@@ -6,6 +6,8 @@ namespace Priston.Application.Home;
 /// acontecia, a página caía no modo "API fora": drops com ícones decorativos e "Patentes indisponíveis".
 /// Uma home com mais de <see cref="FreshFor"/> é entregue mesmo assim e refeita em segundo plano (uma montagem por vez).
 /// Só a primeira chamada depois de ligar a API espera a montagem; o aquecimento em segundo plano evita até essa.
+/// As partes do portal (notícias, eventos, banners, textos) são lidas de novo em toda chamada, porque são rápidas e a
+/// equipe espera ver na hora o que acabou de salvar.
 /// </summary>
 public sealed class HomeSnapshotCache
 {
@@ -13,6 +15,7 @@ public sealed class HomeSnapshotCache
     public static readonly TimeSpan FreshFor = TimeSpan.FromSeconds(30);
 
     private readonly Func<CancellationToken, Task<HomeSnapshot>> build;
+    private readonly Func<HomeSnapshot, CancellationToken, Task<HomeSnapshot>> freshPortal;
     private readonly TimeProvider clock;
     private readonly Lock gate = new();
     private HomeSnapshot? last;
@@ -20,13 +23,17 @@ public sealed class HomeSnapshotCache
     private Task<HomeSnapshot>? running;
 
     public HomeSnapshotCache(HomeService home, TimeProvider clock)
-        : this(home.GetAsync, clock)
+        : this(home.GetAsync, home.WithFreshPortalAsync, clock)
     {
     }
 
-    internal HomeSnapshotCache(Func<CancellationToken, Task<HomeSnapshot>> build, TimeProvider clock)
+    internal HomeSnapshotCache(
+        Func<CancellationToken, Task<HomeSnapshot>> build,
+        Func<HomeSnapshot, CancellationToken, Task<HomeSnapshot>> freshPortal,
+        TimeProvider clock)
     {
         this.build = build;
+        this.freshPortal = freshPortal;
         this.clock = clock;
     }
 
@@ -50,7 +57,7 @@ public sealed class HomeSnapshotCache
             _ = RefreshAsync().ContinueWith(t => _ = t.Exception, CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default);
         }
 
-        return snapshot;
+        return await freshPortal(snapshot, ct).ConfigureAwait(false);
     }
 
     /// <summary>Monta a home de novo; se já tem uma montagem andando, devolve a mesma.</summary>
