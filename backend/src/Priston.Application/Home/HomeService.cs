@@ -97,6 +97,76 @@ public sealed class HomeService(
             rankingAvailable = false;
         }
 
+        var portal = await PortalAsync(cancellationToken).ConfigureAwait(false);
+        IReadOnlyList<RareDrop> drops = [];
+        IReadOnlyList<ItemShowcase> showcase = [];
+        if (portal.Site is { } snapshot && dropFeed is not null)
+        {
+            drops = await dropFeed.GetAsync(snapshot, cancellationToken).ConfigureAwait(false);
+            if (drops.Count < RareDropFeed.MaxShown)
+            {
+                showcase = await dropFeed.GetShowcaseAsync(RareDropFeed.MaxShown - drops.Count, cancellationToken).ConfigureAwait(false);
+            }
+        }
+        else if (portal.Site is { } plain)
+        {
+            drops = plain.RareDrops ?? [];
+        }
+
+        var (battlePoints, battlePointsAvailable) = await TopBattlePointsAsync(cancellationToken).ConfigureAwait(false);
+        var (castle, sod, biggest) = await ClanLeadersAsync(cancellationToken).ConfigureAwait(false);
+        var tiers = await PvpTiersAsync(cancellationToken).ConfigureAwait(false);
+
+        return new HomeSnapshot(
+            portal.Server,
+            await statusTask.ConfigureAwait(false),
+            top,
+            rankingAvailable,
+            portal.News,
+            portal.Live,
+            portal.Upcoming,
+            portal.Banners,
+            battlePoints,
+            battlePointsAvailable,
+            castle,
+            sod,
+            tiers,
+            biggest,
+            drops,
+            showcase,
+            portal.Schedule);
+    }
+
+    /// <summary>
+    /// Troca na home guardada as partes do portal (notícias, eventos, textos, banners e agenda), que são rápidas e
+    /// precisam aparecer assim que a equipe salva. Os dados do jogo continuam os da última montagem.
+    /// </summary>
+    public async Task<HomeSnapshot> WithFreshPortalAsync(HomeSnapshot home, CancellationToken cancellationToken)
+    {
+        var portal = await PortalAsync(cancellationToken).ConfigureAwait(false);
+        return home with
+        {
+            Server = portal.Server,
+            News = portal.News,
+            ActiveEvents = portal.Live,
+            UpcomingEvents = portal.Upcoming,
+            Banners = portal.Banners,
+            Schedule = portal.Schedule,
+        };
+    }
+
+    private sealed record PortalPart(
+        HomeServerInfo Server,
+        IReadOnlyList<HomeNewsItem> News,
+        IReadOnlyList<HomeEventItem> Live,
+        IReadOnlyList<HomeEventItem> Upcoming,
+        IReadOnlyList<PublicBanner> Banners,
+        IReadOnlyList<ScheduledEvent> Schedule,
+        SiteSnapshot? Site);
+
+    /// <summary>Partes que vêm do banco do portal e do appsettings.</summary>
+    private async Task<PortalPart> PortalAsync(CancellationToken cancellationToken)
+    {
         IReadOnlyList<HomeNewsItem> news = [];
         List<HomeEventItem> live = [];
         IReadOnlyList<HomeEventItem> upcoming = [];
@@ -116,8 +186,7 @@ public sealed class HomeService(
         // Textos editados no painel; sem eles (ou sem o banco do portal), os do appsettings.
         HomeServerInfo server;
         IReadOnlyList<PublicBanner> banners = [];
-        IReadOnlyList<RareDrop> drops = [];
-        IReadOnlyList<ItemShowcase> showcase = [];
+        SiteSnapshot? siteSnapshot = null;
         var schedule = SiteContentService.DefaultSchedule.Items;
         if (site is not null)
         {
@@ -131,11 +200,7 @@ public sealed class HomeService(
             server = new HomeServerInfo(snapshot.Server.Name, snapshot.Server.Tagline, rates, snapshot.Server.CommunityLinks);
             banners = snapshot.Banners;
             schedule = snapshot.Schedule ?? schedule;
-            drops = dropFeed is null ? snapshot.RareDrops ?? [] : await dropFeed.GetAsync(snapshot, cancellationToken).ConfigureAwait(false);
-            if (dropFeed is not null && drops.Count < RareDropFeed.MaxShown)
-            {
-                showcase = await dropFeed.GetShowcaseAsync(RareDropFeed.MaxShown - drops.Count, cancellationToken).ConfigureAwait(false);
-            }
+            siteSnapshot = snapshot;
         }
         else
         {
@@ -143,28 +208,7 @@ public sealed class HomeService(
             server = new HomeServerInfo(p.Name, p.Tagline, p.Rates, p.CommunityLinks.Select(l => new LinkItem(l.Label, l.Url)).ToList());
         }
 
-        var (battlePoints, battlePointsAvailable) = await TopBattlePointsAsync(cancellationToken).ConfigureAwait(false);
-        var (castle, sod, biggest) = await ClanLeadersAsync(cancellationToken).ConfigureAwait(false);
-        var tiers = await PvpTiersAsync(cancellationToken).ConfigureAwait(false);
-
-        return new HomeSnapshot(
-            server,
-            await statusTask.ConfigureAwait(false),
-            top,
-            rankingAvailable,
-            news,
-            live,
-            upcoming,
-            banners,
-            battlePoints,
-            battlePointsAvailable,
-            castle,
-            sod,
-            tiers,
-            biggest,
-            drops,
-            showcase,
-            schedule);
+        return new PortalPart(server, news, live, upcoming, banners, schedule, siteSnapshot);
     }
 
     /// <summary>Patentes PvP do jogo (pontos PvP e Rei PvP). Fonte fora: null.</summary>

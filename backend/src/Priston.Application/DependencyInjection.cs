@@ -17,6 +17,7 @@ public static class DependencyInjection
         services.AddSingleton<RareDropFeed>();
         services.AddSingleton<ItemGuide>();
         services.AddSingleton<HomeService>();
+        services.AddSingleton<HomeSnapshotCache>();
         services.AddSingleton<RankingQueryService>();
         services.AddSingleton<LevelSnapshotService>();
         services.AddSingleton<Content.EventReminderService>();
