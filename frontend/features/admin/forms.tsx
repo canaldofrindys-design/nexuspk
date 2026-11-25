@@ -9,7 +9,8 @@ import { eventCategories, newsCategories } from "@/features/content/labels";
 import type { FormState } from "@/features/auth/types";
 import { safeImage } from "@/features/content/labels";
 import { pranchaArt } from "@/components/ui/ArtLink";
-import type { BannerRecord, DownloadSettings, RareDropSettings, ServerSettings } from "@/features/site/types";
+import type { BannerRecord, DownloadSettings, EventScheduleSettings, RareDropSettings, ServerSettings } from "@/features/site/types";
+import { scheduleKinds, weekdayNames } from "@/features/home/eventSchedule";
 import {
   createStaffAction,
   resetStaffPasswordAction,
@@ -18,6 +19,7 @@ import {
   saveEventAction,
   saveNewsAction,
   saveRareDropsAction,
+  saveScheduleAction,
   saveServerSettingsAction,
   staffLoginAction,
   staffPasswordAction,
@@ -401,5 +403,57 @@ export function EditStaffForm({ member, self }: { member: StaffItem; self: boole
         </form>
       ) : null}
     </div>
+  );
+}
+
+/** Horários fixos da semana (Bless Castle, SoD...): o banner da home mostra a contagem regressiva de cada um. */
+export function EventScheduleForm({ settings }: { settings: EventScheduleSettings }) {
+  const [state, action] = useActionState(saveScheduleAction, initialFormState);
+  const e = state.fieldErrors ?? {};
+  const val = (k: string, fallback: string | number | null | undefined) => state.values?.[k] ?? (fallback == null ? "" : String(fallback));
+  const input = "rounded-sm border border-bronze/70 bg-night/80 px-3 py-1.5 text-sm text-silver";
+  return (
+    <form action={action} className="flex flex-col gap-4" noValidate>
+      <FormMessage state={state} />
+      {slots(settings.items.length, 3, 8).map((i) => {
+        const d = settings.items[i];
+        const checked = new Set((state.values ? (state.values[`schDay_${i}`] ?? "").split(",").filter(Boolean).map(Number) : (d?.days ?? [])));
+        return (
+          <fieldset key={i} className="flex flex-col gap-2 border border-steel/60 p-3">
+            <legend className="px-1 text-sm text-silver">Evento {i + 1}</legend>
+            <div className="grid gap-2 md:grid-cols-[1.4fr_1fr_0.6fr_0.6fr]">
+              <input aria-label={`Evento ${i + 1}: nome`} name={`schName_${i}`} maxLength={40} placeholder="Nome (ex.: Bless Castle)" defaultValue={val(`schName_${i}`, d?.name)} className={input} />
+              <select aria-label={`Evento ${i + 1}: tipo`} name={`schKind_${i}`} defaultValue={val(`schKind_${i}`, d?.kind ?? "")} className={input}>
+                <option value="">Tipo</option>
+                {Object.entries(scheduleKinds).map(([k, v]) => (
+                  <option key={k} value={k}>
+                    {v.label}
+                  </option>
+                ))}
+              </select>
+              <input aria-label={`Evento ${i + 1}: horário de início`} name={`schTime_${i}`} type="time" defaultValue={val(`schTime_${i}`, d?.time)} className={`${input} tabular`} />
+              <input aria-label={`Evento ${i + 1}: duração em minutos`} name={`schDur_${i}`} inputMode="numeric" maxLength={4} placeholder="Minutos" defaultValue={val(`schDur_${i}`, d?.durationMinutes)} className={`${input} tabular`} />
+            </div>
+            <div className="flex flex-wrap gap-x-4 gap-y-1" role="group" aria-label={`Evento ${i + 1}: dias da semana`}>
+              {weekdayNames.map((name, day) => (
+                <label key={day} className="flex items-center gap-1.5 text-sm text-silver/90">
+                  <input type="checkbox" name={`schDay_${i}`} value={day} defaultChecked={checked.has(day)} className="accent-gold" />
+                  {name}
+                </label>
+              ))}
+            </div>
+            <input aria-label={`Evento ${i + 1}: descrição`} name={`schDesc_${i}`} maxLength={120} placeholder="Descrição curta (opcional)" defaultValue={val(`schDesc_${i}`, d?.description)} className={input} />
+          </fieldset>
+        );
+      })}
+      {e.items ? (
+        <p className="text-xs text-data-bad">{e.items}</p>
+      ) : (
+        <p className="text-xs text-silver/60">Horário de Brasília. Duração em branco vale 60 minutos. Evento sem nome e sem horário é ignorado. Salve para ganhar mais linhas (até 8).</p>
+      )}
+      <div className="max-w-xs">
+        <SubmitButton>Salvar horários</SubmitButton>
+      </div>
+    </form>
   );
 }

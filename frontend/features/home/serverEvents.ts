@@ -62,12 +62,3 @@ export const serverEvents: ServerEvent[] = [
     pvp: false,
   },
 ];
-
-/** Próximo Bless Castle (domingo, 16:00 em Brasília, UTC−3 o ano todo). */
-export function nextBlessCastle(now: Date = new Date()): Date {
-  const brt = new Date(now.getTime() - 3 * 3600_000);
-  const next = new Date(Date.UTC(brt.getUTCFullYear(), brt.getUTCMonth(), brt.getUTCDate(), 16 + 3));
-  next.setUTCDate(next.getUTCDate() + ((7 - brt.getUTCDay()) % 7));
-  if (next.getTime() <= now.getTime()) next.setUTCDate(next.getUTCDate() + 7);
-  return next;
-}

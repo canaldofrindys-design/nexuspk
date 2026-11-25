@@ -7,7 +7,7 @@ import { Countdown } from "./Countdown";
 import { formatDateTime, formatNumber } from "./format";
 import { ItemSlots } from "./PortalSections";
 import { RareDropsStrip, type DropView } from "./RareDropsStrip";
-import { nextBlessCastle } from "./serverEvents";
+import { nextBlessCastle } from "./eventSchedule";
 import type { HomeEventItem, HomePvpTier, HomeSnapshot } from "./types";
 
 /*
@@ -179,7 +179,7 @@ export function LiveTilesRow({ home }: { home: HomeSnapshot | null }) {
   const leader = home?.topBattlePoints?.[0] ?? null;
   const castle = home?.blessCastle;
   const biggest = home?.biggestClan;
-  const war = nextBlessCastle().toISOString();
+  const war = nextBlessCastle(home?.schedule).toISOString();
 
   const tiles: { href: string; art: (typeof pranchaArt.tiles)[keyof typeof pranchaArt.tiles]; label: string; info: TileInfo }[] = [
     { href: "/eventos?categoria=boss", art: pranchaArt.tiles.bosses, label: "Bosses", info: bossInfo(active, upcoming) },

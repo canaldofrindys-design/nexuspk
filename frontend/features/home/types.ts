@@ -1,4 +1,4 @@
-import type { ItemShowcase, PublicBanner, RareDrop } from "@/features/site/types";
+import type { ItemShowcase, PublicBanner, RareDrop, ScheduledEvent } from "@/features/site/types";
 
 export type Availability = "unknown" | "online" | "offline" | "partial";
 
@@ -75,4 +75,6 @@ export type HomeSnapshot = {
   biggestClan?: HomeClanLeader | null;
   rareDrops?: RareDrop[] | null;
   showcase?: ItemShowcase[] | null;
+  /** Eventos fixos da semana (Bless Castle, SoD...), para o banner com contagem regressiva. */
+  schedule?: ScheduledEvent[] | null;
 };

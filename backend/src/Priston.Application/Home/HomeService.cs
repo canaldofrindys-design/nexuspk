@@ -58,7 +58,8 @@ public sealed record HomeSnapshot(
     PvpTierLadder? PvpTiers = null,
     HomeClanLeader? BiggestClan = null,
     IReadOnlyList<RareDrop>? RareDrops = null,
-    IReadOnlyList<ItemShowcase>? Showcase = null);
+    IReadOnlyList<ItemShowcase>? Showcase = null,
+    IReadOnlyList<ScheduledEvent>? Schedule = null);
 
 /// <summary>
 /// Monta a homepage só com dados reais (ranking, status, notícias e eventos publicados).
@@ -117,6 +118,7 @@ public sealed class HomeService(
         IReadOnlyList<PublicBanner> banners = [];
         IReadOnlyList<RareDrop> drops = [];
         IReadOnlyList<ItemShowcase> showcase = [];
+        var schedule = SiteContentService.DefaultSchedule.Items;
         if (site is not null)
         {
             var snapshot = await site.GetAsync(cancellationToken).ConfigureAwait(false);
@@ -128,6 +130,7 @@ public sealed class HomeService(
 
             server = new HomeServerInfo(snapshot.Server.Name, snapshot.Server.Tagline, rates, snapshot.Server.CommunityLinks);
             banners = snapshot.Banners;
+            schedule = snapshot.Schedule ?? schedule;
             drops = dropFeed is null ? snapshot.RareDrops ?? [] : await dropFeed.GetAsync(snapshot, cancellationToken).ConfigureAwait(false);
             if (dropFeed is not null && drops.Count < RareDropFeed.MaxShown)
             {
@@ -160,7 +163,8 @@ public sealed class HomeService(
             tiers,
             biggest,
             drops,
-            showcase);
+            showcase,
+            schedule);
     }
 
     /// <summary>Patentes PvP do jogo (pontos PvP e Rei PvP). Fonte fora: null.</summary>

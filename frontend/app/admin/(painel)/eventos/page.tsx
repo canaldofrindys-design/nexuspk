@@ -3,12 +3,14 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { GameWindow } from "@/components/ui/GameWindow";
+import { EventScheduleForm } from "@/features/admin/forms";
 import { requireStaff } from "@/features/admin/session";
 import { eventStatusLabels, type AdminList, type EventRecord } from "@/features/admin/types";
 import { eventLabel } from "@/features/content/labels";
 import { formatDateTime } from "@/features/home/format";
 import { Pager } from "@/features/ranking/Pager";
 import { Tabs } from "@/features/ranking/Tabs";
+import type { EventScheduleSettings, SettingView } from "@/features/site/types";
 import { apiSend } from "@/services/api";
 
 export const metadata: Metadata = { title: "Eventos" };
@@ -23,7 +25,10 @@ async function Body({ searchParams }: { searchParams: Promise<Q> }) {
   const page = Math.max(1, Number.parseInt(q.pagina ?? "1", 10) || 1);
   const qs = new URLSearchParams({ pagina: String(page) });
   if (status) qs.set("situacao", status);
-  const r = await apiSend<AdminList<EventRecord>>("GET", `/api/v1/admin/events?${qs}`, { token });
+  const [r, schedule] = await Promise.all([
+    apiSend<AdminList<EventRecord>>("GET", `/api/v1/admin/events?${qs}`, { token }),
+    apiSend<SettingView<EventScheduleSettings>>("GET", "/api/v1/admin/site/schedule", { token }),
+  ]);
   const href = (s?: string, p = 1) => `/admin/eventos?${new URLSearchParams({ ...(s ? { situacao: s } : {}), ...(p > 1 ? { pagina: String(p) } : {}) })}`;
 
   return (
@@ -78,6 +83,33 @@ async function Body({ searchParams }: { searchParams: Promise<Q> }) {
         )}
         {r.ok ? <Pager page={r.data.page} pageSize={r.data.pageSize} total={r.data.total} href={(p) => href(status, p)} /> : null}
       </GameWindow>
+      <div className="mt-4">
+        <GameWindow
+          title="Horários fixos da semana (banner da home)"
+          actions={
+            <Link href="/" className="text-xs text-arcane hover:underline">
+              Ver banner
+            </Link>
+          }
+        >
+          <p className="mb-3 text-sm text-silver/70">
+            Eventos que se repetem toda semana, como o Bless Castle. Os três mais próximos aparecem no banner da home com contagem regressiva até o
+            início (e até o fim enquanto estão acontecendo), junto com os eventos da agenda acima que começam nos próximos 7 dias.
+          </p>
+          {schedule.ok ? (
+            <>
+              <p className="mb-3 text-xs text-silver/60">
+                {schedule.data.updatedUtc
+                  ? `Última alteração em ${formatDateTime(schedule.data.updatedUtc)}${schedule.data.updatedBy ? ` por ${schedule.data.updatedBy}` : ""}.`
+                  : "Ainda no padrão da instalação: Bless Castle aos domingos, 16:00."}
+              </p>
+              <EventScheduleForm settings={schedule.data.value} />
+            </>
+          ) : (
+            <p className="text-sm text-data-bad">{schedule.error.message}</p>
+          )}
+        </GameWindow>
+      </div>
     </>
   );
 }

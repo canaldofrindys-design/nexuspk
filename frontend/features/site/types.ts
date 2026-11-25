@@ -34,3 +34,11 @@ export type BannerRecord = PublicBanner & {
   createdBy: string | null;
   updatedBy: string | null;
 };
+
+/**
+ * Evento fixo do servidor que se repete toda semana (painel: Eventos > Horários fixos).
+ * days: 0 = domingo ... 6 = sábado. time: início em Brasília ("HH:mm").
+ */
+export type ScheduledEventKind = "bless" | "sod" | "hellsgate" | "boss" | "pvp" | "evento";
+export type ScheduledEvent = { name: string; kind: ScheduledEventKind; days: number[]; time: string; durationMinutes: number; description: string | null };
+export type EventScheduleSettings = { items: ScheduledEvent[] };

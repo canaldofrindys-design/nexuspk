@@ -53,7 +53,8 @@ public sealed record SiteSnapshot(
     DateTimeOffset? ServerUpdatedUtc,
     DateTimeOffset? DownloadsUpdatedUtc,
     IReadOnlyList<RareDrop>? RareDrops = null,
-    IReadOnlyList<RareItem>? RareItems = null);
+    IReadOnlyList<RareItem>? RareItems = null,
+    IReadOnlyList<ScheduledEvent>? Schedule = null);
 
 public sealed record SiteSettingRow(string Value, DateTimeOffset UpdatedUtc, string? UpdatedBy);
 
@@ -166,6 +167,7 @@ public sealed partial class SiteContentService(
                 var banners = await store.ListBannersAsync(ct).ConfigureAwait(false);
                 var drops = await store.GetSettingAsync(DropsKey, ct).ConfigureAwait(false);
                 var rareItems = await store.GetSettingAsync(RareItemsKey, ct).ConfigureAwait(false);
+                var schedule = await store.GetSettingAsync(ScheduleKey, ct).ConfigureAwait(false);
                 return new Cached(
                     ParseServer(server?.Value) ?? DefaultServer(),
                     ParseDownloads(downloads?.Value) ?? EmptyDownloads,
@@ -173,7 +175,8 @@ public sealed partial class SiteContentService(
                     server?.UpdatedUtc,
                     downloads?.UpdatedUtc,
                     ParseDrops(drops?.Value)?.Items ?? [],
-                    ParseRareItems(rareItems?.Value)?.Items ?? []);
+                    ParseRareItems(rareItems?.Value)?.Items ?? [],
+                    (ParseSchedule(schedule?.Value) ?? DefaultSchedule).Items);
             }).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
@@ -184,7 +187,7 @@ public sealed partial class SiteContentService(
 
         if (data is null)
         {
-            return new SiteSnapshot(DefaultServer(), EmptyDownloads, [], null, null);
+            return new SiteSnapshot(DefaultServer(), EmptyDownloads, [], null, null, Schedule: DefaultSchedule.Items);
         }
 
         var dropsFrom = clock.GetUtcNow().AddDays(-DropDays);
@@ -199,7 +202,7 @@ public sealed partial class SiteContentService(
             .Take(MaxPublicBanners)
             .Select(b => new PublicBanner(b.Id, b.Title, b.Subtitle, b.ImageUrl, b.LinkUrl, b.LinkLabel))
             .ToList();
-        return new SiteSnapshot(data.Server, data.Downloads, visible, data.ServerUpdatedUtc, data.DownloadsUpdatedUtc, recentDrops, data.RareItems);
+        return new SiteSnapshot(data.Server, data.Downloads, visible, data.ServerUpdatedUtc, data.DownloadsUpdatedUtc, recentDrops, data.RareItems, data.Schedule);
     }
 
     public Task<AttachmentContent?> GetMediaAsync(Guid id, CancellationToken ct) => store.GetMediaAsync(id, ct);
@@ -686,5 +689,6 @@ public sealed partial class SiteContentService(
         DateTimeOffset? ServerUpdatedUtc,
         DateTimeOffset? DownloadsUpdatedUtc,
         IReadOnlyList<RareDrop> Drops,
-        IReadOnlyList<RareItem> RareItems);
+        IReadOnlyList<RareItem> RareItems,
+        IReadOnlyList<ScheduledEvent> Schedule);
 }

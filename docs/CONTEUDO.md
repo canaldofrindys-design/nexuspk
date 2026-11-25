@@ -34,6 +34,17 @@ Texto simples, sem HTML (qualquer marcação aparece como texto):
 
 Pelo painel da equipe em `/admin/noticias` e `/admin/eventos` (funções moderador, administrador e superadministrador). Os horários do formulário são de Brasília. O site mostra a alteração na hora. Ver `docs/ADMIN.md`.
 
+## Banner da home: eventos com contagem regressiva
+
+A abertura da home é um banner grande que começa pelos eventos principais e depois passa pelas três cenas de apresentação.
+Cada evento mostra a contagem até o início (dias, horas, minutos e segundos) e, enquanto acontece, "Acontecendo agora" com a contagem até o fim.
+No computador, a lateral lista os próximos eventos com a contagem de cada um; no celular eles entram como cenas do banner.
+Com "reduzir movimento" ligado não há troca automática nem animação dos números (a contagem continua certa).
+
+- **Horários fixos da semana**: `/admin/eventos`, quadro "Horários fixos da semana". Nome, tipo (Bless Castle, SoD, Hellsgate, boss, PvP ou evento), dias da semana, horário de Brasília e duração em minutos (padrão 60). Até 8 eventos. Sem nada salvo, vale o Bless Castle aos domingos, 16:00. Chave `schedule`, migração `0012`. O mesmo horário do Bless Castle vale para o card "Bless Castle" e para o "Líder do Bless Castle" da home.
+- **Agenda**: os eventos cadastrados em `/admin/eventos` que estão abertos ou começam nos próximos 7 dias entram junto.
+- O banner mostra os três mais próximos (os que estão acontecendo primeiro).
+
 ## Jornada do Herói (centro da home)
 
 A faixa do meio da home mostra o servidor ao vivo, em três fileiras:

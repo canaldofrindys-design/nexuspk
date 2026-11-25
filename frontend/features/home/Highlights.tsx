@@ -7,7 +7,8 @@ import { KitIcon, PodiumMedal } from "@/components/ui/KitIcon";
 import { ClanEmblem } from "./ClanEmblem";
 import { formatNumber } from "./format";
 import { PanelTitle } from "./PortalSections";
-import { nextBlessCastle, serverEvents } from "./serverEvents";
+import { nextBlessCastle } from "./eventSchedule";
+import { serverEvents } from "./serverEvents";
 import type { HomeClanLeader, HomeSnapshot } from "./types";
 
 /*
@@ -166,7 +167,7 @@ function LeaderPanel({
   );
 }
 
-const brt = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit" });
+const brt = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "long", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 
 /** Coluna direita da prancha: líder do Bless Castle e do SoD, com as bandeiras e os orbes. */
 export function LeadersColumn({ home }: { home: HomeSnapshot | null }) {
@@ -178,7 +179,7 @@ export function LeadersColumn({ home }: { home: HomeSnapshot | null }) {
         leader={home?.blessCastle}
         empty="O castelo está sem dono."
         sod={false}
-        note={`Próxima guerra: domingo, ${brt.format(nextBlessCastle())}, 16:00`}
+        note={`Próxima guerra: ${brt.format(nextBlessCastle(home?.schedule))}`}
       />
       <LeaderPanel
         id="lider-sod-t"

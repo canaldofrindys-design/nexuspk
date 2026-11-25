@@ -258,6 +258,39 @@ public sealed class SiteContentTests : IDisposable
     }
 
     [Fact]
+    public async Task Event_schedule_defaults_to_bless_castle_and_is_validated_before_reaching_the_home()
+    {
+        using var svc = Service();
+        var site = await svc.GetAsync(CancellationToken.None);
+        var bless = Assert.Single(site.Schedule!);
+        Assert.Equal(("Bless Castle", "16:00", 0), (bless.Name, bless.Time, Assert.Single(bless.Days)));
+
+        var noDay = await svc.SaveScheduleSettingsAsync(Admin, new EventScheduleSettingsInput(
+            [new ScheduledEventInput("SoD", "sod", [], "20:00", "60", null)]), Client, CancellationToken.None);
+        Assert.Equal("items", Assert.Single(noDay.Errors!).Key);
+        var badTime = await svc.SaveScheduleSettingsAsync(Admin, new EventScheduleSettingsInput(
+            [new ScheduledEventInput("SoD", "sod", [3], "25:00", "60", null)]), Client, CancellationToken.None);
+        Assert.Equal(StaffAuthStatus.ValidationFailed, badTime.Status);
+        var badKind = await svc.SaveScheduleSettingsAsync(Admin, new EventScheduleSettingsInput(
+            [new ScheduledEventInput("SoD", "xyz", [3], "20:00", "60", null)]), Client, CancellationToken.None);
+        Assert.Equal(StaffAuthStatus.ValidationFailed, badKind.Status);
+
+        Assert.Equal(StaffAuthStatus.Ok, (await svc.SaveScheduleSettingsAsync(Admin, new EventScheduleSettingsInput(
+        [
+            new ScheduledEventInput(" Bless Castle ", "bless", [0], "16:00", "", "Guerra de clãs"),
+            new ScheduledEventInput("SoD", "sod", [5, 3, 3, 9], "9:30", "45", null),
+            new ScheduledEventInput("", "", [], "", "", ""),
+        ]), Client, CancellationToken.None)).Status);
+
+        site = await svc.GetAsync(CancellationToken.None);
+        Assert.Equal(["Bless Castle", "SoD"], site.Schedule!.Select(e => e.Name));
+        Assert.Equal(60, site.Schedule![0].DurationMinutes);
+        Assert.Equal([3, 5], site.Schedule![1].Days);
+        Assert.Equal("09:30", site.Schedule![1].Time);
+        Assert.Contains(_audit.Rows, r => r.Action == "site.schedule.updated");
+    }
+
+    [Fact]
     public async Task Uploaded_media_must_be_a_real_png_or_jpg()
     {
         using var svc = Service();
