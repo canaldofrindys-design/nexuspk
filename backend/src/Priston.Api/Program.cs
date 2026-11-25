@@ -32,6 +32,7 @@ builder.Services.AddApplication(builder.Configuration);
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.Converters.Add(new JsonStringEnumConverter(System.Text.Json.JsonNamingPolicy.CamelCase)));
 builder.Services.AddGameDatabaseIntegration(builder.Configuration);
+builder.Services.AddHostedService<Priston.Api.Endpoints.HomeWarmup>();
 
 // A API fica atrás do Next (mesma máquina). Só confia no X-Forwarded-For vindo de 127.0.0.1/::1.
 builder.Services.Configure<ForwardedHeadersOptions>(o =>
