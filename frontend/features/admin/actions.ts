@@ -282,6 +282,33 @@ function formValues(form: FormData): Record<string, string> {
   return v;
 }
 
+/** Horários fixos dos eventos (banner da home). Os dias vêm de caixas marcadas: schDay_{linha} com 0 a 6. */
+export async function saveScheduleAction(_: FormState, form: FormData): Promise<FormState> {
+  const items: { name: string; kind: string; days: number[]; time: string; duration: string; description: string }[] = [];
+  const values = formValues(form);
+  for (let i = 0; i < 8; i++) {
+    const days = form
+      .getAll(`schDay_${i}`)
+      .map((d) => Number(d))
+      .filter((d) => Number.isInteger(d) && d >= 0 && d <= 6);
+    values[`schDay_${i}`] = days.join(",");
+    const row = {
+      name: text(form, `schName_${i}`),
+      kind: text(form, `schKind_${i}`),
+      days,
+      time: text(form, `schTime_${i}`),
+      duration: text(form, `schDur_${i}`),
+      description: text(form, `schDesc_${i}`),
+    };
+    if (row.name.trim() || row.time.trim()) items.push(row);
+  }
+  const r = await apiSend("PUT", "/api/v1/admin/site/schedule", { token: await token(), body: { items }, ...(await clientContext()) });
+  if (!r.ok) return failure(r, values);
+  revalidatePath("/admin/eventos");
+  revalidatePath("/");
+  return { status: "success", message: "Horários salvos. O banner da home mostra a nova contagem em até 1 minuto." };
+}
+
 export async function saveRareDropsAction(_: FormState, form: FormData): Promise<FormState> {
   const body = {
     items: rows(form, { item: "dropItem", icon: "dropIcon", boss: "dropBoss", player: "dropPlayer", droppedLocal: "dropWhen" }, 30),

@@ -113,6 +113,13 @@ public static class SiteEndpoints
         admin.MapPut("/site/rare-items", async ([FromBody] RareItemSettingsInput body, StaffAuthService auth, SiteContentService site, HttpContext http, CancellationToken ct) =>
             await AdminEndpoints.Guard(auth, http, Capability.ManageContent, async me => AdminEndpoints.Saved(await site.SaveRareItemSettingsAsync(me, body, AuthEndpoints.Client(http), ct)), ct));
 
+        // Horários fixos dos eventos do servidor (Bless Castle, SoD...): contagem regressiva no banner da home.
+        admin.MapGet("/site/schedule", async (StaffAuthService auth, SiteContentService site, HttpContext http, CancellationToken ct) =>
+            await AdminEndpoints.Guard(auth, http, Capability.ManageContent, async _ => Results.Ok(await site.GetScheduleSettingsAsync(ct)), ct));
+
+        admin.MapPut("/site/schedule", async ([FromBody] EventScheduleSettingsInput body, StaffAuthService auth, SiteContentService site, HttpContext http, CancellationToken ct) =>
+            await AdminEndpoints.Guard(auth, http, Capability.ManageContent, async me => AdminEndpoints.Saved(await site.SaveScheduleSettingsAsync(me, body, AuthEndpoints.Client(http), ct)), ct));
+
         // Itens mais pegos nos últimos 30 dias (log de itens), para a equipe achar os códigos dos raros.
         admin.MapGet("/site/item-pickups", async (StaffAuthService auth, IServiceProvider services, TimeProvider clock, HttpContext http, CancellationToken ct) =>
             await AdminEndpoints.Guard(auth, http, Capability.ManageContent, async _ =>

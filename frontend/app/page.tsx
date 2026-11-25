@@ -3,6 +3,7 @@ import { AgendaWindow } from "@/features/home/AgendaWindow";
 import { BannerCarousel } from "@/features/home/BannerCarousel";
 import { ActionButtons, FeatureCards } from "@/features/home/FeatureCards";
 import { HeroBanner } from "@/features/home/HeroBanner";
+import { defaultSchedule } from "@/features/home/eventSchedule";
 import { HomeChapters } from "@/features/home/HomeChapters";
 import { NoticeBoard } from "@/features/home/NoticeBoard";
 import {
@@ -25,7 +26,8 @@ import { connection } from "next/server";
 
 /**
  * Home em quatro partes, cada uma com o seu cenário no fundo (o fundo troca com esmaecer ao rolar):
- * 1) banner animado com três cenas (vale ao entardecer, luar e estrada);
+ * 1) banner grande e animado: os eventos principais (Bless Castle e os horários fixos do painel) com
+ *    contagem regressiva até o início, depois três cenas (vale ao entardecer, luar e estrada);
  * 2) a prancha "portal" do kit visual: banners do painel (quando houver), faixa de cinco banners,
  *    faixa de botões e o quadro em três colunas (ranking de BP e status | classes e a "Jornada do Herói":
  *    drops raros da semana, elos PvP e cards ao vivo | líder do Bless Castle, líder do SoD e bandeiras);
@@ -90,6 +92,19 @@ async function LiveBoard() {
   );
 }
 
+/** Banner com os horários do painel e a agenda; até a API responder, o Bless Castle padrão. */
+async function Hero() {
+  await connection();
+  const home = await loadHome();
+  return (
+    <HeroBanner
+      schedule={home?.schedule ?? defaultSchedule}
+      agenda={[...(home?.activeEvents ?? []), ...(home?.upcomingEvents ?? [])]}
+      initialNow={new Date().getTime()}
+    />
+  );
+}
+
 function PortalFallback() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-6">
@@ -105,7 +120,9 @@ export default function HomePage() {
   return (
     <>
       <h1 className="sr-only">NexusPK, servidor privado de Priston Tale</h1>
-      <HeroBanner />
+      <Suspense fallback={<HeroBanner schedule={defaultSchedule} />}>
+        <Hero />
+      </Suspense>
       <Suspense fallback={<PortalFallback />}>
         <Portal />
       </Suspense>
