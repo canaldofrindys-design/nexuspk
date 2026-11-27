@@ -85,16 +85,22 @@ async function Body({ searchParams }: { searchParams: Promise<Q> }) {
       </GameWindow>
       <div className="mt-4">
         <GameWindow
-          title="Horários fixos da semana (banner da home)"
+          title="Horários fixos da semana e bosses"
           actions={
-            <Link href="/" className="text-xs text-arcane hover:underline">
-              Ver banner
-            </Link>
+            <span className="flex gap-3">
+              <Link href="/" className="text-xs text-arcane hover:underline">
+                Ver banner
+              </Link>
+              <Link href="/bosses" className="text-xs text-arcane hover:underline">
+                Ver bosses
+              </Link>
+            </span>
           }
         >
           <p className="mb-3 text-sm text-silver/70">
             Eventos que se repetem toda semana, como o Bless Castle. Os três mais próximos aparecem no banner da home com contagem regressiva até o
-            início (e até o fim enquanto estão acontecendo), junto com os eventos da agenda acima que começam nos próximos 7 dias.
+            início (e até o fim enquanto estão acontecendo), junto com os eventos da agenda acima que começam nos próximos 7 dias. Os do tipo Boss mundial
+            também formam a página de bosses, onde o jogador liga um aviso no navegador antes de cada horário.
           </p>
           {schedule.ok ? (
             <>

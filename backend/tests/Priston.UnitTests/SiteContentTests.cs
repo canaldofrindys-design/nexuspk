@@ -291,6 +291,62 @@ public sealed class SiteContentTests : IDisposable
     }
 
     [Fact]
+    public async Task Boss_schedule_accepts_several_times_a_day_and_a_place()
+    {
+        using var svc = Service();
+        Assert.Equal(["01:00", "09:30", "17:00"], SiteContentService.ParseTimes("17:00, 9:30;01:00 17:00"));
+        Assert.Null(SiteContentService.ParseTimes("01:00, 25:00"));
+        Assert.Null(SiteContentService.ParseTimes(" "));
+
+        var tooMany = string.Join(',', Enumerable.Range(0, 25).Select(m => $"10:{m:00}"));
+        var bad = await svc.SaveScheduleSettingsAsync(Admin, new EventScheduleSettingsInput(
+            [new ScheduledEventInput("Valento", "boss", [0, 1, 2, 3, 4, 5, 6], tooMany, "30", null)]), Client, CancellationToken.None);
+        Assert.Equal(StaffAuthStatus.ValidationFailed, bad.Status);
+
+        Assert.Equal(StaffAuthStatus.Ok, (await svc.SaveScheduleSettingsAsync(Admin, new EventScheduleSettingsInput(
+        [
+            new ScheduledEventInput("Valento", "boss", [0, 1, 2, 3, 4, 5, 6], "21:00, 01:00, 13:00", "30", null, " Coração de Fogo "),
+            new ScheduledEventInput("Bless Castle", "bless", [0], "16:00", "60", null),
+        ]), Client, CancellationToken.None)).Status);
+
+        var site = await svc.GetAsync(CancellationToken.None);
+        var boss = site.Schedule![0];
+        Assert.Equal("01:00", boss.Time);
+        Assert.Equal(["01:00", "13:00", "21:00"], boss.Times);
+        Assert.Equal("Coração de Fogo", boss.Place);
+        Assert.Null(site.Schedule[1].Times);
+    }
+
+    [Fact]
+    public async Task Mix_list_is_validated_and_starts_empty()
+    {
+        using var svc = Service();
+        var empty = await svc.GetPublicMixAsync(CancellationToken.None);
+        Assert.Empty(empty!.Value.Items);
+        Assert.Null(empty.UpdatedUtc);
+
+        var noTarget = await svc.SaveMixSettingsAsync(Admin, new MixSettingsInput(null,
+            [new MixRecipeInput("Mix comum", "", "Devine", "Devine ×3", "+10 de dano")]), Client, CancellationToken.None);
+        Assert.Equal("items", Assert.Single(noTarget.Errors!).Key);
+        var noEffect = await svc.SaveMixSettingsAsync(Admin, new MixSettingsInput(null,
+            [new MixRecipeInput("Mix comum", "armas", "Devine", "Devine ×3", " ")]), Client, CancellationToken.None);
+        Assert.Equal(StaffAuthStatus.ValidationFailed, noEffect.Status);
+
+        Assert.Equal(StaffAuthStatus.Ok, (await svc.SaveMixSettingsAsync(Admin, new MixSettingsInput(" Mix no Ferreiro. ",
+        [
+            new MixRecipeInput(" Mix comum ", "armas", "Devine", "Devine ×3, Murky ×2", "+10 de dano"),
+            new MixRecipeInput("", "", "", "", ""),
+            new MixRecipeInput("Mix comum", "botas", "Celesto", "Celesto ×4", "+20 de defesa"),
+        ]), Client, CancellationToken.None)).Status);
+
+        var mix = await svc.GetPublicMixAsync(CancellationToken.None);
+        Assert.Equal("Mix no Ferreiro.", mix!.Value.Intro);
+        Assert.Equal(["Devine", "Celesto"], mix.Value.Items.Select(i => i.Name));
+        Assert.Equal("Mix comum", mix.Value.Items[0].Group);
+        Assert.Contains(_audit.Rows, r => r.Action == "site.mix.updated");
+    }
+
+    [Fact]
     public async Task Uploaded_media_must_be_a_real_png_or_jpg()
     {
         using var svc = Service();

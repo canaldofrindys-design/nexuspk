@@ -9,7 +9,9 @@ export type Block =
   | { kind: "table"; caption?: string; head: string[]; rows: string[][] }
   | { kind: "facts"; items: { label: string; value: string }[] }
   | { kind: "note"; tone: "info" | "alerta"; text: string }
-  | { kind: "links"; items: { href: string; label: string; text?: string }[] };
+  | { kind: "links"; items: { href: string; label: string; text?: string }[] }
+  /** Calculadora de sheltoms do Aging (componente do navegador). */
+  | { kind: "aging-calculator" };
 
 export type Section = { id: string; title: string; icon?: KitIconName; blocks: Block[] };
 
