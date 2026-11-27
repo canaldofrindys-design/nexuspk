@@ -59,6 +59,25 @@ assert d["game"]["vip"]["active"] and d["game"]["coins"] == 10, d["game"]
 print("ok   - painel lê personagens, VIP e coins com o login de leitura")
 PY
 check "senha atual errada no painel"   400 POST /api/v1/player/password '{"currentPassword":"errada99","newPassword":"nova1234"}' "$TOKEN"
+# Desconectar personagem travado (docs/DESCONECTAR.md): sem sinal do servidor do jogo, depois com o servidor simulado
+# por um login com só a permissão de database/scripts/permissoes-servidor-desconectar.sql.
+GS_PW=$(rnd)
+$SQLCMD -Q "IF SUSER_ID('integ_game_server') IS NULL CREATE LOGIN integ_game_server WITH PASSWORD = '$GS_PW', CHECK_POLICY = OFF;" > /dev/null
+sed -e "s/<LOGIN-DO-SERVIDOR>/integ_game_server/g" database/scripts/permissoes-servidor-desconectar.sql | $SQLCMD > /dev/null
+GS_SQLCMD="${SQLCMD/-U sa -P $SA_PASSWORD/-U integ_game_server -P $GS_PW}"
+XFF=198.51.100.23 check "desconectar: situação"           200 GET  /api/v1/player/disconnect '' "$TOKEN"
+python3 -c 'import json; d=json.load(open("/tmp/integration-body")); assert d["available"] is False and d["last"] is None, d; print("ok   - desconectar desligado sem sinal do servidor")' || fail=1
+XFF=198.51.100.23 check "desconectar: servidor sem sinal" 503 POST /api/v1/player/disconnect '' "$TOKEN"
+$GS_SQLCMD -d PortalDB -Q "SET NOCOUNT ON; UPDATE dbo.GameServerRuntime SET ProtocolVersion = 1, LastSeenUtc = SYSUTCDATETIME() WHERE Feature = 'disconnect';" > /dev/null
+XFF=198.51.100.23 check "desconectar: pedir"              202 POST /api/v1/player/disconnect '' "$TOKEN"
+XFF=198.51.100.23 check "desconectar: já pendente"        409 POST /api/v1/player/disconnect '' "$TOKEN"
+pending=$($GS_SQLCMD -h -1 -W -d PortalDB -Q "SET NOCOUNT ON; SELECT TOP (20) Id, GameLogin FROM dbo.GameDisconnectRequest WHERE Status = 'pending' AND RequestedUtc >= DATEADD(MINUTE, -2, SYSUTCDATETIME()) ORDER BY Id;" | tr -d '\r' | head -1)
+REQ_ID=$(echo "$pending" | awk '{print $1}')
+[ "$(echo "$pending" | awk '{print tolower($2)}')" = "integ01" ] && echo "ok   - servidor lê o pedido pendente" || { echo "FAIL - fila do servidor: $pending"; fail=1; }
+$GS_SQLCMD -d PortalDB -Q "SET NOCOUNT ON; UPDATE dbo.GameDisconnectRequest SET Status = 'done', ProcessedUtc = SYSUTCDATETIME(), ServerNote = N'integ' WHERE Id = $REQ_ID AND Status = 'pending';" > /dev/null
+XFF=198.51.100.23 check "desconectar: resposta do servidor" 200 GET /api/v1/player/disconnect '' "$TOKEN"
+python3 -c 'import json; d=json.load(open("/tmp/integration-body")); assert d["last"]["status"]=="done" and d["available"] is True, d; print("ok   - painel mostra a conta desconectada")' || fail=1
+if $GS_SQLCMD -d PortalDB -Q "SET NOCOUNT ON; SELECT TOP 1 1 FROM dbo.PlayerSession;" > /dev/null 2>&1; then echo "FAIL - login do servidor lê outras tabelas do portal"; fail=1; else echo "ok   - login do servidor só vê a fila de desconexão"; fi
 $SQLCMD -d PortalDB -Q "SET QUOTED_IDENTIFIER ON; SET NOCOUNT ON;
 INSERT INTO dbo.News (Slug, Category, Title, Summary, Body, Status, PublishedUtc) VALUES
  ('integ-publicada','noticia',N'Publicada',N'r',N'b','published',DATEADD(hour,-1,SYSUTCDATETIME())),

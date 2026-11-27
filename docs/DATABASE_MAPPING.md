@@ -63,6 +63,7 @@ Bancos que existem no servidor e **não** foram extraídos: BattleEvents, Billin
 | Esconder equipe e testes do ranking | `[PortalDB].dbo.RankingExclusion` (migração 0009) | `Kind` = conta, personagem ou prefixo do nome; `Value` | Lista do portal; editar com `database/scripts/esconder-do-ranking.sql`. Classe fora de 1 a 11 ("Desconhecida") também fica fora |
 | VIP | `[ServerDB].dbo.Vip` | `AccountID, PlayerName, IdVip, DateStart, DateEnd` | Confirmado |
 | Jogadores online | Conexões TCP abertas na porta do servidor do jogo (sem tabela) | — | `GameOnRecord`/`GameOutRecord` pararam em 2022; `inuse` e `ClanDB.CT` não voltam a 0 ao sair (11/11/2026). O portal conta as conexões, desligado até conferir com a janela do servidor (INSTALLATION.md) |
+| Desconectar personagem travado | `[PortalDB].dbo.GameDisconnectRequest` e `GameServerRuntime` (migração 0013) | — | **Sem fonte no jogo**: o portal grava o pedido e o servidor do jogo atende (docs/DESCONECTAR.md). Depende de mudança no código do servidor |
 | Status do servidor (online/offline) | Teste de porta TCP do servidor de jogo (`GAME_SERVER_IP`/`PORT` do admin antigo) | — | Sem tabela; verificação ativa pelo Worker |
 | Coins | `[CoinShopDB].dbo.UserInfo` | `UserID, UserCoin, LastChange` | Confirmado (fora do escopo inicial) |
 | Histórico diário/semanal/mensal | — | — | **Sem fonte**: snapshots no banco do portal, a partir da data de implantação |

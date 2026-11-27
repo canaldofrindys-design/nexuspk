@@ -11,7 +11,7 @@
     api\  worker\  migrator\  .NET publicados para win-x64 (usam o runtime do Hosting Bundle)
     web\                      Next (saída standalone) + start.js
     deploy\                   scripts de instalação, publicação, backup e volta de versão
-    deploy\sql\               permissoes-portal.sql, permissoes-admin-jogo.sql
+    deploy\sql\               permissoes-portal.sql, permissoes-admin-jogo.sql, permissoes-servidor-desconectar.sql
   Nenhum segredo vai no pacote: connection strings e senhas ficam em C:\NexusPortal\config no servidor.
 #>
 [CmdletBinding()]
@@ -72,7 +72,7 @@ $deploy = Join-Path $stage 'deploy'
 New-Item -ItemType Directory -Force -Path (Join-Path $deploy 'sql'), (Join-Path $deploy 'web') | Out-Null
 Copy-Item -Path (Join-Path $PSScriptRoot 'windows/*.ps1') -Destination $deploy
 Copy-Item -Path (Join-Path $PSScriptRoot 'windows/web/web.config.template') -Destination (Join-Path $deploy 'web')
-Copy-Item -Path (Join-Path $repo 'database/scripts/permissoes-portal.sql'), (Join-Path $repo 'database/scripts/permissoes-admin-jogo.sql') -Destination (Join-Path $deploy 'sql')
+Copy-Item -Path (Join-Path $repo 'database/scripts/permissoes-portal.sql'), (Join-Path $repo 'database/scripts/permissoes-admin-jogo.sql'), (Join-Path $repo 'database/scripts/permissoes-servidor-desconectar.sql') -Destination (Join-Path $deploy 'sql')
 Set-Content -Path (Join-Path $stage 'VERSION') -Value $Version -NoNewline -Encoding ascii
 
 $zip = Join-Path $Output "nexusportal-$Version.zip"
