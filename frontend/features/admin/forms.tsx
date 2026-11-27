@@ -9,7 +9,8 @@ import { eventCategories, newsCategories } from "@/features/content/labels";
 import type { FormState } from "@/features/auth/types";
 import { safeImage } from "@/features/content/labels";
 import { pranchaArt } from "@/components/ui/ArtLink";
-import type { BannerRecord, DownloadSettings, EventScheduleSettings, RareDropSettings, ServerSettings } from "@/features/site/types";
+import type { BannerRecord, DownloadSettings, EventScheduleSettings, MixSettings, RareDropSettings, ServerSettings } from "@/features/site/types";
+import { mixTargets } from "@/features/mix/labels";
 import { scheduleKinds, weekdayNames } from "@/features/home/eventSchedule";
 import {
   createStaffAction,
@@ -18,6 +19,7 @@ import {
   saveDownloadsAction,
   saveEventAction,
   saveNewsAction,
+  saveMixAction,
   saveRareDropsAction,
   saveScheduleAction,
   saveServerSettingsAction,
@@ -415,7 +417,7 @@ export function EventScheduleForm({ settings }: { settings: EventScheduleSetting
   return (
     <form action={action} className="flex flex-col gap-4" noValidate>
       <FormMessage state={state} />
-      {slots(settings.items.length, 3, 8).map((i) => {
+      {slots(settings.items.length, 3, 20).map((i) => {
         const d = settings.items[i];
         const checked = new Set((state.values ? (state.values[`schDay_${i}`] ?? "").split(",").filter(Boolean).map(Number) : (d?.days ?? [])));
         return (
@@ -431,7 +433,14 @@ export function EventScheduleForm({ settings }: { settings: EventScheduleSetting
                   </option>
                 ))}
               </select>
-              <input aria-label={`Evento ${i + 1}: horário de início`} name={`schTime_${i}`} type="time" defaultValue={val(`schTime_${i}`, d?.time)} className={`${input} tabular`} />
+              <input
+                aria-label={`Evento ${i + 1}: horários de início`}
+                name={`schTime_${i}`}
+                maxLength={200}
+                placeholder="16:00 ou 01:00, 13:00"
+                defaultValue={val(`schTime_${i}`, d ? (d.times?.length ? d.times.join(", ") : d.time) : "")}
+                className={`${input} tabular`}
+              />
               <input aria-label={`Evento ${i + 1}: duração em minutos`} name={`schDur_${i}`} inputMode="numeric" maxLength={4} placeholder="Minutos" defaultValue={val(`schDur_${i}`, d?.durationMinutes)} className={`${input} tabular`} />
             </div>
             <div className="flex flex-wrap gap-x-4 gap-y-1" role="group" aria-label={`Evento ${i + 1}: dias da semana`}>
@@ -442,17 +451,75 @@ export function EventScheduleForm({ settings }: { settings: EventScheduleSetting
                 </label>
               ))}
             </div>
-            <input aria-label={`Evento ${i + 1}: descrição`} name={`schDesc_${i}`} maxLength={120} placeholder="Descrição curta (opcional)" defaultValue={val(`schDesc_${i}`, d?.description)} className={input} />
+            <div className="grid gap-2 md:grid-cols-[1fr_2fr]">
+              <input aria-label={`Evento ${i + 1}: mapa ou local`} name={`schPlace_${i}`} maxLength={40} placeholder="Mapa ou local (opcional)" defaultValue={val(`schPlace_${i}`, d?.place)} className={input} />
+              <input aria-label={`Evento ${i + 1}: descrição`} name={`schDesc_${i}`} maxLength={120} placeholder="Descrição curta (opcional)" defaultValue={val(`schDesc_${i}`, d?.description)} className={input} />
+            </div>
           </fieldset>
         );
       })}
       {e.items ? (
         <p className="text-xs text-data-bad">{e.items}</p>
       ) : (
-        <p className="text-xs text-silver/60">Horário de Brasília. Duração em branco vale 60 minutos. Evento sem nome e sem horário é ignorado. Salve para ganhar mais linhas (até 8).</p>
+        <p className="text-xs text-silver/60">
+          Horário de Brasília. Um boss que nasce várias vezes no dia leva todos os horários separados por vírgula (01:00, 09:00, 17:00); com o tipo Boss mundial ele aparece na página de bosses, com aviso no navegador.
+          Duração em branco vale 60 minutos. Evento sem nome e sem horário é ignorado. Salve para ganhar mais linhas (até 20).
+        </p>
       )}
       <div className="max-w-xs">
         <SubmitButton>Salvar horários</SubmitButton>
+      </div>
+    </form>
+  );
+}
+
+/** Mix List pública: texto de abertura e uma linha por fórmula (tipo de mix, equipamento, nome, sheltoms e o que dá). */
+export function MixForm({ settings }: { settings: MixSettings }) {
+  const [state, action] = useActionState(saveMixAction, initialFormState);
+  const e = state.fieldErrors ?? {};
+  const val = (k: string, fallback: string | null | undefined) => state.values?.[k] ?? fallback ?? "";
+  const input = "rounded-sm border border-bronze/70 bg-night/80 px-3 py-1.5 text-sm text-silver";
+  return (
+    <form action={action} className="flex flex-col gap-4" noValidate>
+      <FormMessage state={state} />
+      <TextArea
+        label="Texto de abertura (opcional)"
+        name="mixIntro"
+        rows={3}
+        maxLength={2000}
+        defaultValue={val("mixIntro", settings.intro)}
+        error={e.intro}
+        hint="Ex.: onde fica o NPC do mix e o que acontece se a combinação estiver errada."
+      />
+      <fieldset className="flex flex-col gap-3 border border-steel/60 p-3">
+        <legend className="px-1 text-sm text-silver">Fórmulas</legend>
+        {slots(settings.items.length + 3, 5, 200).map((i) => {
+          const d = settings.items[i];
+          return (
+            <div key={i} className="grid gap-2 border-b border-steel/40 pb-3 last:border-0 md:grid-cols-[1fr_1fr_1fr_2fr_2fr]">
+              <input aria-label={`Mix ${i + 1}: tipo de mix`} name={`mixGroup_${i}`} maxLength={30} placeholder="Tipo (ex.: Mix comum)" defaultValue={val(`mixGroup_${i}`, d?.group)} className={input} />
+              <select aria-label={`Mix ${i + 1}: equipamento`} name={`mixTarget_${i}`} defaultValue={val(`mixTarget_${i}`, d?.target)} className={input}>
+                <option value="">Equipamento</option>
+                {Object.entries(mixTargets).map(([k, label]) => (
+                  <option key={k} value={k}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+              <input aria-label={`Mix ${i + 1}: nome`} name={`mixName_${i}`} maxLength={40} placeholder="Nome (ex.: Devine)" defaultValue={val(`mixName_${i}`, d?.name)} className={input} />
+              <input aria-label={`Mix ${i + 1}: sheltoms`} name={`mixSheltoms_${i}`} maxLength={200} placeholder="Sheltoms (ex.: Devine ×3, Murky ×2)" defaultValue={val(`mixSheltoms_${i}`, d?.sheltoms)} className={input} />
+              <input aria-label={`Mix ${i + 1}: o que dá`} name={`mixEffect_${i}`} maxLength={300} placeholder="O que dá (ex.: +10 de dano, +2% crítico)" defaultValue={val(`mixEffect_${i}`, d?.effect)} className={input} />
+            </div>
+          );
+        })}
+        {e.items ? (
+          <p className="text-xs text-data-bad">{e.items}</p>
+        ) : (
+          <p className="text-xs text-silver/60">A página mostra as fórmulas na ordem daqui, separadas pelo tipo de mix. Linha vazia é ignorada; salve para ganhar mais linhas (até 200).</p>
+        )}
+      </fieldset>
+      <div className="max-w-xs">
+        <SubmitButton>Salvar Mix List</SubmitButton>
       </div>
     </form>
   );

@@ -1,3 +1,4 @@
+import { agingLevels, describeSheltoms } from "./aging";
 import type { Guide } from "./types";
 
 /*
@@ -6,34 +7,6 @@ import type { Guide } from "./types";
  * ou um sistema do jogo, o texto muda aqui.
  */
 
-const aging: [string, string, string][] = [
-  ["+1", "Fadeo ×2, Sparky ×2, Raident ×1", "Sem falha"],
-  ["+2", "Fadeo ×2, Sparky ×2, Raident ×2", "Sem falha"],
-  ["+3", "Fadeo ×2, Sparky ×2, Raident ×2, Transparo ×1", "Sem falha"],
-  ["+4", "Fadeo ×2, Sparky ×2, Raident ×2, Transparo ×2", "Sem falha"],
-  ["+5", "Fadeo ×2, Sparky ×2, Raident ×2, Transparo ×2, Murky ×1", "Sem falha"],
-  ["+6", "Fadeo ×2, Sparky ×2, Raident ×2, Transparo ×2, Murky ×2", "Sem falha"],
-  ["+7", "Fadeo ×2, Sparky ×2, Raident ×2, Transparo ×2, Murky ×2, Devine ×1", "Sem falha"],
-  ["+8", "Fadeo ×2, Sparky ×2, Raident ×2, Transparo ×2, Murky ×2, Devine ×2", "Sem falha"],
-  ["+9", "Sparky ×2, Raident ×2, Transparo ×2, Murky ×2, Devine ×2, Celesto ×1", "Sem falha"],
-  ["+10", "Sparky ×2, Raident ×2, Transparo ×2, Murky ×2, Devine ×2, Celesto ×2", "Sem falha"],
-  ["+11", "Raident ×2, Transparo ×2, Murky ×2, Devine ×2, Celesto ×2, Mirage ×1", "Sem falha"],
-  ["+12", "Raident ×2, Transparo ×2, Murky ×2, Devine ×2, Celesto ×2, Mirage ×2", "Sem falha"],
-  ["+13", "Transparo ×2, Murky ×2, Devine ×2, Celesto ×2, Mirage ×2, Inferna ×1", "Sem falha"],
-  ["+14", "Transparo ×2, Murky ×2, Devine ×2, Celesto ×2, Mirage ×2, Inferna ×2", "Sem falha"],
-  ["+15", "Murky ×2, Devine ×2, Celesto ×2, Mirage ×2, Inferna ×2, Enigma ×1", "Sem falha"],
-  ["+16", "Murky ×2, Devine ×2, Celesto ×2, Mirage ×2, Inferna ×2, Enigma ×2", "Sem falha"],
-  ["+17", "Devine ×2, Celesto ×2, Mirage ×2, Inferna ×2, Enigma ×2, Bellum ×1", "Sem falha"],
-  ["+18", "Devine ×2, Celesto ×2, Mirage ×2, Inferna ×2, Enigma ×2, Bellum ×2", "Sem falha"],
-  ["+19", "Celesto ×2, Mirage ×2, Inferna ×2, Enigma ×2, Bellum ×2, Oredo ×1", "Sem falha"],
-  ["+20", "Celesto ×2, Mirage ×2, Inferna ×2, Enigma ×2, Bellum ×2, Oredo ×2", "Sem falha"],
-  ["+21", "Mirage ×2, Inferna ×2, Enigma ×2, Bellum ×2, Oredo ×2", "Sem falha"],
-  ["+22", "Mirage ×2, Inferna ×2, Enigma ×2, Bellum ×2, Oredo ×2", "Sem falha"],
-  ["+23", "Inferna ×2, Enigma ×2, Bellum ×2, Oredo ×2", "Sem falha"],
-  ["+24", "Inferna ×2, Enigma ×2, Bellum ×2, Oredo ×2", "Pode falhar"],
-  ["+25", "Inferna ×2, Enigma ×2, Bellum ×2, Oredo ×2", "Pode falhar"],
-  ["+26", "Inferna ×2, Enigma ×2, Bellum ×2, Oredo ×2", "Pode falhar (máximo)"],
-];
 
 export const guides: Guide[] = [
   {
@@ -204,7 +177,7 @@ export const guides: Guide[] = [
   {
     slug: "aging",
     title: "Aging",
-    summary: "Quantos sheltoms cada nível pede, onde a chance de falha começa e como não perder o item.",
+    summary: "Quantos sheltoms cada nível pede, uma calculadora do caminho até o seu aging, onde a falha começa e como não perder o item.",
     icon: "trofeu",
     scene: "torre-vigia",
     group: "Evolução",
@@ -223,8 +196,16 @@ export const guides: Guide[] = [
         id: "tabela",
         title: "Sheltoms por nível",
         blocks: [
-          { kind: "table", caption: "Sheltoms necessários em cada nível de Aging", head: ["Nível", "Sheltoms", "Risco"], rows: aging.map(([n, s, r]) => [n, s, r]) },
+          { kind: "table", caption: "Sheltoms necessários em cada nível de Aging", head: ["Nível", "Sheltoms", "Risco"], rows: agingLevels.map((l) => [`+${l.level}`, describeSheltoms(l.sheltoms), l.risk]) },
           { kind: "p", text: "Ordem dos sheltoms, do mais comum ao mais raro: Fadeo, Sparky, Raident, Transparo, Murky, Devine, Celesto, Mirage, Inferna, Enigma, Bellum e Oredo." },
+        ],
+      },
+      {
+        id: "calculadora",
+        title: "Calculadora de sheltoms",
+        blocks: [
+          { kind: "p", text: "Escolha o aging que o item tem hoje e onde você quer chegar: a calculadora soma os sheltoms de todos os níveis do caminho." },
+          { kind: "aging-calculator" },
         ],
       },
       {
@@ -236,6 +217,7 @@ export const guides: Guide[] = [
             "Aprimore primeiro a arma: é o item que mais muda o seu dano por gold gasto.",
             "Guarde Mirage e Inferna desde cedo. Eles aparecem em todos os níveis altos.",
           ] },
+          { kind: "links", items: [{ href: "/mix", label: "Mix List" }, { href: "/bosses", label: "Horários de boss" }] },
         ],
       },
     ],

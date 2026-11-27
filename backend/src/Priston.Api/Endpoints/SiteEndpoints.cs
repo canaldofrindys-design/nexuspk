@@ -23,6 +23,18 @@ public static class SiteEndpoints
             return Results.Ok(await site.GetAsync(ct));
         });
 
+        // Mix List pública (página /mix). Sem o banco do portal: 503, e a página avisa.
+        app.MapGet("/api/v1/site/mix", async (SiteContentService site, HttpContext http, CancellationToken ct) =>
+        {
+            if (await site.GetPublicMixAsync(ct) is not { } mix)
+            {
+                return Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
+            }
+
+            http.Response.Headers.CacheControl = "public, max-age=60";
+            return Results.Ok(mix);
+        });
+
         app.MapGet("/api/v1/media/{id:guid}", async (SiteContentService site, HttpContext http, Guid id, CancellationToken ct) =>
         {
             var file = await site.GetMediaAsync(id, ct);
@@ -119,6 +131,13 @@ public static class SiteEndpoints
 
         admin.MapPut("/site/schedule", async ([FromBody] EventScheduleSettingsInput body, StaffAuthService auth, SiteContentService site, HttpContext http, CancellationToken ct) =>
             await AdminEndpoints.Guard(auth, http, Capability.ManageContent, async me => AdminEndpoints.Saved(await site.SaveScheduleSettingsAsync(me, body, AuthEndpoints.Client(http), ct)), ct));
+
+        // Mix List: fórmulas de mix por equipamento, para a página pública /mix.
+        admin.MapGet("/site/mix", async (StaffAuthService auth, SiteContentService site, HttpContext http, CancellationToken ct) =>
+            await AdminEndpoints.Guard(auth, http, Capability.ManageContent, async _ => Results.Ok(await site.GetMixSettingsAsync(ct)), ct));
+
+        admin.MapPut("/site/mix", async ([FromBody] MixSettingsInput body, StaffAuthService auth, SiteContentService site, HttpContext http, CancellationToken ct) =>
+            await AdminEndpoints.Guard(auth, http, Capability.ManageContent, async me => AdminEndpoints.Saved(await site.SaveMixSettingsAsync(me, body, AuthEndpoints.Client(http), ct)), ct));
 
         // Itens mais pegos nos últimos 30 dias (log de itens), para a equipe achar os códigos dos raros.
         admin.MapGet("/site/item-pickups", async (StaffAuthService auth, IServiceProvider services, TimeProvider clock, HttpContext http, CancellationToken ct) =>

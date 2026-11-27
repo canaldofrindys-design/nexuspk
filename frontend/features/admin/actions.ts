@@ -284,9 +284,9 @@ function formValues(form: FormData): Record<string, string> {
 
 /** Horários fixos dos eventos (banner da home). Os dias vêm de caixas marcadas: schDay_{linha} com 0 a 6. */
 export async function saveScheduleAction(_: FormState, form: FormData): Promise<FormState> {
-  const items: { name: string; kind: string; days: number[]; time: string; duration: string; description: string }[] = [];
+  const items: { name: string; kind: string; days: number[]; time: string; duration: string; description: string; place: string }[] = [];
   const values = formValues(form);
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < 20; i++) {
     const days = form
       .getAll(`schDay_${i}`)
       .map((d) => Number(d))
@@ -299,6 +299,7 @@ export async function saveScheduleAction(_: FormState, form: FormData): Promise<
       time: text(form, `schTime_${i}`),
       duration: text(form, `schDur_${i}`),
       description: text(form, `schDesc_${i}`),
+      place: text(form, `schPlace_${i}`),
     };
     if (row.name.trim() || row.time.trim()) items.push(row);
   }
@@ -306,7 +307,21 @@ export async function saveScheduleAction(_: FormState, form: FormData): Promise<
   if (!r.ok) return failure(r, values);
   revalidatePath("/admin/eventos");
   revalidatePath("/");
-  return { status: "success", message: "Horários salvos. O banner da home mostra a nova contagem em até 1 minuto." };
+  revalidatePath("/bosses");
+  return { status: "success", message: "Horários salvos. O banner da home e a página de bosses mostram a mudança em até 1 minuto." };
+}
+
+/** Mix List: linhas mixGroup_{i}, mixTarget_{i}, mixName_{i}, mixSheltoms_{i}, mixEffect_{i}. */
+export async function saveMixAction(_: FormState, form: FormData): Promise<FormState> {
+  const body = {
+    intro: text(form, "mixIntro"),
+    items: rows(form, { group: "mixGroup", target: "mixTarget", name: "mixName", sheltoms: "mixSheltoms", effect: "mixEffect" }, 200),
+  };
+  const r = await apiSend("PUT", "/api/v1/admin/site/mix", { token: await token(), body, ...(await clientContext()) });
+  if (!r.ok) return failure(r, formValues(form));
+  revalidatePath("/admin/mix");
+  revalidatePath("/mix");
+  return { status: "success", message: "Mix List salva. A página pública mostra a mudança em até 1 minuto." };
 }
 
 export async function saveRareDropsAction(_: FormState, form: FormData): Promise<FormState> {

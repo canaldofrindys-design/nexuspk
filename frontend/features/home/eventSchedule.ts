@@ -39,25 +39,50 @@ const DAY_MS = 86400_000;
 
 export const weekdayNames = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"] as const;
 
+/** Todos os horários de início do evento no dia, em ordem ("01:00", "13:00"...). */
+export function eventTimes(ev: Pick<ScheduledEvent, "time" | "times">): string[] {
+  const list = ev.times && ev.times.length > 0 ? ev.times : [ev.time];
+  return [...new Set(list)].filter((t) => /^\d{1,2}:\d{2}$/.test(t)).sort((a, b) => toMinutes(a) - toMinutes(b));
+}
+
+function toMinutes(t: string): number {
+  const [h, m] = t.split(":").map(Number);
+  return h * 60 + m;
+}
+
+/**
+ * Próximas ocorrências de um evento fixo (a que está aberta agora entra primeiro), olhando todos os horários do dia,
+ * até `max` e até duas semanas à frente.
+ */
+export function upcomingOccurrences(
+  ev: Pick<ScheduledEvent, "days" | "time" | "times" | "durationMinutes">,
+  now: number,
+  max: number,
+): { start: number; end: number }[] {
+  const times = eventTimes(ev);
+  if (times.length === 0 || ev.days.length === 0) return [];
+  const duration = Math.max(1, ev.durationMinutes || 60) * 60_000;
+  const brt = new Date(now - BRT_OFFSET_MS);
+  const midnightUtc = Date.UTC(brt.getUTCFullYear(), brt.getUTCMonth(), brt.getUTCDate()) + BRT_OFFSET_MS;
+  const out: { start: number; end: number }[] = [];
+  // Começa um dia antes para pegar um evento que passou da meia-noite e ainda está aberto.
+  for (let d = -1; d <= 14 && out.length < max; d++) {
+    const weekday = (((brt.getUTCDay() + d) % 7) + 7) % 7;
+    if (!ev.days.includes(weekday)) continue;
+    for (const t of times) {
+      const start = midnightUtc + d * DAY_MS + toMinutes(t) * 60_000;
+      if (start + duration > now && out.length < max) out.push({ start, end: start + duration });
+    }
+  }
+  return out;
+}
+
 /**
  * Próxima ocorrência (ou a que está acontecendo agora) de um evento fixo.
  * null quando o horário salvo é inválido ou nenhum dia foi marcado.
  */
-export function nextOccurrence(ev: Pick<ScheduledEvent, "days" | "time" | "durationMinutes">, now: number): { start: number; end: number } | null {
-  const m = /^(\d{1,2}):(\d{2})$/.exec(ev.time);
-  if (!m || ev.days.length === 0) return null;
-  const minutes = Number(m[1]) * 60 + Number(m[2]);
-  const duration = Math.max(1, ev.durationMinutes || 60) * 60_000;
-  const brt = new Date(now - BRT_OFFSET_MS);
-  const midnightUtc = Date.UTC(brt.getUTCFullYear(), brt.getUTCMonth(), brt.getUTCDate()) + BRT_OFFSET_MS;
-  // Começa um dia antes para pegar um evento que passou da meia-noite e ainda está aberto.
-  for (let d = -1; d <= 7; d++) {
-    const weekday = (((brt.getUTCDay() + d) % 7) + 7) % 7;
-    if (!ev.days.includes(weekday)) continue;
-    const start = midnightUtc + d * DAY_MS + minutes * 60_000;
-    if (start + duration > now) return { start, end: start + duration };
-  }
-  return null;
+export function nextOccurrence(ev: Pick<ScheduledEvent, "days" | "time" | "times" | "durationMinutes">, now: number): { start: number; end: number } | null {
+  return upcomingOccurrences(ev, now, 1)[0] ?? null;
 }
 
 /** Próximo Bless Castle pelo horário do painel (sem ele, domingo 16:00). */
@@ -67,13 +92,19 @@ export function nextBlessCastle(schedule: ScheduledEvent[] | null | undefined, n
   return new Date(next.start);
 }
 
-/** "Domingo, 16:00" ou "Segunda e quinta, 20:00" ou "Todo dia, 21:00". */
-export function describeDays(ev: Pick<ScheduledEvent, "days" | "time">): string {
-  const days = [...new Set(ev.days)].sort((a, b) => a - b);
-  if (days.length === 7) return `Todo dia, ${ev.time}`;
+/** "Domingo" ou "Segunda e quinta" ou "Todo dia". */
+export function describeWeekdays(daysIn: number[]): string {
+  const days = [...new Set(daysIn)].sort((a, b) => a - b);
+  if (days.length === 7) return "Todo dia";
   const names = days.map((d, i) => (i === 0 ? weekdayNames[d] : weekdayNames[d].toLowerCase()));
-  const list = names.length > 1 ? `${names.slice(0, -1).join(", ")} e ${names[names.length - 1]}` : (names[0] ?? "");
-  return `${list}, ${ev.time}`;
+  return names.length > 1 ? `${names.slice(0, -1).join(", ")} e ${names[names.length - 1]}` : (names[0] ?? "");
+}
+
+/** "Domingo, 16:00" ou "Segunda e quinta, 20:00" ou "Todo dia, 01:00, 13:00 e 21:00". */
+export function describeDays(ev: Pick<ScheduledEvent, "days" | "time" | "times">): string {
+  const times = eventTimes(ev);
+  const t = times.length > 1 ? `${times.slice(0, -1).join(", ")} e ${times[times.length - 1]}` : (times[0] ?? ev.time);
+  return `${describeWeekdays(ev.days)}, ${t}`;
 }
 
 /** Evento que vai para o banner: fixo da semana ou da agenda do painel. */
@@ -113,8 +144,8 @@ export function featuredEvents(schedule: ScheduledEvent[], agenda: HomeEventItem
       when: describeDays(ev),
       start: next.start,
       end: next.end,
-      href: kind === "bless" || kind === "sod" || kind === "hellsgate" ? "/manual#pvp" : "/eventos",
-      hrefLabel: kind === "bless" || kind === "sod" || kind === "hellsgate" ? "Como funciona" : "Ver agenda",
+      href: kind === "boss" ? "/bosses" : kind === "bless" || kind === "sod" || kind === "hellsgate" ? "/manual#pvp" : "/eventos",
+      hrefLabel: kind === "boss" ? "Horários e aviso" : kind === "bless" || kind === "sod" || kind === "hellsgate" ? "Como funciona" : "Ver agenda",
     });
   });
   const seen = new Set<string>();

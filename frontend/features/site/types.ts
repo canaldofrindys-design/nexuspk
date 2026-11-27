@@ -20,6 +20,8 @@ export type SiteSnapshot = {
   serverUpdatedUtc: string | null;
   downloadsUpdatedUtc: string | null;
   rareDrops?: RareDrop[] | null;
+  /** Horários fixos da semana (Bless Castle, bosses...). */
+  schedule?: ScheduledEvent[] | null;
 };
 
 export type SettingView<T> = { value: T; updatedUtc: string | null; updatedBy: string | null };
@@ -40,5 +42,19 @@ export type BannerRecord = PublicBanner & {
  * days: 0 = domingo ... 6 = sábado. time: início em Brasília ("HH:mm").
  */
 export type ScheduledEventKind = "bless" | "sod" | "hellsgate" | "boss" | "pvp" | "evento";
-export type ScheduledEvent = { name: string; kind: ScheduledEventKind; days: number[]; time: string; durationMinutes: number; description: string | null };
+/** times: todos os horários do dia, em ordem, quando há mais de um (bosses que nascem várias vezes). place: mapa ou local. */
+export type ScheduledEvent = {
+  name: string;
+  kind: ScheduledEventKind;
+  days: number[];
+  time: string;
+  durationMinutes: number;
+  description: string | null;
+  times?: string[] | null;
+  place?: string | null;
+};
 export type EventScheduleSettings = { items: ScheduledEvent[] };
+
+/** Mix List (painel: Mix List). target: chave de mixTargets. */
+export type MixRecipe = { group: string; target: string; name: string; sheltoms: string; effect: string };
+export type MixSettings = { intro: string; items: MixRecipe[] };

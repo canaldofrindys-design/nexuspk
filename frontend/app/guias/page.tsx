@@ -8,7 +8,7 @@ import { guideGroups, guides } from "@/features/guides/content";
 
 export const metadata: Metadata = {
   title: "O Jogo: guias",
-  description: "Guias do NexusPK: primeiros passos, sistemas do servidor, aging, missões, comandos, glossário e regras. Manual do jogo e guia de instalação.",
+  description: "Guias do NexusPK: primeiros passos, sistemas do servidor, aging, Mix List, horários de boss, missões, comandos, glossário e regras.",
 };
 
 /** Os três pilares da área "O Jogo": instalação, manual e guias. */
@@ -16,6 +16,13 @@ const pillars: { href: string; icon: KitIconName; title: string; text: string; c
   { href: "/instalacao", icon: "download", title: "Instalação", text: "Download, requisitos, passo a passo e solução dos erros mais comuns.", cta: "Instalar o jogo" },
   { href: "/manual", icon: "guia", title: "Manual do jogo", text: "Teclas, atributos, itens, aging, mapas, PvP, eventos e segurança em um só lugar.", cta: "Abrir o manual" },
   { href: "/guias/primeiros-passos", icon: "mapa", title: "Primeiros passos", text: "Da conta criada às primeiras horas: tribo, classe e as missões iniciais.", cta: "Começar por aqui" },
+];
+
+/** Páginas de consulta do dia a dia: horários, mix e a conta do aging. */
+const tools: { href: string; icon: KitIconName; title: string; text: string }[] = [
+  { href: "/bosses", icon: "boss", title: "Horários de boss", text: "Quando cada boss nasce, quanto falta e aviso no navegador antes do horário." },
+  { href: "/mix", icon: "recompensas", title: "Mix List", text: "As fórmulas de mix de cada equipamento, com sheltoms e bônus." },
+  { href: "/guias/aging#calculadora", icon: "trofeu", title: "Calculadora de Aging", text: "Quantos sheltoms faltam do aging de hoje até o que você quer." },
 ];
 
 export default function GuidesPage() {
@@ -42,6 +49,28 @@ export default function GuidesPage() {
             </li>
           ))}
         </ul>
+
+        <section aria-labelledby="g-consulta">
+          <div className="mb-3 flex items-center gap-3">
+            <h2 id="g-consulta" className="font-display text-lg font-bold tracking-wide text-gold-bright uppercase">
+              Consulta rápida
+            </h2>
+            <span aria-hidden className="gold-rule flex-1" />
+          </div>
+          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {tools.map((t) => (
+              <li key={t.href} data-reveal="up">
+                <Link href={t.href} className="guide-card group">
+                  <KitIcon name={t.icon} size={48} />
+                  <span className="min-w-0">
+                    <span className="block font-semibold text-silver group-hover:text-gold-bright">{t.title}</span>
+                    <span className="mt-0.5 block text-sm leading-snug text-silver/70">{t.text}</span>
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
 
         {guideGroups.map((group) => (
           <section key={group} aria-labelledby={`g-${group}`}>
