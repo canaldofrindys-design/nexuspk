@@ -43,6 +43,7 @@ public static class DependencyInjection
         services.AddSingleton<IPlayerSessionStore, PlayerSessionStore>();
         services.AddSingleton<IOneTimeTokenStore, OneTimeTokenStore>();
         services.AddSingleton<IAuditLog, AuditLogWriter>();
+        services.AddSingleton<Priston.Application.Player.IGameDisconnectStore, GameDisconnectStore>();
         services.AddSingleton<Priston.Application.Admin.IStaffRepository, Admin.StaffRepository>();
         services.AddSingleton<Priston.Application.Admin.IStaffSessionStore, Admin.StaffSessionStore>();
         services.AddSingleton<Priston.Application.Admin.IContentAdminStore, Admin.ContentAdminStore>();

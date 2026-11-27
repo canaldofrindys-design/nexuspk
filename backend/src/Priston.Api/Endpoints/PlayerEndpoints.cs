@@ -77,6 +77,32 @@ public static class PlayerEndpoints
             var count = await auth.RevokeOtherSessionsAsync(me.Login, token!, AuthEndpoints.Client(http), ct);
             return Results.Ok(new { revoked = count });
         }).RequireRateLimiting(AuthEndpoints.RateLimitPolicy);
+
+        // "Desconectar personagem travado": o portal grava o pedido e o servidor do jogo atende (docs/DESCONECTAR.md).
+        group.MapGet("/disconnect", async (AuthService auth, GameDisconnectService disconnect, HttpContext http, CancellationToken ct) =>
+        {
+            http.Response.Headers.CacheControl = "no-store";
+            var me = await auth.GetCurrentAsync(AuthEndpoints.BearerToken(http), ct);
+            return me is null ? Unauthenticated() : Results.Ok(await disconnect.GetAsync(me.Login, ct));
+        });
+
+        group.MapPost("/disconnect", async (AuthService auth, GameDisconnectService disconnect, HttpContext http, CancellationToken ct) =>
+        {
+            var me = await auth.GetCurrentAsync(AuthEndpoints.BearerToken(http), ct);
+            if (me is null)
+            {
+                return Unauthenticated();
+            }
+
+            var result = await disconnect.RequestAsync(me.Login, AuthEndpoints.Client(http), ct);
+            return result.Outcome switch
+            {
+                DisconnectOutcome.Ok => Results.Json(result.State, statusCode: StatusCodes.Status202Accepted),
+                DisconnectOutcome.Unavailable => Results.Json(new AuthEndpoints.ErrorBody("unavailable", result.Message!), statusCode: StatusCodes.Status503ServiceUnavailable),
+                DisconnectOutcome.AlreadyPending => Results.Json(new AuthEndpoints.ErrorBody("pending", result.Message!), statusCode: StatusCodes.Status409Conflict),
+                _ => Results.Json(new AuthEndpoints.ErrorBody("too-many", result.Message!), statusCode: StatusCodes.Status429TooManyRequests),
+            };
+        }).RequireRateLimiting(AuthEndpoints.RateLimitPolicy);
     }
 
     private static IResult Unauthenticated() =>

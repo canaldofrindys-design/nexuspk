@@ -9,7 +9,8 @@ import { logoutAction } from "@/features/auth/actions";
 import { getSessionToken } from "@/features/auth/session";
 import { formatDate, formatDateTime, formatNumber } from "@/features/home/format";
 import { ChangeEmailForm, ChangePasswordForm, ResendConfirmationButton, RevokeOthersButton } from "@/features/player/forms";
-import type { PlayerPanel } from "@/features/player/types";
+import type { DisconnectState, PlayerPanel } from "@/features/player/types";
+import { DisconnectForm } from "@/features/player/DisconnectForm";
 import { CharacterSheetCard } from "@/features/player/CharacterSheetCard";
 import { clientContext } from "@/features/auth/session";
 import { apiSend } from "@/services/api";
@@ -246,6 +247,20 @@ async function SupportWindow() {
   );
 }
 
+async function DisconnectWindow() {
+  const token = await getSessionToken();
+  const r = token ? await apiSend<DisconnectState>("GET", "/api/v1/player/disconnect", { token, ...(await clientContext()) }) : null;
+  return (
+    <GameWindow title="Personagem travado" icon="personagem">
+      <p className="mb-3 text-sm text-silver/80">
+        O jogo diz que a conta já está conectada, mas você não está jogando? Peça aqui para o servidor desconectar a conta. Se estiver jogando em outro computador, o
+        personagem é salvo e sai do jogo.
+      </p>
+      {r?.ok ? <DisconnectForm state={r.data} /> : <p className="text-sm text-silver/70">Não foi possível consultar agora. Tente de novo em instantes.</p>}
+    </GameWindow>
+  );
+}
+
 async function Panel() {
   const panel = await loadPanel();
   if (panel === "error") {
@@ -267,6 +282,9 @@ async function Panel() {
       </div>
       <div className="flex flex-col gap-4">
         <AccountWindow panel={panel} />
+        <Suspense fallback={null}>
+          <DisconnectWindow />
+        </Suspense>
         <SecurityWindow panel={panel} />
         <EmailWindow panel={panel} />
       </div>

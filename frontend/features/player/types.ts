@@ -68,3 +68,13 @@ export type PlayerPanel = {
   } | null;
   recentLogins: { atUtc: string; ipAddress: string | null }[];
 };
+
+/** "Desconectar personagem travado". status: pending, done, not-online, failed ou expired (sem resposta do servidor a tempo). */
+export type DisconnectRequest = { id: number; requestedUtc: string; status: "pending" | "done" | "not-online" | "failed" | "expired"; processedUtc: string | null };
+
+export type DisconnectState = {
+  available: boolean;
+  unavailableReason: string | null;
+  last: DisconnectRequest | null;
+  nextAllowedUtc: string | null;
+};

@@ -31,6 +31,7 @@ public static class DependencyInjection
         services.AddSingleton<LoginThrottle>();
         services.AddScoped<AuthService>();
         services.AddScoped<Player.PlayerPanelService>();
+        services.AddSingleton<Player.GameDisconnectService>();
         services.AddSingleton<Content.ContentService>();
         services.AddSingleton<Admin.StaffAuthService>();
         services.AddSingleton<Admin.StaffAdminService>();
