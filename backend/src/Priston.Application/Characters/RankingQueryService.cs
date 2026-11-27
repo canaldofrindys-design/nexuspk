@@ -225,15 +225,19 @@ public sealed class RankingQueryService(
             .ToList();
     }
 
+    /// <summary>Todas as linhas de BattlePoints (uma por personagem), do cache (5 minutos).</summary>
+    public Task<IReadOnlyList<PvpRow>> GetAllPvpAsync(CancellationToken ct) => AllPvpAsync(ct);
+
     private async Task<IReadOnlyList<PvpRow>> AllPvpAsync(CancellationToken ct) =>
         await cache.GetOrCreateAsync("ranking:pvp", async e =>
         {
             e.AbsoluteExpirationRelativeToNow = CacheDuration;
-            // BattlePoints não tem chave: o mesmo personagem pode aparecer mais de uma vez. Fica a linha de maior BP.
+            // BattlePoints não tem chave: o mesmo personagem pode aparecer mais de uma vez. Fica a linha de maior BP,
+            // com o maior SoD da semana entre as repetidas.
             var rows = await pvpReader.ReadAllAsync(ct);
             return (IReadOnlyList<PvpRow>)rows
                 .GroupBy(r => r.Name, StringComparer.OrdinalIgnoreCase)
-                .Select(g => g.OrderByDescending(r => r.BattlePoints).ThenByDescending(r => r.Kills).First())
+                .Select(g => g.OrderByDescending(r => r.BattlePoints).ThenByDescending(r => r.Kills).First() with { WeeklySod = g.Max(r => r.WeeklySod) })
                 .ToList();
         }) ?? [];
 

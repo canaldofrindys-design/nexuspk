@@ -1,7 +1,8 @@
 namespace Priston.Application.Characters;
 
 /// <summary>Linha do ranking PvP (UserDB.dbo.BattlePoints). Sem a conta.</summary>
-public sealed record PvpRow(string Name, int ClassCode, int BattlePoints, int WeeklyBattlePoints, int Kills, int Deaths, bool IsPvpKing, int PvpPoints = 0);
+/// <paramref name="WeeklySod"/>: <c>SodSemanal</c>, os pontos de SoD da semana que o próprio jogo conta (zerados pelo reset do painel).
+public sealed record PvpRow(string Name, int ClassCode, int BattlePoints, int WeeklyBattlePoints, int Kills, int Deaths, bool IsPvpKing, int PvpPoints = 0, int WeeklySod = 0);
 
 /// <summary>
 /// Linha do ranking de clãs (ClanDB.dbo.CL).
@@ -11,16 +12,20 @@ public sealed record PvpRow(string Name, int ClassCode, int BattlePoints, int We
 /// </summary>
 public sealed record ClanRow(string Name, int Members, int Points, int Wins, int Losses, DateTime? CreatedLocal, int IconId = 0, string? Leader = null);
 
-/// <summary>Melhor colocação de um personagem no SoD do mês (sodDB.dbo.SOD2Record&lt;aamm&gt;).</summary>
+/// <summary>Melhor pontuação de um personagem no SoD do mês (sodDB.dbo.SOD2Record&lt;aamm&gt;).</summary>
 public sealed record SodPlayerRow(string Name, int ClassCode, int Level, int Points);
 
 public interface ISodRankingReader
 {
     /// <summary>
-    /// O personagem com mais pontos no SoD do mês (<paramref name="month"/> em horário de Brasília), sem GMs.
-    /// Null quando a tabela do mês ainda não existe ou ninguém pontuou.
+    /// Os personagens que pontuaram no SoD do mês (<paramref name="month"/>, primeiro dia, em horário de Brasília), um por
+    /// personagem com a maior pontuação, do maior para o menor. Sem GMs e sem a lista de escondidos do ranking.
+    /// Null quando a tabela do mês não existe (o servidor do jogo ainda não a criou).
     /// </summary>
-    Task<SodPlayerRow?> ReadTopAsync(DateOnly month, CancellationToken ct);
+    Task<IReadOnlyList<SodPlayerRow>?> ReadMonthAsync(DateOnly month, CancellationToken ct);
+
+    /// <summary>Os meses que têm tabela no sodDB (primeiro dia de cada um), do mais novo para o mais antigo.</summary>
+    Task<IReadOnlyList<DateOnly>> ReadMonthsAsync(CancellationToken ct);
 }
 
 public interface IPvpRankingReader
