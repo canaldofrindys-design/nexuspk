@@ -19,6 +19,7 @@ public static class DependencyInjection
         services.AddSingleton<HomeService>();
         services.AddSingleton<HomeSnapshotCache>();
         services.AddSingleton<RankingQueryService>();
+        services.AddSingleton<SodRankingService>();
         services.AddSingleton<LevelSnapshotService>();
         services.AddSingleton<Content.EventReminderService>();
         services.AddOptions<AccountOptions>()

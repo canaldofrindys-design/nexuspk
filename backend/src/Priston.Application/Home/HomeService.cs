@@ -338,7 +338,8 @@ public sealed class HomeService(
         try
         {
             var local = TimeZoneInfo.ConvertTime((clock ?? TimeProvider.System).GetUtcNow(), GameTimeZone);
-            var row = await sodPlayers.ReadTopAsync(new DateOnly(local.Year, local.Month, 1), ct).ConfigureAwait(false);
+            var month = await sodPlayers.ReadMonthAsync(new DateOnly(local.Year, local.Month, 1), ct).ConfigureAwait(false);
+            var row = month is { Count: > 0 } ? month[0] : null;
             if (row is null)
             {
                 return null;

@@ -56,3 +56,30 @@ export type CharacterProfile = {
 };
 
 export type SearchResult = { position: number; name: string; classCode: number; className: string; level: number };
+
+/** Personagem no ranking do SoD (mês: sodDB.SOD2Record<aamm>; semana: BattlePoints.SodSemanal). */
+export type SodEntry = {
+  position: number;
+  name: string;
+  classCode: number;
+  className: string;
+  level: number;
+  points: number;
+  clan: string | null;
+};
+
+/** Clã no ranking do SoD (ClanDB.CL.Cpoint). crown: 1 ouro, 2 prata, 3 bronze, 0 sem coroa. */
+export type SodClanEntry = {
+  position: number;
+  name: string;
+  points: number;
+  members: number;
+  wins: number;
+  losses: number;
+  iconId: number;
+  leader: string | null;
+  crown: number;
+};
+
+/** Meses com tabela de SoD ("AAAA-MM-DD", primeiro dia), do mais novo ao mais antigo. */
+export type SodMonths = { current: string; months: string[]; available: boolean };

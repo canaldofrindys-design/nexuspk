@@ -20,11 +20,15 @@ public class HomeHighlightsTests
     {
         public DateOnly? Month { get; private set; }
 
-        public Task<SodPlayerRow?> ReadTopAsync(DateOnly month, CancellationToken ct)
+        public Task<IReadOnlyList<SodPlayerRow>?> ReadMonthAsync(DateOnly month, CancellationToken ct)
         {
             Month = month;
-            return fail ? throw new InvalidOperationException("sem permissão") : Task.FromResult(top);
+            return fail
+                ? throw new InvalidOperationException("sem permissão")
+                : Task.FromResult<IReadOnlyList<SodPlayerRow>?>(top is null ? null : [top]);
         }
+
+        public Task<IReadOnlyList<DateOnly>> ReadMonthsAsync(CancellationToken ct) => Task.FromResult<IReadOnlyList<DateOnly>>([]);
     }
 
     private sealed class FixedClock(DateTimeOffset now) : TimeProvider
