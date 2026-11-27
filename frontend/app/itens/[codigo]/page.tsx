@@ -70,7 +70,9 @@ async function Detail({ params }: { params: Promise<{ codigo: string }> }) {
                   const each = itemChance(s.chance, s.choices);
                   return (
                     <li key={`${s.monster}-${s.chance}-${s.choices}`} className="flex flex-wrap items-baseline justify-between gap-2 border-b border-steel/40 pb-1.5">
-                      <span className="text-data-bad">{s.monster}</span>
+                      <Link href={`/monstros?q=${encodeURIComponent(s.monster)}`} className="text-data-bad hover:underline">
+                        {s.monster}
+                      </Link>
                       <span className="text-xs text-silver/70">
                         {s.chance}% de drop{s.choices > 1 ? `, sorteado entre ${s.choices} itens` : ""}
                         {each ? <span className="text-data-info"> (≈ {each} por morte)</span> : null}

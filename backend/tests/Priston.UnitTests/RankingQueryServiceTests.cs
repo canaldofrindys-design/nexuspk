@@ -57,6 +57,9 @@ public class RankingQueryServiceTests
 
         public Task<DateOnly?> FirstDateAsync(CancellationToken ct) => Task.FromResult(Days.Count == 0 ? (DateOnly?)null : Days.Keys.First());
 
+        public Task<IReadOnlyList<LevelSnapshotPoint>> ReadSinceAsync(DateOnly from, CancellationToken ct) =>
+            Task.FromResult<IReadOnlyList<LevelSnapshotPoint>>(Days.Where(d => d.Key >= from).SelectMany(d => d.Value.Select(kv => new LevelSnapshotPoint(d.Key, kv.Key, kv.Value))).ToList());
+
         public Task<int> DeleteBeforeAsync(DateOnly day, CancellationToken ct)
         {
             var old = Days.Keys.Where(d => d < day).ToList();

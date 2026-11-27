@@ -198,3 +198,12 @@ Login `portal_game_admin` (`database/scripts/permissoes-admin-jogo.sql`). Só mu
 | Box Donate, lojas, drops, NPC, catálogo, logs de itens | **não mapeadas aqui**: o superadministrador escolhe a tabela e as colunas no painel (`PortalDB.dbo.GameSourceBinding`), conferidas no `sys.columns` | uma linha por vez, pelas colunas-chave escolhidas |
 
 - [ ] Confirmar com o servidor do jogo se mudar `BlockChk` com o jogador online derruba a sessão ou vale só no próximo login.
+
+## 13. Monstros, históricos e clãs (27/11)
+
+- **Banco de monstros** (`/monstros`): os mesmos arquivos `GameServer\Monster\*.inf` do painel (`GameServer:MonstersFolder`), só leitura. Nome, vida (`*생명력`), nível (`*레벨`) e EXP base (`*경험치`) quando o arquivo traz, e cada linha `*아이템` com a chance, o ouro e os itens. Monstro repetido em vários arquivos (mesmo nome e mesmos drops) aparece uma vez. Sem acesso à pasta, a página avisa que está indisponível.
+- **Página do clã** (`/clas/<nome>`): `ClanDB.CL` (pontos, membros, vitórias, fundação, emblema `MIconCnt`, líder `ClanZang`) e os membros de `ClanDB.UL` que aparecem no ranking público de nível (GMs e escondidos ficam de fora), com classe e nível da `LevelTable` e BP de `UserDB.BattlePoints`. A conta (`CL.UserID`, `UL.userid`) não é lida.
+- **Histórico de níveis** (`/historico`): comparação das fotos diárias de `PortalDB.dbo.LevelSnapshot` (últimos 30 dias) e da última foto com o nível de agora. Não existe histórico antes da primeira foto.
+- **Histórico de aging e craft**: `ItemLogDB.dbo.IL` pelos valores de `Flag` em `GameDatabase:ItemLogAgingFlags` e `GameDatabase:ItemLogCraftFlags`. **Sem fonte confirmada**: o significado de cada Flag não está mapeado, então as listas vêm vazias e as abas ficam desligadas até a equipe descobrir os valores com `database/scripts/descobrir-flags-log-itens.sql`. Sem GMs nem contas escondidas; conta e IP não saem da API.
+
+- [ ] Descobrir os Flags de aging e mix/craft em `ItemLogDB.dbo.IL` e configurar no `portal.json`.

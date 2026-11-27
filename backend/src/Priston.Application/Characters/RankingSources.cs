@@ -40,6 +40,9 @@ public interface ICharacterClanReader
     Task<IReadOnlyDictionary<string, string>> ReadAllAsync(CancellationToken ct);
 }
 
+/// <summary>Nível de um personagem numa foto diária.</summary>
+public sealed record LevelSnapshotPoint(DateOnly Date, string Name, int Level);
+
 /// <summary>Fotos diárias de nível guardadas no PortalDB pelo Worker.</summary>
 public interface ILevelSnapshotStore
 {
@@ -51,6 +54,9 @@ public interface ILevelSnapshotStore
     Task<(DateOnly Date, IReadOnlyDictionary<string, int> Levels)?> FirstOnOrAfterAsync(DateOnly from, CancellationToken ct);
 
     Task<DateOnly?> FirstDateAsync(CancellationToken ct);
+
+    /// <summary>Nível de cada personagem em cada foto a partir de <paramref name="from"/> (base do histórico de níveis).</summary>
+    Task<IReadOnlyList<LevelSnapshotPoint>> ReadSinceAsync(DateOnly from, CancellationToken ct);
 
     Task<int> DeleteBeforeAsync(DateOnly day, CancellationToken ct);
 }

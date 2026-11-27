@@ -51,6 +51,29 @@ public static class SiteEndpoints
             return Results.Ok(page);
         });
 
+        // Banco de monstros público: lista (com busca por monstro ou item) e página de cada monstro, dos arquivos Monster\*.inf.
+        app.MapGet("/api/v1/monsters", async (MonsterGuide guide, HttpContext http, string? q, CancellationToken ct) =>
+        {
+            if (q is { Length: > MonsterGuide.MaxQueryLength })
+            {
+                return Results.BadRequest();
+            }
+
+            http.Response.Headers.CacheControl = "public, max-age=300";
+            return Results.Ok(await guide.ListAsync(q, ct));
+        });
+
+        app.MapGet("/api/v1/monsters/{slug}", async (MonsterGuide guide, HttpContext http, string slug, CancellationToken ct) =>
+        {
+            if (slug.Length is 0 or > 120 || await guide.GetAsync(slug, ct) is not { } page)
+            {
+                return Results.NotFound();
+            }
+
+            http.Response.Headers.CacheControl = "public, max-age=300";
+            return Results.Ok(page);
+        });
+
         app.MapGet("/api/v1/items/{id}/image", async (IServiceProvider services, HttpContext http, string id, CancellationToken ct) =>
         {
             if (ItemNames.ParseFileId(id) is null || services.GetService<IItemImageStore>() is not { } images)

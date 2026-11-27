@@ -83,6 +83,15 @@ internal sealed class LevelSnapshotStore(IPortalDbConnectionFactory db, IOptions
         return first is null ? null : DateOnly.FromDateTime(first.Value);
     }
 
+    public async Task<IReadOnlyList<LevelSnapshotPoint>> ReadSinceAsync(DateOnly from, CancellationToken ct)
+    {
+        await using var conn = await db.OpenAsync(ct).ConfigureAwait(false);
+        var rows = await conn.QueryAsync<(DateTime SnapshotDate, string CharacterName, int Level)>(new CommandDefinition(
+            "SELECT SnapshotDate, CharacterName, Level FROM dbo.LevelSnapshot WHERE SnapshotDate >= @from",
+            new { from = from.ToDateTime(TimeOnly.MinValue) }, commandTimeout: Timeout, cancellationToken: ct)).ConfigureAwait(false);
+        return rows.Select(r => new LevelSnapshotPoint(DateOnly.FromDateTime(r.SnapshotDate), r.CharacterName, r.Level)).ToList();
+    }
+
     public async Task<int> DeleteBeforeAsync(DateOnly day, CancellationToken ct)
     {
         await using var conn = await db.OpenAsync(ct).ConfigureAwait(false);

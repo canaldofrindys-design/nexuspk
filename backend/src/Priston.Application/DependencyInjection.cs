@@ -16,6 +16,8 @@ public static class DependencyInjection
         services.AddSingleton<ItemNameSource>();
         services.AddSingleton<RareDropFeed>();
         services.AddSingleton<ItemGuide>();
+        services.AddSingleton<MonsterGuide>();
+        services.AddSingleton<Characters.PublicHistoryService>();
         services.AddSingleton<HomeService>();
         services.AddSingleton<HomeSnapshotCache>();
         services.AddSingleton<RankingQueryService>();

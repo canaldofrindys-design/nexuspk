@@ -49,5 +49,15 @@ public sealed class GameDatabaseOptions
     /// <summary>Valor de IL.Flag que o servidor grava quando o personagem pega um item do chão.</summary>
     public int ItemPickupFlag { get; set; }
 
+    /// <summary>
+    /// Valores de IL.Flag que o servidor grava num aging (histórico público "Aging"). Vazio = desligado: o significado de cada
+    /// Flag muda de servidor para servidor e não está no DATABASE_MAPPING.md, então o portal não adivinha
+    /// (ver <c>database/scripts/descobrir-flags-log-itens.sql</c>).
+    /// </summary>
+    public List<int> ItemLogAgingFlags { get; set; } = [];
+
+    /// <summary>Valores de IL.Flag de mix/craft (histórico público "Craft"). Vazio = desligado.</summary>
+    public List<int> ItemLogCraftFlags { get; set; } = [];
+
     public int CommandTimeoutSeconds { get; set; } = 15;
 }

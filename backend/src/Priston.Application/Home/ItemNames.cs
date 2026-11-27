@@ -45,8 +45,8 @@ public interface IMonsterDropCatalog
 /// <summary>Uma linha de drop do monstro: chance como está no arquivo, códigos dos itens e o ouro ("2000–5000"), se houver.</summary>
 public sealed record MonsterDropGroup(string Chance, IReadOnlyList<string> Items, string? Gold);
 
-/// <summary>Monstro do arquivo do servidor: nome, arquivo, vida e linhas de drop.</summary>
-public sealed record MonsterInfo(string Name, string File, long? Hp, IReadOnlyList<MonsterDropGroup> Drops);
+/// <summary>Monstro do arquivo do servidor: nome, arquivo, vida, linhas de drop e, quando o arquivo traz, nível e EXP.</summary>
+public sealed record MonsterInfo(string Name, string File, long? Hp, IReadOnlyList<MonsterDropGroup> Drops, int? Level = null, long? Exp = null);
 
 /// <summary>Loja de um NPC do servidor do jogo: nome, arquivo e os códigos dos itens à venda (armas, armaduras e o resto).</summary>
 public sealed record NpcShop(string Name, string File, IReadOnlyList<string> Weapons, IReadOnlyList<string> Armors, IReadOnlyList<string> Misc);

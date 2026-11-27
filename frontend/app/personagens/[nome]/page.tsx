@@ -54,7 +54,15 @@ async function Profile({ params }: { params: Promise<{ nome: string }> }) {
               {c.levelPosition}º de {formatNumber(c.levelTotal)}
             </span>
           </Row>
-          <Row label="Clã">{c.clan ?? "sem clã"}</Row>
+          <Row label="Clã">
+            {c.clan ? (
+              <Link href={`/clas/${encodeURIComponent(c.clan)}`} className="text-data-name hover:underline">
+                {c.clan}
+              </Link>
+            ) : (
+              "sem clã"
+            )}
+          </Row>
         </dl>
       </GameWindow>
       <GameWindow title="PvP" icon="pvp">

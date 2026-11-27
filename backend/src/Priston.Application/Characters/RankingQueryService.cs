@@ -38,6 +38,28 @@ public sealed record PvpTierLadder(int Total, IReadOnlyList<PvpTier> Tiers);
 
 public sealed record ClanEntry(int Position, string Name, int Members, int Points, int Wins, int Losses, DateTimeOffset? CreatedUtc);
 
+/// <summary>Membro do clã na página pública: personagem do ranking de nível (sem GMs nem contas escondidas), com BP quando tem.</summary>
+public sealed record ClanMember(string Name, int ClassCode, string ClassName, int Level, int LevelPosition, int BattlePoints, bool IsLeader);
+
+/// <summary>
+/// Página pública de um clã (<c>ClanDB.dbo.CL</c> e <c>UL</c>). <paramref name="Position"/>: lugar no ranking de clãs (pontos do SoD).
+/// <paramref name="Leader"/>: personagem líder (<c>ClanZang</c>), só quando ele aparece no ranking público.
+/// <paramref name="Roster"/>: membros que aparecem no ranking de nível, do maior nível para o menor.
+/// </summary>
+public sealed record ClanProfile(
+    string Name,
+    int IconId,
+    string? Leader,
+    int Members,
+    int Points,
+    int Position,
+    int Total,
+    int Wins,
+    int Losses,
+    DateTimeOffset? CreatedUtc,
+    int TotalBattlePoints,
+    IReadOnlyList<ClanMember> Roster);
+
 /// <summary>
 /// Página de ranking. <paramref name="CountingSince"/>: data local a partir da qual o período é contado
 /// (pode ser depois do início do período quando as fotos diárias começaram depois).
@@ -189,6 +211,45 @@ public sealed class RankingQueryService(
             .ToList();
         return Paged(entries, page, pageSize, true, null, null, clock.GetUtcNow());
     }
+
+    /// <summary>Página do clã pelo nome (sem diferença de maiúsculas). null quando o clã não existe.</summary>
+    public async Task<ClanProfile?> GetClanAsync(string name, CancellationToken ct)
+    {
+        var rows = await GetAllClansAsync(ct);
+        var ordered = rows
+            .OrderByDescending(r => r.Points)
+            .ThenByDescending(r => r.Members)
+            .ThenBy(r => r.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        var index = ordered.FindIndex(r => string.Equals(r.Name, name.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (index < 0)
+        {
+            return null;
+        }
+
+        var clan = ordered[index];
+        var levelsAll = await levels.GetLevelRankingAsync(ct);
+        var clans = await ClansByCharacterAsync(ct);
+        var bp = (await AllPvpAsync(ct)).ToDictionary(r => r.Name, r => r.BattlePoints, StringComparer.OrdinalIgnoreCase);
+        var roster = BuildRoster(clan, levelsAll, clans, bp);
+        var leader = roster.FirstOrDefault(m => m.IsLeader)?.Name;
+        return new ClanProfile(
+            clan.Name, clan.IconId, leader, clan.Members, clan.Points, index + 1, ordered.Count, clan.Wins, clan.Losses,
+            ToUtc(clan.CreatedLocal), roster.Sum(m => m.BattlePoints), roster);
+    }
+
+    /// <summary>
+    /// Membros do clã pelo <c>UL</c> que estão no ranking público de nível (GMs e escondidos ficam de fora), líder primeiro,
+    /// depois do maior nível para o menor.
+    /// </summary>
+    public static IReadOnlyList<ClanMember> BuildRoster(ClanRow clan, IReadOnlyList<RankedCharacter> ranking, IReadOnlyDictionary<string, string> clanOf, IReadOnlyDictionary<string, int> battlePoints) =>
+        ranking
+            .Where(c => clanOf.TryGetValue(c.Name, out var cn) && string.Equals(cn, clan.Name, StringComparison.OrdinalIgnoreCase))
+            .Select(c => new ClanMember(c.Name, c.ClassCode, c.ClassName, c.Level, c.Position, battlePoints.GetValueOrDefault(c.Name),
+                clan.Leader is not null && string.Equals(clan.Leader, c.Name, StringComparison.OrdinalIgnoreCase)))
+            .OrderByDescending(m => m.IsLeader)
+            .ThenBy(m => m.LevelPosition)
+            .ToList();
 
     public async Task<CharacterProfile?> GetCharacterAsync(string name, CancellationToken ct)
     {
