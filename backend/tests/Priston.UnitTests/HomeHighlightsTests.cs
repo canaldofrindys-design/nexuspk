@@ -68,6 +68,8 @@ public class HomeHighlightsTests
 
         public Task<DateOnly?> FirstDateAsync(CancellationToken ct) => Task.FromResult<DateOnly?>(null);
 
+        public Task<IReadOnlyList<LevelSnapshotPoint>> ReadSinceAsync(DateOnly from, CancellationToken ct) => Task.FromResult<IReadOnlyList<LevelSnapshotPoint>>([]);
+
         public Task<int> DeleteBeforeAsync(DateOnly day, CancellationToken ct) => Task.FromResult(0);
     }
 

@@ -96,6 +96,38 @@ public static class RankingEndpoints
             return Results.Ok(await sod.GetMonthsAsync(ct));
         });
 
+        // Página pública do clã: dados do CL e membros do UL que estão no ranking público.
+        group.MapGet("/clans/{name}", async (RankingQueryService rankings, HttpContext http, string name, CancellationToken ct) =>
+        {
+            if (name.Trim().Length is 0 or > 32)
+            {
+                return Results.NotFound();
+            }
+
+            var clan = await rankings.GetClanAsync(name, ct);
+            Cache(http);
+            return clan is null ? Results.NotFound() : Results.Ok(clan);
+        });
+
+        // Históricos públicos: níveis (fotos diárias do portal), aging e craft (log de itens do jogo, quando configurado).
+        group.MapGet("/history/levels", async (PublicHistoryService history, HttpContext http, int? pagina, int? porPagina, CancellationToken ct) =>
+        {
+            Cache(http);
+            return Results.Ok(await history.GetLevelUpsAsync(pagina ?? 1, porPagina ?? 50, ct));
+        });
+
+        group.MapGet("/history/{tipo}", async (PublicHistoryService history, HttpContext http, string tipo, int? pagina, int? porPagina, CancellationToken ct) =>
+        {
+            ItemEventKind? kind = tipo switch { "aging" => ItemEventKind.Aging, "craft" => ItemEventKind.Craft, _ => null };
+            if (kind is null)
+            {
+                return Results.NotFound();
+            }
+
+            Cache(http);
+            return Results.Ok(await history.GetItemEventsAsync(kind.Value, pagina ?? 1, porPagina ?? 50, ct));
+        });
+
         group.MapGet("/characters", async (RankingQueryService rankings, HttpContext http, string? q, CancellationToken ct) =>
         {
             if (q is null || q.Length > 32)

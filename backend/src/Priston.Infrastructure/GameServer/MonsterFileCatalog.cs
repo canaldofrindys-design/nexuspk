@@ -21,6 +21,12 @@ internal sealed class MonsterFileCatalog(IOptions<GameServerOptions> options) : 
     /// <summary>"생명력" (vida) em CP949 lido como Windows-1252.</summary>
     internal const string HpKey = "\u00BB\u00FD\u00B8\u00ED\u00B7\u00C2";
 
+    /// <summary>"레벨" (nível) em CP949 lido como Windows-1252.</summary>
+    internal const string LevelKey = "\u00B7\u00B9\u00BA\u00A7";
+
+    /// <summary>"경험치" (experiência) em CP949 lido como Windows-1252.</summary>
+    internal const string ExpKey = "\u00B0\u00E6\u00C7\u00E8\u00C4\u00A1";
+
     /// <summary>"돈" (dinheiro) em CP949 lido como Windows-1252.</summary>
     internal const string GoldKey = "\u00B5\u00B7";
 
@@ -101,12 +107,14 @@ internal sealed class MonsterFileCatalog(IOptions<GameServerOptions> options) : 
 
     /// <summary>
     /// Monstro completo: nome (<c>*Name</c> ou <c>*이름</c>; sem ele, o nome do arquivo depois do mapa, "Slab_119_Elite Zumbi" → "Elite Zumbi"),
-    /// vida e cada linha de drop com a chance, os itens e o ouro. null sem nome ou sem nenhuma linha de drop.
+    /// vida, nível (<c>*레벨</c>) e EXP (<c>*경험치</c>) quando o arquivo traz, e cada linha de drop com a chance, os itens e o ouro. null sem nome ou sem nenhuma linha de drop.
     /// </summary>
     public static MonsterInfo? ParseDetails(string fileName, string text)
     {
         string? name = null;
         long? hp = null;
+        int? level = null;
+        long? exp = null;
         var drops = new List<MonsterDropGroup>();
         foreach (var raw in text.Split('\n'))
         {
@@ -136,6 +144,14 @@ internal sealed class MonsterFileCatalog(IOptions<GameServerOptions> options) : 
             {
                 hp = h;
             }
+            else if (level is null && (parts[0] == LevelKey || parts[0].Equals("Level", StringComparison.OrdinalIgnoreCase)) && parts.Length > 1 && int.TryParse(parts[1], out var lv) && lv > 0)
+            {
+                level = lv;
+            }
+            else if (exp is null && (parts[0] == ExpKey || parts[0].Equals("Exp", StringComparison.OrdinalIgnoreCase)) && parts.Length > 1 && long.TryParse(parts[1], out var xp) && xp >= 0)
+            {
+                exp = xp;
+            }
             else if (parts[0] == ItemKey && parts.Length > 1)
             {
                 var items = new List<string>();
@@ -163,7 +179,7 @@ internal sealed class MonsterFileCatalog(IOptions<GameServerOptions> options) : 
         }
 
         name = string.IsNullOrWhiteSpace(name) ? FromFileName(Path.GetFileNameWithoutExtension(fileName)) : name.Trim();
-        return name is null || drops.Count == 0 ? null : new MonsterInfo(name, fileName, hp, drops);
+        return name is null || drops.Count == 0 ? null : new MonsterInfo(name, fileName, hp, drops, level, exp);
     }
 
     private static string? FromFileName(string stem)

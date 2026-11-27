@@ -50,6 +50,8 @@ Endpoints:
 - `GET /api/v1/site` — textos do servidor, downloads, redes sociais e banners; `GET /api/v1/media/{id}` — imagens enviadas pelo painel.
 - `POST /api/v1/auth/register|login|logout|recover|reset-password|confirm-email`, `GET /api/v1/auth/me|options` — contas (ver `docs/CONTAS.md`).
 - `GET|POST /api/v1/player/disconnect` — desconectar personagem travado (o servidor do jogo atende; ver `docs/DESCONECTAR.md`).
+- `GET /api/v1/monsters?q=`, `GET /api/v1/monsters/{arquivo}` — banco de monstros com drops (arquivos do servidor).
+- `GET /api/v1/clans/{nome}` — página pública do clã; `GET /api/v1/history/levels|aging|craft` — históricos públicos (ver `docs/DATABASE_MAPPING.md`, seção 14).
 - `/api/v1/admin/accounts`, `/server`, `/rankings`, `/game-tables` — funções do jogo no painel da equipe (ver `docs/ADMIN.md`).
 
 Teste de integração local (precisa de Docker): ver o cabeçalho de `scripts/integration-auth.sh`.

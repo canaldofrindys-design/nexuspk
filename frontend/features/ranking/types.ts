@@ -44,6 +44,32 @@ export type ClanEntry = {
   createdUtc: string | null;
 };
 
+export type ClanMember = {
+  name: string;
+  classCode: number;
+  className: string;
+  level: number;
+  levelPosition: number;
+  battlePoints: number;
+  isLeader: boolean;
+};
+
+/** Página pública do clã: dados do ClanDB e os membros que aparecem no ranking. */
+export type ClanProfile = {
+  name: string;
+  iconId: number;
+  leader: string | null;
+  members: number;
+  points: number;
+  position: number;
+  total: number;
+  wins: number;
+  losses: number;
+  createdUtc: string | null;
+  totalBattlePoints: number;
+  roster: ClanMember[];
+};
+
 export type CharacterProfile = {
   name: string;
   classCode: number;

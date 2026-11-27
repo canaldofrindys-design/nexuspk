@@ -87,7 +87,9 @@ function LeaderBody({ leader, empty, sod }: { leader: HomeClanLeader | null | un
         <ClanEmblem iconId={c.iconId ?? 0} name={c.name} size={44} />
         <div className="min-w-0">
           <p className="text-[11px] tracking-wider text-silver/60 uppercase">Clã</p>
-          <p className="text-gilded font-display text-base leading-tight font-bold [overflow-wrap:anywhere]">{c.name}</p>
+          <Link href={`/clas/${encodeURIComponent(c.name)}`} className="text-gilded block font-display text-base leading-tight font-bold [overflow-wrap:anywhere] hover:underline">
+            {c.name}
+          </Link>
         </div>
       </div>
       <dl className="mt-2 text-xs">

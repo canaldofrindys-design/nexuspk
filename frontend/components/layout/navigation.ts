@@ -22,6 +22,8 @@ export const mainNavigation = [
   { href: "/noticias", label: "Notícias", icon: "noticias", extra: true },
   { href: "/servidor", label: "O Servidor", icon: "mapa", extra: true },
   { href: "/personagens", label: "Personagens", icon: "personagem", extra: true },
+  { href: "/monstros", label: "Monstros", icon: "boss", extra: true },
+  { href: "/historico", label: "Históricos", icon: "noticias", extra: true },
   { href: "/status", label: "Status", icon: "online", extra: true },
 ] as const satisfies readonly { href: string; label: string; icon: KitIconName; extra?: boolean; match?: readonly string[] }[];
 
@@ -42,6 +44,7 @@ export const footerColumns = [
       { href: "/ranking", label: "Ranking" },
       { href: "/classes", label: "Classes" },
       { href: "/personagens", label: "Buscar personagem" },
+      { href: "/historico", label: "Históricos" },
       { href: "/eventos", label: "Eventos" },
     ],
   },
@@ -56,6 +59,7 @@ export const footerColumns = [
       { href: "/mix", label: "Mix List" },
       { href: "/guias/aging", label: "Aging" },
       { href: "/guias/regras", label: "Regras" },
+      { href: "/monstros", label: "Monstros e drops" },
     ],
   },
   {

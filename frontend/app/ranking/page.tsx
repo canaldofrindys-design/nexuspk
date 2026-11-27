@@ -89,7 +89,15 @@ function LevelTable({ data, period }: { data: RankingPage<LevelEntry>; period: P
             <td className="py-1.5 text-silver/80">
               <ClassBadge code={c.classCode} name={c.className} />
             </td>
-            <td className="py-1.5 text-silver/80">{c.clan ?? "—"}</td>
+            <td className="py-1.5 text-silver/80">
+              {c.clan ? (
+                <Link href={`/clas/${encodeURIComponent(c.clan)}`} className="hover:text-gold-bright hover:underline">
+                  {c.clan}
+                </Link>
+              ) : (
+                "—"
+              )}
+            </td>
             {gains ? <td className="tabular py-1.5 text-right text-data-ok">+{c.levelsGained}</td> : null}
             <td className="tabular py-1.5 text-right text-data-info">{c.level}</td>
           </tr>
@@ -158,10 +166,10 @@ function ClanTable({ data }: { data: RankingPage<ClanEntry> }) {
           <tr key={c.name} className="border-t border-steel/60">
             <Position n={c.position} />
             <td className="py-1.5 font-medium text-data-name">
-              <span className="inline-flex items-center gap-1.5">
+              <Link href={`/clas/${encodeURIComponent(c.name)}`} className="inline-flex items-center gap-1.5 hover:text-gold-bright hover:underline">
                 <KitIcon name="guilda" size={20} />
                 {c.name}
-              </span>
+              </Link>
             </td>
             <td className="tabular py-1.5 text-right text-data-info">{formatNumber(c.points)}</td>
             <td className="tabular py-1.5 text-right text-data-info">{c.members}</td>
