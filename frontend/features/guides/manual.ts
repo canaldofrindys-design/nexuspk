@@ -84,7 +84,7 @@ export const manual: Section[] = [
     blocks: [
       { kind: "p", text: "O Aging sobe os atributos do item nível por nível, até +26, e vale também para botas, luvas e braceletes. Do +1 ao +23 não há falha; a partir do +24 o aging pode falhar. Clique com o botão direito no sheltom para mandá-lo direto para a janela de aging." },
       { kind: "p", text: "O Mix coloca sheltoms no item para melhorar a qualidade. O NexusPK tem dois tipos de mix." },
-      { kind: "links", items: [{ href: "/guias/aging", label: "Tabela completa de Aging" }] },
+      { kind: "links", items: [{ href: "/guias/aging", label: "Tabela e calculadora de Aging" }, { href: "/mix", label: "Mix List" }] },
     ],
   },
   {

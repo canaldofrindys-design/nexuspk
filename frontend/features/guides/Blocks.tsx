@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Info, TriangleAlert } from "lucide-react";
 import { KitIcon } from "@/components/ui/KitIcon";
+import { AgingCalculator } from "./AgingCalculator";
 import type { Block, Section } from "./types";
 
 /** Desenha os blocos de um guia. Tudo é texto do repositório renderizado como texto pelo React. */
@@ -87,6 +88,8 @@ export function Blocks({ blocks }: { blocks: Block[] }) {
               </p>
             );
           }
+          case "aging-calculator":
+            return <AgingCalculator key={i} />;
           case "links":
             return (
               <ul key={i} className="flex flex-wrap gap-2">

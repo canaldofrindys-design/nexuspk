@@ -8,7 +8,7 @@ import type { KitIconName } from "@/components/ui/KitIcon";
  */
 export const mainNavigation = [
   { href: "/", label: "Início", icon: "inicio" },
-  { href: "/guias", label: "O Jogo", icon: "guia", match: ["/guias", "/manual", "/instalacao"] },
+  { href: "/guias", label: "O Jogo", icon: "guia", match: ["/guias", "/manual", "/instalacao", "/mix", "/bosses"] },
   { href: "/download", label: "Download", icon: "download" },
   { href: "/criar-conta", label: "Cadastro", icon: "conta" },
   { href: "/classes", label: "Classes", icon: "classes" },
@@ -17,6 +17,8 @@ export const mainNavigation = [
   { href: "/suporte", label: "Suporte", icon: "noticias" },
   { href: "/manual", label: "Manual do jogo", icon: "guia", extra: true },
   { href: "/instalacao", label: "Instalação", icon: "download", extra: true },
+  { href: "/bosses", label: "Horários de boss", icon: "boss", extra: true },
+  { href: "/mix", label: "Mix List", icon: "recompensas", extra: true },
   { href: "/noticias", label: "Notícias", icon: "noticias", extra: true },
   { href: "/servidor", label: "O Servidor", icon: "mapa", extra: true },
   { href: "/personagens", label: "Personagens", icon: "personagem", extra: true },
@@ -53,6 +55,9 @@ export const footerColumns = [
       { href: "/manual", label: "Manual do jogo" },
       { href: "/instalacao", label: "Instalação" },
       { href: "/guias/primeiros-passos", label: "Primeiros passos" },
+      { href: "/bosses", label: "Horários de boss" },
+      { href: "/mix", label: "Mix List" },
+      { href: "/guias/aging", label: "Aging" },
       { href: "/guias/regras", label: "Regras" },
       { href: "/monstros", label: "Monstros e drops" },
     ],

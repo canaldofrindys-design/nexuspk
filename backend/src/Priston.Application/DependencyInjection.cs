@@ -21,6 +21,7 @@ public static class DependencyInjection
         services.AddSingleton<HomeService>();
         services.AddSingleton<HomeSnapshotCache>();
         services.AddSingleton<RankingQueryService>();
+        services.AddSingleton<SodRankingService>();
         services.AddSingleton<LevelSnapshotService>();
         services.AddSingleton<Content.EventReminderService>();
         services.AddOptions<AccountOptions>()
@@ -32,6 +33,7 @@ public static class DependencyInjection
         services.AddSingleton<LoginThrottle>();
         services.AddScoped<AuthService>();
         services.AddScoped<Player.PlayerPanelService>();
+        services.AddSingleton<Player.GameDisconnectService>();
         services.AddSingleton<Content.ContentService>();
         services.AddSingleton<Admin.StaffAuthService>();
         services.AddSingleton<Admin.StaffAdminService>();

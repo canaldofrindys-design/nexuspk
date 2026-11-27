@@ -71,3 +71,11 @@ export async function revokeOtherSessionsAction(): Promise<FormState> {
   const n = result.data.revoked;
   return { status: "success", message: n === 0 ? "Não havia outras sessões abertas." : `${n} ${n === 1 ? "sessão encerrada" : "sessões encerradas"}.` };
 }
+
+export async function disconnectGameAction(): Promise<FormState> {
+  const token = await sessionOrLogin();
+  const result = await apiSend("POST", "/api/v1/player/disconnect", { token, ...(await clientContext()) });
+  if (!result.ok) return failure(result);
+  revalidatePath("/painel");
+  return { status: "success", message: "Pedido enviado ao servidor do jogo. Em alguns segundos a situação aparece aqui." };
+}

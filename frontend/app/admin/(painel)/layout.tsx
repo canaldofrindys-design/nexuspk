@@ -30,7 +30,8 @@ const groups: { title: string; items: NavItem[] }[] = [
     title: "Site",
     items: [
       { href: "/admin/noticias", label: "Notícias", needs: ["ManageContent"] },
-      { href: "/admin/eventos", label: "Eventos", needs: ["ManageContent"] },
+      { href: "/admin/eventos", label: "Eventos e bosses", needs: ["ManageContent"] },
+      { href: "/admin/mix", label: "Mix List", needs: ["ManageContent"] },
       { href: "/admin/banners", label: "Banners", needs: ["ManageContent"] },
       { href: "/admin/site", label: "Conteúdo do site", needs: ["ManageSite"] },
       { href: "/admin/avisos", label: "Avisos de status", needs: ["ManageContent"] },

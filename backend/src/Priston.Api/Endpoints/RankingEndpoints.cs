@@ -52,6 +52,50 @@ public static class RankingEndpoints
             return Results.Ok(await rankings.GetClansAsync(pagina ?? 1, porPagina ?? 50, ct));
         });
 
+        group.MapGet("/rankings/sod", async (SodRankingService sod, HttpContext http, string? tipo, string? mes, int? classe, int? pagina, int? porPagina, CancellationToken ct) =>
+        {
+            if (!ValidClass(classe))
+            {
+                return Results.BadRequest();
+            }
+
+            switch (tipo)
+            {
+                case null or "" or "mensal":
+                    DateOnly? month = null;
+                    if (!string.IsNullOrEmpty(mes))
+                    {
+                        if (!DateOnly.TryParseExact(mes + "-01", "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var parsed)
+                            || parsed > sod.CurrentMonth() || parsed.Year < 2000)
+                        {
+                            return Results.BadRequest();
+                        }
+
+                        month = parsed;
+                    }
+
+                    Cache(http);
+                    return Results.Ok(await sod.GetMonthlyAsync(month, classe, pagina ?? 1, porPagina ?? 50, ct));
+                case "semanal":
+                    Cache(http);
+                    return Results.Ok(await sod.GetWeeklyAsync(classe, pagina ?? 1, porPagina ?? 50, ct));
+                default:
+                    return Results.BadRequest();
+            }
+        });
+
+        group.MapGet("/rankings/sod/clas", async (SodRankingService sod, HttpContext http, int? pagina, int? porPagina, CancellationToken ct) =>
+        {
+            Cache(http);
+            return Results.Ok(await sod.GetClansAsync(pagina ?? 1, porPagina ?? 50, ct));
+        });
+
+        group.MapGet("/rankings/sod/meses", async (SodRankingService sod, HttpContext http, CancellationToken ct) =>
+        {
+            Cache(http);
+            return Results.Ok(await sod.GetMonthsAsync(ct));
+        });
+
         // Página pública do clã: dados do CL e membros do UL que estão no ranking público.
         group.MapGet("/clans/{name}", async (RankingQueryService rankings, HttpContext http, string name, CancellationToken ct) =>
         {

@@ -34,7 +34,7 @@ Consequências:
 | `PristonDB` | `TopLevel`, `PVP`, anti-cheat | Leitura |
 | `CoinShopDB` / `TimeShopDB` | Saldo de coins e loja, sistemas Nexus | Leitura (fora do escopo inicial) |
 | `QuestDB` | Quests e progresso | Leitura (fora do escopo inicial) |
-| `SodDb` | Bellatra/SoD por mês | Leitura (fora do escopo inicial) |
+| `SodDb` | Bellatra/SoD por mês | Leitura (ranking do SoD e destaque da home) |
 | `KLVN Studio` | Banco do **site antigo** (contas web, logins, notícias, suporte) | Fonte de migração |
 | `NexusPKAdmin` | Painel admin antigo, PIX, doações | Fonte de migração / fora do escopo inicial |
 
@@ -59,10 +59,12 @@ Bancos que existem no servidor e **não** foram extraídos: BattleEvents, Billin
 | Ranking geral (nível) | `LevelTable` + arquivo `.dat` do personagem | `Level`, `Class`; no `.dat`, classe 0xC4 e nível 0xC8 | Vale o maior nível. A `LevelTable` pode ficar atrás do `.dat` (personagem novo com nível 0, nível 200 dado pela equipe); quando a tabela não tem classe, vale a do arquivo |
 | Ranking geral (EXP) | `CharGameRecordLg` ou `TopLevel` | `Exp` / `XP` | Depende da confirmação acima |
 | Ranking PvP | `[UserDB].dbo.BattlePoints` | `Nick, BPs, DPs, BPsSemanal, KillsPvP, MortesPvP, PontosPvP, IsReiPvP, SodSemanal` | Confirmado (usado hoje) |
+| Ranking do SoD (Bellatra) | `[sodDB].dbo.SOD2Record<aamm>` (solo do mês), `UserDB.BattlePoints.SodSemanal` (solo da semana), `ClanDB.CL.Cpoint` (clãs) | `UserID, CharName, CharType, GLevel, Point` | Ver seção 13 |
 | Excluir GMs do ranking | `[UserDB].dbo.GameMasters` | `Account, GameMasterLevel` | Confirmado |
 | Esconder equipe e testes do ranking | `[PortalDB].dbo.RankingExclusion` (migração 0009) | `Kind` = conta, personagem ou prefixo do nome; `Value` | Lista do portal; editar com `database/scripts/esconder-do-ranking.sql`. Classe fora de 1 a 11 ("Desconhecida") também fica fora |
 | VIP | `[ServerDB].dbo.Vip` | `AccountID, PlayerName, IdVip, DateStart, DateEnd` | Confirmado |
 | Jogadores online | Conexões TCP abertas na porta do servidor do jogo (sem tabela) | — | `GameOnRecord`/`GameOutRecord` pararam em 2022; `inuse` e `ClanDB.CT` não voltam a 0 ao sair (11/11/2026). O portal conta as conexões, desligado até conferir com a janela do servidor (INSTALLATION.md) |
+| Desconectar personagem travado | `[PortalDB].dbo.GameDisconnectRequest` e `GameServerRuntime` (migração 0013) | — | **Sem fonte no jogo**: o portal grava o pedido e o servidor do jogo atende (docs/DESCONECTAR.md). Depende de mudança no código do servidor |
 | Status do servidor (online/offline) | Teste de porta TCP do servidor de jogo (`GAME_SERVER_IP`/`PORT` do admin antigo) | — | Sem tabela; verificação ativa pelo Worker |
 | Coins | `[CoinShopDB].dbo.UserInfo` | `UserID, UserCoin, LastChange` | Confirmado (fora do escopo inicial) |
 | Histórico diário/semanal/mensal | — | — | **Sem fonte**: snapshots no banco do portal, a partir da data de implantação |
@@ -199,7 +201,17 @@ Login `portal_game_admin` (`database/scripts/permissoes-admin-jogo.sql`). Só mu
 
 - [ ] Confirmar com o servidor do jogo se mudar `BlockChk` com o jogador online derruba a sessão ou vale só no próximo login.
 
-## 13. Monstros, históricos e clãs (27/11)
+## 13. Ranking do SoD (Bellatra)
+
+Página `/ranking/sod`, API `GET /api/v1/rankings/sod?tipo=mensal|semanal&mes=aaaa-mm&classe=`, `GET /api/v1/rankings/sod/clas` e `GET /api/v1/rankings/sod/meses`.
+
+- **Solo do mês**: `sodDB.dbo.SOD2Record<aamm>`, uma tabela por mês criada pelo servidor do jogo (a mesma fonte do ranking Bellatra do site antigo e do "Melhor do mês" da home). Colunas `UserID, CharName, CharType, GLevel, Point`. A tabela não tem chave: vale a maior `Point` de cada personagem no mês. Sem GMs (`UserDB.GameMasters`) e sem a lista de escondidos (`RankingExclusion`). O clã vem de `ClanDB.UL`.
+- **Meses**: as tabelas `SOD2Record[0-9]{4}` que existem no `sodDB` (até 12, nunca no futuro). Mês sem tabela aparece como "ainda não gravado", sem inventar zeros.
+- **Solo da semana**: `UserDB.BattlePoints.SodSemanal`, o contador do jogo (o painel zera em "Reset de rankings"). Nível pela `LevelTable`.
+- **Clãs**: `ClanDB.CL.Cpoint` maior que zero, na mesma ordem do "Líder do SoD" da home; emblema (`MIconCnt`), líder (`ClanZang`) e membros. Os três primeiros recebem a coroa de ouro, prata e bronze.
+- Leitura do `sodDB` pelo login `portal_game_read` (bloco em `database/scripts/permissoes-portal.sql`). Sem ela, o solo do mês aparece como indisponível e a semana e os clãs continuam.
+
+## 14. Monstros, históricos e clãs (27/11)
 
 - **Banco de monstros** (`/monstros`): os mesmos arquivos `GameServer\Monster\*.inf` do painel (`GameServer:MonstersFolder`), só leitura. Nome, vida (`*생명력`), nível (`*레벨`) e EXP base (`*경험치`) quando o arquivo traz, e cada linha `*아이템` com a chance, o ouro e os itens. Monstro repetido em vários arquivos (mesmo nome e mesmos drops) aparece uma vez. Sem acesso à pasta, a página avisa que está indisponível.
 - **Página do clã** (`/clas/<nome>`): `ClanDB.CL` (pontos, membros, vitórias, fundação, emblema `MIconCnt`, líder `ClanZang`) e os membros de `ClanDB.UL` que aparecem no ranking público de nível (GMs e escondidos ficam de fora), com classe e nível da `LevelTable` e BP de `UserDB.BattlePoints`. A conta (`CL.UserID`, `UL.userid`) não é lida.

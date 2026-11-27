@@ -9,20 +9,32 @@ namespace Priston.Application.Site;
 /// Evento fixo do servidor que se repete toda semana (Bless Castle, SoD, Hellsgate...), com contagem regressiva no banner da home.
 /// <paramref name="Kind"/>: uma das chaves de <see cref="SiteContentService.ScheduleKinds"/> (escolhe arte e ícone).
 /// <paramref name="Days"/>: dias da semana em que acontece (0 = domingo ... 6 = sábado).
-/// <paramref name="Time"/>: horário de início em Brasília ("HH:mm"). <paramref name="DurationMinutes"/>: quanto tempo fica aberto.
+/// <paramref name="Time"/>: primeiro horário de início em Brasília ("HH:mm"). <paramref name="DurationMinutes"/>: quanto tempo fica aberto.
+/// <paramref name="Times"/>: todos os horários do dia, em ordem ("01:00", "13:00"...), para bosses que nascem várias vezes; null = só <paramref name="Time"/>.
+/// <paramref name="Place"/>: mapa ou local (opcional), mostrado na página de bosses.
 /// </summary>
-public sealed record ScheduledEvent(string Name, string Kind, IReadOnlyList<int> Days, string Time, int DurationMinutes, string? Description);
+public sealed record ScheduledEvent(
+    string Name,
+    string Kind,
+    IReadOnlyList<int> Days,
+    string Time,
+    int DurationMinutes,
+    string? Description,
+    IReadOnlyList<string>? Times = null,
+    string? Place = null);
 
 public sealed record EventScheduleSettings(IReadOnlyList<ScheduledEvent> Items);
 
-public sealed record ScheduledEventInput(string? Name, string? Kind, IReadOnlyList<int>? Days, string? Time, string? Duration, string? Description);
+/// <summary><paramref name="Time"/>: um horário ("16:00") ou vários separados por vírgula ("01:00, 09:00, 17:00").</summary>
+public sealed record ScheduledEventInput(string? Name, string? Kind, IReadOnlyList<int>? Days, string? Time, string? Duration, string? Description, string? Place = null);
 
 public sealed record EventScheduleSettingsInput(IReadOnlyList<ScheduledEventInput>? Items);
 
 public sealed partial class SiteContentService
 {
     public const string ScheduleKey = "schedule";
-    public const int MaxScheduled = 8;
+    public const int MaxScheduled = 20;
+    public const int MaxTimesPerEvent = 24;
     public const int MaxDurationMinutes = 24 * 60;
 
     /// <summary>Tipos de evento fixo: definem a arte do banner e o ícone.</summary>
@@ -53,12 +65,15 @@ public sealed partial class SiteContentService
 
         await store.SaveSettingAsync(ScheduleKey, JsonSerializer.Serialize(value, Json), me.Username, ct).ConfigureAwait(false);
         await audit.WriteAsync("staff", me.Username, "site.schedule.updated", "site", ScheduleKey, client.IpAddress,
-            JsonSerializer.Serialize(new { items = value.Items.Select(i => new { i.Name, i.Days, i.Time }) }), ct).ConfigureAwait(false);
+            JsonSerializer.Serialize(new { items = value.Items.Select(i => new { i.Name, i.Days, Times = i.Times ?? [i.Time] }) }), ct).ConfigureAwait(false);
         Invalidate();
         return new(StaffAuthStatus.Ok);
     }
 
-    /// <summary>Nome, tipo, ao menos um dia, horário "HH:mm" e duração em minutos. Linha sem nome e sem horário é ignorada.</summary>
+    /// <summary>
+    /// Nome, tipo, ao menos um dia, um ou mais horários "HH:mm" (separados por vírgula) e duração em minutos.
+    /// Linha sem nome e sem horário é ignorada.
+    /// </summary>
     public static (EventScheduleSettings? Value, Dictionary<string, string> Errors) ValidateSchedule(EventScheduleSettingsInput input)
     {
         var errors = new Dictionary<string, string>();
@@ -92,9 +107,16 @@ public sealed partial class SiteContentService
                 continue;
             }
 
-            if (!TimeOnly.TryParseExact(timeText, ["HH:mm", "H:mm"], CultureInfo.InvariantCulture, DateTimeStyles.None, out var time))
+            var times = ParseTimes(timeText);
+            if (times is null)
             {
-                errors["items"] = $"Evento {i}: o horário fica no formato 16:00.";
+                errors["items"] = $"Evento {i}: o horário fica no formato 16:00 (vários horários separados por vírgula: 01:00, 13:00).";
+                continue;
+            }
+
+            if (times.Count > MaxTimesPerEvent)
+            {
+                errors["items"] = $"Evento {i}: use no máximo {MaxTimesPerEvent} horários por dia.";
                 continue;
             }
 
@@ -114,7 +136,14 @@ public sealed partial class SiteContentService
                 continue;
             }
 
-            items.Add(new ScheduledEvent(name, kind, days, time.ToString("HH:mm", CultureInfo.InvariantCulture), duration, description));
+            var place = Optional(r.Place);
+            if (place is { Length: > 40 })
+            {
+                errors["items"] = $"Evento {i}: o local tem no máximo 40 caracteres.";
+                continue;
+            }
+
+            items.Add(new ScheduledEvent(name, kind, days, times[0], duration, description, times.Count > 1 ? times : null, place));
         }
 
         if (items.Count > MaxScheduled)
@@ -125,12 +154,37 @@ public sealed partial class SiteContentService
         return errors.Count > 0 ? (null, errors) : (new EventScheduleSettings(items), errors);
     }
 
+    /// <summary>"9:30, 01:00, 9:30" vira ["01:00", "09:30"]. null quando vazio ou com algum horário inválido.</summary>
+    public static IReadOnlyList<string>? ParseTimes(string? text)
+    {
+        var parts = (text ?? string.Empty).Split([',', ';', ' '], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (parts.Length == 0)
+        {
+            return null;
+        }
+
+        var times = new SortedSet<TimeOnly>();
+        foreach (var part in parts)
+        {
+            if (!TimeOnly.TryParseExact(part, ["HH:mm", "H:mm"], CultureInfo.InvariantCulture, DateTimeStyles.None, out var time))
+            {
+                return null;
+            }
+
+            times.Add(time);
+        }
+
+        return times.Select(t => t.ToString("HH:mm", CultureInfo.InvariantCulture)).ToList();
+    }
+
+    private static bool ValidTime(string? time) => TimeOnly.TryParseExact(time, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out _);
+
     private static EventScheduleSettings? ParseSchedule(string? json) => Parse<EventScheduleSettings>(json) is { } s
         ? s with
         {
             Items = (s.Items ?? [])
                 .Where(i => i is not null && !string.IsNullOrEmpty(i.Name) && ScheduleKinds.Contains(i.Kind ?? string.Empty)
-                    && i.Days is { Count: > 0 } && TimeOnly.TryParseExact(i.Time, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out _))
+                    && i.Days is { Count: > 0 } && ValidTime(i.Time) && (i.Times is null || i.Times.All(ValidTime)))
                 .ToList(),
         }
         : null;

@@ -164,6 +164,11 @@ function LeaderPanel({
         <LeaderBody leader={leader} empty={empty} sod={sod} />
         {sod ? <SodTopPlayer leader={leader} /> : null}
         <p className="mt-2 text-center text-[11px] text-silver/55">{note}</p>
+        {sod ? (
+          <Link href="/ranking/sod" className="mt-1 text-center text-xs text-arcane hover:underline">
+            Ver o ranking do SoD
+          </Link>
+        ) : null}
       </div>
     </section>
   );

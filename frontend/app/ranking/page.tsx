@@ -297,6 +297,7 @@ async function KindTabs({ searchParams }: { searchParams: Promise<Query> }) {
         { href: url(s, { kind: "nivel" }), label: "Nível", icon: <KitIcon name="rankingGeral" size={24} />, active: s.kind === "nivel" },
         { href: url(s, { kind: "pvp" }), label: "PvP", icon: <KitIcon name="pvp" size={24} />, active: s.kind === "pvp" },
         { href: url(s, { kind: "clas" }), label: "Clãs", icon: <KitIcon name="guildasBandeira" size={24} />, active: s.kind === "clas" },
+        { href: "/ranking/sod", label: "SoD", icon: <KitIcon name="trofeu" size={24} />, active: false },
       ]}
     />
   );
@@ -311,7 +312,7 @@ export default function RankingPage({ searchParams }: PageProps<"/ranking">) {
         icon="trofeu"
         eyebrow="Os mais fortes do vale"
         title="Ranking"
-        lead="Geral por nível, por classe, de clãs e de PvP, além dos níveis ganhos no dia, na semana e no mês. Atualizado direto do servidor."
+        lead="Geral por nível, por classe, de clãs, de PvP e do SoD, além dos níveis ganhos no dia, na semana e no mês. Atualizado direto do servidor."
         aside={
           <Link href="/personagens" className="nx-btn btn-glow inline-flex items-center px-4 py-2 font-display text-sm font-bold tracking-wide uppercase">
             Buscar personagem
